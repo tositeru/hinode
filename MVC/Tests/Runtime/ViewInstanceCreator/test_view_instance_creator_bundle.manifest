@@ -1,0 +1,24 @@
+ManifestFileVersion: 0
+CRC: 3287073659
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: f89239a571000c05f9f0afa16f1680d9
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: e9cf3c93e3c00dc34240f6caf7ddd00d
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: b832d217b6f48404296930d72ad36a8e, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+Assets:
+- Assets/testViewObjPrefab.prefab
+Dependencies: []

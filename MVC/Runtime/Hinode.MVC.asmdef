@@ -1,0 +1,14 @@
+{
+    "name": "Hinode.MVC",
+    "references": [
+        "GUID:9f1fdaef15a7b4001961009abd3aa659"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

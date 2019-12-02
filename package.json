@@ -1,0 +1,14 @@
+{
+  "name": "com.tositeru.hinode",
+  "version": "0.0.0",
+  "displayName": "Hinode",
+  "description": "Hinode is Library for Unity",
+  "unity": "2019.2",
+  "author": {
+    "name": "tositeru"
+  },
+  "dependencies": {
+    "com.unity.ugui": "1.0.0"
+  },
+  "type": "library"
+}

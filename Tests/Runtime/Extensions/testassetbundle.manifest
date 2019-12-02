@@ -1,0 +1,20 @@
+ManifestFileVersion: 0
+CRC: 1114958611
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 1adf10fa4f0eb97724111c6779019c92
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: f562b365ba45a9260cf3b374a06b51a7
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 65
+  Script: {instanceID: 0}
+Assets:
+- Assets/boxcollider.prefab
+Dependencies: []

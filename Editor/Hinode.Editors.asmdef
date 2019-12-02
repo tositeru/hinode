@@ -1,0 +1,16 @@
+{
+    "name": "Hinode.Editors",
+    "references": [
+        "GUID:9f1fdaef15a7b4001961009abd3aa659"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
