@@ -1,5 +1,5 @@
 {
-    "name": "Hinode.Editor",
+    "name": "Hinode.Editors",
     "references": [],
     "includePlatforms": [
         "Editor"

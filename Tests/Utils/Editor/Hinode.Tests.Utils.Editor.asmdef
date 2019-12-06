@@ -1,0 +1,18 @@
+{
+    "name": "Hinode.Tests.Utils.Editor",
+    "references": [
+        "GUID:f660d6d99091c411493b29a705294352",
+        "GUID:9f1fdaef15a7b4001961009abd3aa659",
+        "GUID:be99853fc7531475aabb3e4e05a662a0"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
