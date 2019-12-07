@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.TestTools.TestRunner;
 using Hinode.Editors;
+using System.Text.RegularExpressions;
 
 namespace Hinode.Tests
 {
@@ -43,7 +44,7 @@ namespace Hinode.Tests
         /// <param name="snapshotNo"></param>
         /// <param name="validateFunc"></param>
         /// <param name="message"></param>
-        protected void TakeOrValid<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int snapshotNo, System.Func<T, T, bool> validateFunc, string message)
+        protected Snapshot TakeOrValid<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int snapshotNo, System.Func<T, T, bool> validateFunc, string message)
         {
             var newSnapshot = Snapshot.Create(snapshot, testStackFrame);
             var assetPath = newSnapshot.GetAssetPath(snapshotNo);
@@ -60,12 +61,49 @@ namespace Hinode.Tests
                 Assert.IsNotNull(recoredSnapshot, $"Don't exist Snapshot... paht=>{assetPath}");
                 Assert.IsTrue(validateFunc(recoredSnapshot.GetSnapshot<T>(), snapshot), $"Failed to validate snapshot... : {message}");
             }
+            return newSnapshot;
         }
 
+        readonly string FOR_SCREENSHOT_LABEL = "__for_screenshot";
         protected IEnumerator TakeOrValidWithCaptureScreen<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int snapshotNo, System.Func<T, T, bool> validateFunc, string message)
         {
-            TakeOrValid(snapshot, testStackFrame, snapshotNo, validateFunc, message);
-            throw new System.NotImplementedException("Capture Screen");
+            var newSnapshot = TakeOrValid(snapshot, testStackFrame, snapshotNo, validateFunc, message);
+
+            var cameraObj = new GameObject("__ScreenshotCamera");
+            var camera = cameraObj.AddComponent<Camera>();
+            camera.targetTexture = new RenderTexture(512, 512, 1);
+
+            foreach(var canvas in Object.FindObjectsOfType<Canvas>()
+                .Where(_c => _c.renderMode == RenderMode.ScreenSpaceOverlay))
+            {
+                var label = canvas.gameObject.AddComponent<LabelObj>();
+                label.Add(FOR_SCREENSHOT_LABEL);
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = camera;
+            }
+
+            yield return new WaitForEndOfFrame();
+            var holdActiveRT = RenderTexture.active;
+            RenderTexture.active = camera.targetTexture;
+            var captureTex = new Texture2D(RenderTexture.active.width, RenderTexture.active.height);
+            captureTex.ReadPixels(new Rect(0, 0, RenderTexture.active.width, RenderTexture.active.height), 0, 0);
+            captureTex.Apply();
+            RenderTexture.active = holdActiveRT;
+
+            var screenshotFilepath = DoTakeSnapshot ? newSnapshot.GetScreenshotFilepath(snapshotNo) : newSnapshot.GetScreenshotFilepathAtTest(snapshotNo);
+            Directory.CreateDirectory(Path.GetDirectoryName(screenshotFilepath));
+            File.WriteAllBytes(screenshotFilepath, captureTex.EncodeToPNG());
+
+            foreach (var pair in Object.FindObjectsOfType<LabelObj>()
+                .Where(_l => _l.Contains(FOR_SCREENSHOT_LABEL))
+                .Select(_l => (l: _l, c: _l.GetComponent<Canvas>())))
+            {
+                pair.c.renderMode = RenderMode.ScreenSpaceOverlay;
+                pair.c.worldCamera = null;
+                Object.Destroy(pair.l);
+            }
+
+            Object.Destroy(cameraObj);
         }
 
         #endregion
@@ -105,7 +143,19 @@ namespace Hinode.Tests
             }
             foreach(var p in _deleteAssets)
             {
-                AssetDatabase.DeleteAsset(p);
+                var fullpath = Path.GetFullPath(p);
+                if(new Regex($"^{Application.dataPath}").IsMatch(fullpath))
+                {
+                    AssetDatabase.DeleteAsset(p);
+                }
+                else if(File.Exists(p))
+                {
+                    File.Delete(p);
+                }
+                else if(Directory.Exists(p))
+                {
+                    Directory.Delete(p);
+                }
             }
             _deleteAssets.Clear();
         }
