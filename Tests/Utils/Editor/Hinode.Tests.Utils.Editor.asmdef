@@ -1,5 +1,5 @@
 {
-    "name": "Hinode.Tests.Utils.Editor",
+    "name": "Hinode.Tests.Utils.Editors",
     "references": [
         "GUID:f660d6d99091c411493b29a705294352",
         "GUID:9f1fdaef15a7b4001961009abd3aa659",

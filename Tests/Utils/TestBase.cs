@@ -29,14 +29,15 @@ namespace Hinode.Tests
             get => _snapshotSetting.DoTakeSnapshot;
             set => _snapshotSetting.DoTakeSnapshot = value;
         }
+
         [SetUp]
-        public void RecoredSnapshotSetting()
+        public void ReadSnapshotSetting()
         {
             _snapshotSetting = SnapshotSettings.CreateOrGet();
         }
 
         /// <summary>
-        /// 現在のDoTAkeSnapshotの状態からスナップショットを取るか検証するかどちらかを実行する
+        /// 現在のDoTakeSnapshotの状態からスナップショットを取るか検証するかどちらかを実行する
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="snapshot"></param>
@@ -46,8 +47,8 @@ namespace Hinode.Tests
         /// <param name="message"></param>
         protected Snapshot TakeOrValid<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int snapshotNo, System.Func<T, T, bool> validateFunc, string message)
         {
-            var newSnapshot = Snapshot.Create(snapshot, testStackFrame);
-            var assetPath = newSnapshot.GetAssetPath(snapshotNo);
+            var newSnapshot = Snapshot.Create(snapshot, testStackFrame, snapshotNo);
+            var assetPath = newSnapshot.GetAssetPath();
             if (_snapshotSetting.DoTakeSnapshot)
             {
                 var assetDirPath = Path.GetDirectoryName(assetPath);
@@ -90,7 +91,7 @@ namespace Hinode.Tests
             captureTex.Apply();
             RenderTexture.active = holdActiveRT;
 
-            var screenshotFilepath = DoTakeSnapshot ? newSnapshot.GetScreenshotFilepath(snapshotNo) : newSnapshot.GetScreenshotFilepathAtTest(snapshotNo);
+            var screenshotFilepath = DoTakeSnapshot ? newSnapshot.ScreenshotFilepath : newSnapshot.ScreenshotFilepathAtTest;
             Directory.CreateDirectory(Path.GetDirectoryName(screenshotFilepath));
             File.WriteAllBytes(screenshotFilepath, captureTex.EncodeToPNG());
 

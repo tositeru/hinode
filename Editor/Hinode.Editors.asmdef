@@ -1,6 +1,8 @@
 {
     "name": "Hinode.Editors",
-    "references": [],
+    "references": [
+        "GUID:9f1fdaef15a7b4001961009abd3aa659"
+    ],
     "includePlatforms": [
         "Editor"
     ],
