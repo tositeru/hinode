@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Linq;
 using UnityEngine.TestTools;
+using Hinode.Editors;
 
 namespace Hinode.Tests
 {
@@ -166,16 +167,7 @@ namespace Hinode.Tests
 
         public Snapshot Copy()
         {
-            var SO = new SerializedObject(this);
-            var it = SO.GetIterator();
-            var destSO = new SerializedObject(CreateInstance<Snapshot>());
-            it.Next(true);
-            for(; it.Next(false); )
-            {
-                destSO.CopyFromSerializedProperty(it);
-            }
-            destSO.ApplyModifiedProperties();
-            var copy = destSO.targetObject as Snapshot;
+            var copy = SerializedObjectExtensions.Copy(this, CreateInstance<Snapshot>());
             copy.name = $"copy_{this.name}";
             return copy;
         }
