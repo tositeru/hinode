@@ -21,7 +21,7 @@ namespace Hinode
         {
             var inst = CreateInstance<KeyObjectRefDictionary>();
             Assert.IsTrue(inst.IsValidType(typeof(TObject)));
-            inst.CurrentType = typeof(TObject);
+            inst.HasType = typeof(TObject);
             return inst;
         }
 
@@ -33,11 +33,11 @@ namespace Hinode
 
         #region IKeyValueDictionary
         protected override KeyObjectRefObject CreateObj(string key, Object value)
-            => new KeyObjectRefObject(key, value, CurrentType);
+            => new KeyObjectRefObject(key, value, HasType);
 
         public override void Refresh()
         {
-            CurrentType = FindType();
+            HasType = FindType();
             base.Refresh();
         }
         #endregion

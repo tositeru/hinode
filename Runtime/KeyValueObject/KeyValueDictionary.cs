@@ -133,12 +133,12 @@ namespace Hinode
     /// <typeparam name="TKeyValue"></typeparam>
     /// <typeparam name="T"></typeparam>
     [System.Serializable]
-    public abstract class IKeyValueDictionaryWithTypeName<TKeyValue, T> : IKeyValueDictionary<TKeyValue, T>
+    public abstract class IKeyValueDictionaryWithTypeName<TKeyValue, T> : IKeyValueDictionary<TKeyValue, T>, IHasTypeName
         where TKeyValue : IKeyValueObject<T>
     {
         [SerializeField] string _typeName;
         System.Type _type;
-        public System.Type CurrentType
+        public System.Type HasType
         {
             get
             {
@@ -148,7 +148,7 @@ namespace Hinode
                 _type = FindType();
                 return _type;
             }
-            protected set
+            set
             {
                 _type = value != null ? value : typeof(object);
                 _typeName = _type.FullName;
@@ -170,6 +170,6 @@ namespace Hinode
                 .SelectMany(_asm => _asm.GetTypes().Where(IsValidType));
         }
 
-        public bool IsValidCurrentType { get => IsValidType(CurrentType); }
+        public bool IsValidCurrentType { get => IsValidType(HasType); }
     }
 }

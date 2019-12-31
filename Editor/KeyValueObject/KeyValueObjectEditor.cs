@@ -9,7 +9,8 @@ using UnityEngine.Assertions;
 
 namespace Hinode.Editors
 {
-    public abstract class IKeyValueObjectPropertyDrawer<T> : PropertyDrawer
+    public abstract class IKeyValueObjectPropertyDrawer<TKeyValue, TValue, T> : PropertyDrawer
+        where TKeyValue : IKeyValueObject<TValue>
     {
         protected float WIDTH_OFFSET = 5f;
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
@@ -44,12 +45,25 @@ namespace Hinode.Editors
 
         protected abstract VisualElement CreateValueElement(SerializedProperty property);
 
+        /// <summary>
+        /// PropertyDrawerでScriptableObjectを編集できるようにした際に、propertyPathが途切れてしまうため、
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static GUIContent AppendTypeName(GUIContent src, System.Type type)
+        {
+            var dest = new GUIContent(src);
+            dest.text += $"$${type.FullName}$$";
+            return dest;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             using (var propScope = new EditorGUI.PropertyScope(position, label, property))
             {
                 var labelPos = position;
-                if(label.text != "")
+                if (label.text != "")
                 {
                     labelPos.width = labelPos.width / 3;
                     EditorGUI.LabelField(labelPos, propScope.content);
@@ -85,8 +99,44 @@ namespace Hinode.Editors
         protected abstract void OnGUIValue(Rect position, SerializedProperty property, GUIContent label);
     }
 
+    public abstract class IKeyValueObjectWithTypeNamePropertyDrawer<TKeyValue, TValue, T> : IKeyValueObjectPropertyDrawer<TKeyValue, TValue, T>
+        where TKeyValue : IKeyValueObjectWithTypeName<TValue>
+    {
+        /// <summary>
+        /// UsedTypeAttributeが指定されているかチェックする関数。
+        /// されていた場合はそれに設定されている型を使用するようにターゲットの_typeNameプロパティを変更します。
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="label"></param>
+        /// <returns>true:プロパティが変更された, false:変更されていない</returns>
+        protected bool CheckUsedTypeAttr(SerializedProperty property, GUIContent label)
+        {
+            var inst = property.GetSelf() as TKeyValue;
+            var typeNameProp = property.FindPropertyRelative("_typeName");
+            if (typeNameProp == null) return false;
+
+            var customLabel = label as CustomGUIContent;
+            if (UsedTypeAttribute.SetTypeFromFieldInfo(fieldInfo, inst))
+            {
+                typeNameProp.stringValue = inst.HasType.FullName;
+                return true;
+            }
+            else if (customLabel != null && customLabel.Parameter != null && customLabel.Parameter is UsedTypeAttribute)
+            {
+                var usedTypeAttr = customLabel.Parameter as UsedTypeAttribute;
+                inst.HasType = usedTypeAttr.UsedType;
+                typeNameProp.stringValue = usedTypeAttr.UsedType.FullName;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
     [CustomPropertyDrawer(typeof(KeyIntObject))]
-    public class KeyIntObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<int>
+    public class KeyIntObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<KeyIntObject, int, int>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
@@ -113,7 +163,8 @@ namespace Hinode.Editors
                 intField.style.marginRight = new StyleLength(5);
                 intField.style.maxWidth = new StyleLength(150);
                 intField.style.minWidth = new StyleLength(50);
-                EventCallback<ChangeEvent<int>> action = (e) => {
+                EventCallback<ChangeEvent<int>> action = (e) =>
+                {
                     var valueProp = property.FindPropertyRelative("_value");
                     Debug.Log($"prop={valueProp.intValue}, value=>{e.newValue}; range=>({range.Min}:{range.Max})");
                     if (range.IsInRange(e.newValue))
@@ -127,12 +178,13 @@ namespace Hinode.Editors
                 root.Add(intField);
                 return root;
             }
-            else if(attributes.Any(_a => _a is MinAttribute))
+            else if (attributes.Any(_a => _a is MinAttribute))
             {
                 var min = attributes.First(_a => _a is MinAttribute) as MinAttribute;
                 var intField = new IntegerField();
-                intField.RegisterValueChangedCallback(_e => {
-                    if((int)min.min > _e.newValue)
+                intField.RegisterValueChangedCallback(_e =>
+                {
+                    if ((int)min.min > _e.newValue)
                     {
                         var valueProp = property.FindPropertyRelative("_value");
                         valueProp.intValue = (int)min.min;
@@ -174,7 +226,7 @@ namespace Hinode.Editors
 
     [CustomPropertyDrawer(typeof(KeyFloatObject))]
     [CustomPropertyDrawer(typeof(KeyDoubleObject))]
-    public class KeyNumberObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<float>
+    public class KeyNumberObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<KeyFloatObject, float, float>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
@@ -206,7 +258,7 @@ namespace Hinode.Editors
     }
 
     [CustomPropertyDrawer(typeof(KeyBoolObject))]
-    public class KeyBoolObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<bool>
+    public class KeyBoolObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<KeyBoolObject, bool, bool>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
@@ -228,7 +280,7 @@ namespace Hinode.Editors
     }
 
     [CustomPropertyDrawer(typeof(KeyStringObject))]
-    public class KeyStringObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<string>
+    public class KeyStringObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<KeyStringObject, string, string>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
@@ -251,7 +303,7 @@ namespace Hinode.Editors
     }
 
     [CustomPropertyDrawer(typeof(KeyEnumObject))]
-    public class KeyEnumObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<System.Enum>
+    public class KeyEnumObjectPropertyDrawer : IKeyValueObjectWithTypeNamePropertyDrawer<KeyEnumObject, int, System.Enum>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
@@ -260,10 +312,14 @@ namespace Hinode.Editors
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)
         {
-            var inst = property.GetSelf() as KeyEnumObject;
-            if (!inst.IsValid) return;
+            if(!CheckUsedTypeAttr(property, label))
+            {
+                EditorGUI.LabelField(position, "Please Use UsedEnum Attribute");
+                return;
+            }
 
-            if(inst.IsFlags)
+            var inst = property.GetSelf() as KeyEnumObject;
+            if (inst.IsFlags)
             {
                 DrawFlagsEnum(inst, position, property, label);
             }
@@ -278,7 +334,7 @@ namespace Hinode.Editors
             var valueProp = property.FindPropertyRelative("_value");
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
-                if(instance.IsValid)
+                if (instance.IsValid)
                 {
                     var e = EditorGUI.EnumFlagsField(position, instance.Value);
                     if (scope.changed)
@@ -290,7 +346,7 @@ namespace Hinode.Editors
                 }
                 else
                 {
-                    Debug.LogWarning($"Invalid Enum Value... This Property is set 0... name={property.displayName}, value={instance.EnumIndex}, enumType={instance.CurrentType.FullName}");
+                    Debug.LogWarning($"Invalid Enum Value... This Property is set 0... name={property.displayName}, value={instance.EnumIndex}, enumType={instance.HasType.FullName}");
                     valueProp.intValue = 0;
                 }
             }
@@ -301,7 +357,7 @@ namespace Hinode.Editors
             var valueProp = property.FindPropertyRelative("_value");
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
-                var names = instance.CurrentType.GetEnumNames().ToList();
+                var names = instance.HasType.GetEnumNames().ToList();
                 var index = valueProp.intValue;
                 if (!instance.IsValid)
                 {
@@ -318,11 +374,32 @@ namespace Hinode.Editors
     }
 
     [CustomPropertyDrawer(typeof(KeyObjectRefObject), true)]
-    public class KeyObjectRefObjectPropertyDrawer : IKeyValueObjectPropertyDrawer<Object>
+    public class KeyObjectRefObjectPropertyDrawer : IKeyValueObjectWithTypeNamePropertyDrawer<KeyObjectRefObject, Object, Object>
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
-            return new Label("Not Implement");
+            var root = new VisualElement();
+            var inst = property.GetSelf() as KeyObjectRefObject;
+            if (UsedTypeAttribute.SetTypeFromFieldInfo(fieldInfo, inst))
+            {
+                var typeNameProp = property.FindPropertyRelative("_typeName");
+                typeNameProp.stringValue = inst.HasType.FullName;
+
+                var objField = new ObjectField
+                {
+                    objectType = inst.HasType,
+                    allowSceneObjects = true,
+                    bindingPath = property.propertyPath + "._value",
+                };
+                root.Add(objField);
+            }
+            else
+            {
+                root.Add(new Label("Please Use UsedUnityObject Attribute"));
+            }
+
+            root.Bind(property.serializedObject);
+            return root;
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)
@@ -330,8 +407,15 @@ namespace Hinode.Editors
             var valueProp = property.FindPropertyRelative("_value");
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
+                if (!CheckUsedTypeAttr(property, label))
+                {
+                    EditorGUI.LabelField(position, "Please Use UsedUnityObject Attribute");
+                    return;
+                }
+
                 var inst = property.GetSelf() as KeyObjectRefObject;
-                var newValue = EditorGUI.ObjectField(position, valueProp.objectReferenceValue, inst.CurrentType, true);
+                var currentType = inst.HasType;
+                var newValue = EditorGUI.ObjectField(position, valueProp.objectReferenceValue, currentType, true);
                 if (scope.changed)
                 {
                     valueProp.objectReferenceValue = newValue;

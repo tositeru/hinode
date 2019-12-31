@@ -129,11 +129,11 @@ namespace Hinode
     }
 
     [System.Serializable]
-    public abstract class IKeyValueObjectWithTypeName<T> : IKeyValueObject<T>
+    public abstract class IKeyValueObjectWithTypeName<T> : IKeyValueObject<T>, IHasTypeName
     {
         [SerializeField] string _typeName;
         System.Type _type;
-        public System.Type CurrentType
+        public System.Type HasType
         {
             get
             {
@@ -144,7 +144,7 @@ namespace Hinode
                     .FirstOrDefault(_t => _t.FullName == _typeName);
                 return _type;
             }
-            protected set
+            set
             {
                 Assert.IsNotNull(value);
                 _type = value;
@@ -175,10 +175,10 @@ namespace Hinode
     [System.Serializable]
     public class KeyEnumObject : IKeyValueObjectWithTypeName<int>
     {
-        new public System.Enum Value { get => GetValue(base.Value, CurrentType); }
+        new public System.Enum Value { get => GetValue(base.Value, HasType); }
         public int EnumIndex { get => base.Value; }
         public bool IsValid { get => IsValidValue(base.Value); }
-        public bool IsFlags { get => IsFlagsEnum(CurrentType); }
+        public bool IsFlags { get => IsFlagsEnum(HasType); }
 
         public static KeyEnumObject Create<T>(string key, T value)
             where T : System.Enum
@@ -199,13 +199,13 @@ namespace Hinode
 
         public bool IsValidValue(int value)
         {
-            if (CurrentType == null) return false;
-            if (!CurrentType.IsSubclassOf(typeof(System.Enum))) return false;
+            if (HasType == null) return false;
+            if (!HasType.IsSubclassOf(typeof(System.Enum))) return false;
 
             if (IsFlags)
             {
                 if (value == -1) return true;
-                uint bits = System.Enum.GetValues(CurrentType).Cast<int>()
+                uint bits = System.Enum.GetValues(HasType).Cast<int>()
                     .Select(_v => (uint)_v)
                     .Aggregate((_s, _c) => _s | _c);
                 uint valueBits = (uint)value;
@@ -213,13 +213,13 @@ namespace Hinode
             }
             else
             {
-                return System.Enum.GetValues(CurrentType).Cast<int>().Any(_v => (int)_v == value);
+                return System.Enum.GetValues(HasType).Cast<int>().Any(_v => (int)_v == value);
             }
         }
 
         public int GetIndex(System.Enum value)
         {
-            return GetIndex(CurrentType, value);
+            return GetIndex(HasType, value);
         }
 
         static System.Enum GetValue(int value, System.Type type)

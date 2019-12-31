@@ -26,12 +26,15 @@ namespace Hinode.Tests
             Assert.AreEqual(TestEnum.Apple, keyValue.Value);
 
             Assert.AreEqual(0, keyValue.EnumIndex);
-            Assert.AreEqual(typeof(TestEnum), keyValue.CurrentType);
+            Assert.AreEqual(typeof(TestEnum), keyValue.HasType);
             Assert.IsFalse(keyValue.IsFlags);
             Assert.IsTrue(keyValue.IsValid);
             Assert.IsTrue(keyValue.IsValidValue((int)TestEnum.Apple));
         }
 
+        /// <summary>
+        /// ScriptableObject#CreateInstanceで警告が出るが、無視しても大丈夫なのでそのままにしている。
+        /// </summary>
         [System.Serializable]
         class TestFailedEnum : ScriptableObject
         {
@@ -77,7 +80,7 @@ namespace Hinode.Tests
             Assert.AreEqual(e, keyValue.Value);
 
             Assert.AreEqual((int)e, keyValue.EnumIndex);
-            Assert.AreEqual(typeof(TestFlags), keyValue.CurrentType);
+            Assert.AreEqual(typeof(TestFlags), keyValue.HasType);
             Assert.IsTrue(keyValue.IsFlags);
             Assert.IsTrue(keyValue.IsValid);
             Assert.IsTrue(keyValue.IsValidValue((int)(TestFlags.Blue | TestFlags.Green)));

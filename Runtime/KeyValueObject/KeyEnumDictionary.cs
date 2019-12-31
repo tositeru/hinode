@@ -20,7 +20,7 @@ namespace Hinode
         {
             var inst = CreateInstance<KeyEnumDictionary>();
             Assert.IsTrue(inst.IsValidType(typeof(TEnum)));
-            inst.CurrentType = typeof(TEnum);
+            inst.HasType = typeof(TEnum);
             return inst;
         }
 
@@ -32,11 +32,11 @@ namespace Hinode
 
         #region IKeyValueDictionary
         protected override KeyEnumObject CreateObj(string key, int value)
-            => new KeyEnumObject(key, (System.Enum)(object)value, CurrentType);
+            => new KeyEnumObject(key, (System.Enum)(object)value, HasType);
 
         public override void Refresh()
         {
-            CurrentType = FindType();
+            HasType = FindType();
             base.Refresh();
         }
         #endregion

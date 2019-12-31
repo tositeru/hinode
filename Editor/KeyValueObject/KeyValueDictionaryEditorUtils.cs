@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using UnityEngine.Assertions;
 
 namespace Hinode.Editors
 {
@@ -15,19 +16,21 @@ namespace Hinode.Editors
         where TDictionary : IKeyValueDictionary<TKeyValue, T>
         where TKeyValue : IKeyValueObject<T>
     {
-        SerializedTarget _target = new SerializedTarget();
+        protected SerializedTarget Target
+        {
+            get; private set;
+        } = new SerializedTarget();
 
         bool _foldout;
         int _page;
         readonly int ELEMENT_PER_PAGE = 15;
-        readonly int GUI_OFFSET = 4;
 
         public void Draw(SerializedObject target, Rect position, GUIContent label) => Draw(target, SerializedTarget.Type.SerializedObject, position, label);
         public void Draw(SerializedProperty target, Rect position, GUIContent label) => Draw(target, SerializedTarget.Type.SerializedProperty, position, label);
 
         void Draw(object target, SerializedTarget.Type type, Rect position, GUIContent label)
         {
-            _target.Set(type, target);
+            Target.Set(type, target);
 
             DrawImpl(position, label);
         }
@@ -39,7 +42,7 @@ namespace Hinode.Editors
             rowHeight += GUI.skin.label.margin.vertical + GUI.skin.label.padding.vertical;
             var pos = new GUILayoutPosition(position, rowHeight);
 
-            if(_target.CurrentType == SerializedTarget.Type.SerializedProperty)
+            if(Target.CurrentType == SerializedTarget.Type.SerializedProperty)
             {
                 using (var scope = new EditorGUI.ChangeCheckScope())
                 {
@@ -47,13 +50,13 @@ namespace Hinode.Editors
                     _foldout = EditorGUI.Foldout(foldoutPos, _foldout, label);
 
                     var objFieldPos = pos.GetSplitPos(3f, 1, 2);
-                    var newObj = EditorGUI.ObjectField(objFieldPos, _target.ObjectReference, typeof(TDictionary), false);
+                    var newObj = EditorGUI.ObjectField(objFieldPos, Target.ObjectReference, typeof(TDictionary), false);
                     if (scope.changed)
                     {
-                        _target.ObjectReference = newObj;
+                        Target.ObjectReference = newObj;
                     }
                 }
-                if (!_foldout || _target.ObjectReference == null) return;
+                if (!_foldout || Target.ObjectReference == null) return;
             }
             else
             {
@@ -97,12 +100,12 @@ namespace Hinode.Editors
         {
             get
             {
-                switch (_target.CurrentType)
+                switch (Target.CurrentType)
                 {
                     case SerializedTarget.Type.SerializedObject:
-                        return _target.SerializedObject.targetObject as TDictionary;
+                        return Target.SerializedObject.targetObject as TDictionary;
                     case SerializedTarget.Type.SerializedProperty:
-                        return _target.SerializedProperty.GetAssetInstance<TDictionary>();
+                        return Target.SerializedProperty.GetAssetInstance<TDictionary>();
                     default:
                         throw new System.NotImplementedException();
                 }
@@ -172,7 +175,16 @@ namespace Hinode.Editors
                 {
                     position.IncrementRow();
 
-                    EditorGUI.PropertyField(position.Pos, element, new GUIContent());
+                    CustomGUIContent label = new CustomGUIContent();
+                    if (Target.CurrentType == SerializedTarget.Type.SerializedProperty)
+                    {
+                        var usedTypeAttr = Target.SerializedProperty.GetFieldAttributes<UsedTypeAttribute>().FirstOrDefault();
+                        if(usedTypeAttr != null)
+                        {
+                            label.Parameter = usedTypeAttr;
+                        }
+                    }
+                    EditorGUI.PropertyField(position.Pos, element, label);
                     if (scope.changed)
                     {
                         doChanged |= scope.changed;
@@ -219,15 +231,40 @@ namespace Hinode.Editors
     /// </summary>
     internal class KeyValueDictionaryWithTypeNameEditorUtils<TDictionary, TKeyValue, T, TCacheType>
         : KeyValueDictionaryEditorUtils<TDictionary, TKeyValue, T>
-        where TDictionary : IKeyValueDictionaryWithTypeName<TKeyValue, T>
+        where TDictionary : IKeyValueDictionaryWithTypeName<TKeyValue, T>, IHasTypeName
         where TKeyValue : IKeyValueObject<T>
     {
-        /// <summary>
-        /// 処理負荷が高かったのでキャッシュしている
-        /// </summary>
-        TypeListCache<TCacheType> _typeCache;
         protected readonly int layoutPosDivideCount = 3;
 
+        /// <summary>
+        /// 処理負荷が高かったのでキャッシュしている
+        /// 使用する時はGetOrCreateTypeCahce関数を経由して使用するようにしてください。
+        /// </summary>
+        private TypeListCache<TCacheType> _typeCache;
+
+        protected TypeListCache<TCacheType> GetOrCreateTypeCahce(SerializedObject SO, out bool isNew)
+        {
+            isNew = false;
+            var instance = SO.targetObject as TDictionary;
+            if (_typeCache == null || !instance.IsValidCurrentType)
+            {
+                var asmName = instance.IsValidCurrentType
+                    ? instance.HasType.Assembly.GetName().Name
+                    : "Assembly-CSharp";
+                var curTypeName = instance.HasType?.FullName ?? "";
+                _typeCache = new TypeListCache<TCacheType>(asmName, curTypeName);
+                isNew = true;
+            }
+            return _typeCache;
+        }
+
+        /// <summary>
+        /// Targetと引数SOが参照しているものは同じだが、場合によってTargetがポインタ型の場合があるためプロパティを変更したい場合はSOの方を使用してください。
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="SO"></param>
+        /// <param name="rowHeight"></param>
+        /// <returns></returns>
         protected override (bool doApply, GUILayoutPosition nextPos) OnDrawElementsBefore(GUILayoutPosition position, SerializedObject SO, float rowHeight)
         {
             position.IncrementRow();
@@ -237,28 +274,28 @@ namespace Hinode.Editors
             EditorGUI.LabelField(labelPos, "Used Type");
 
             bool doApply = false;
+            bool enableUpdateType = true;
+            //UsedUnityObjectAttributeが指定されていたら型は固定し、そうでなければ選択できるようにする
             var instance = SO.targetObject as TDictionary;
-            if (_typeCache == null || !instance.IsValidCurrentType)
+            if (Target.CurrentType == SerializedTarget.Type.SerializedProperty
+                && UsedTypeAttribute.SetTypeFromFieldInfo(Target.SerializedProperty.GetFieldInfo(), instance))
             {
-                var asmName = instance.IsValidCurrentType
-                    ? instance.CurrentType.Assembly.GetName().Name
-                    : "Assembly-CSharp";
-                var curTypeName = instance.CurrentType?.FullName ?? "";
-                _typeCache = new TypeListCache<TCacheType>(asmName, curTypeName);
-                doApply = true;
+                var typeNameProp = SO.FindProperty("_typeName");
+                Assert.IsNotNull(typeNameProp, $"{Target.SerializedProperty.propertyPath}");
+                if(typeNameProp.stringValue != instance.HasType.FullName)
+                {
+                    typeNameProp.stringValue = instance.HasType.FullName;
+                    var typeCache = GetOrCreateTypeCahce(SO, out bool _);
+                    typeCache.CurrentType = instance.HasType;
+                    doApply = true;
+                }
+                enableUpdateType = false;
             }
 
-            var newAsmIndex = EditorGUI.Popup(position.GetSplitPos(layoutPosDivideCount, 1), _typeCache.AssemblyIndex, _typeCache.AssemblyNameList);
+            doApply |= DrawTypePopUp(SO, position, enableUpdateType);
 
-            var newTypeIndex = EditorGUI.Popup(position.GetSplitPos(layoutPosDivideCount, 2), _typeCache.TypeIndex, _typeCache.TypeNameList);
-
-            doApply |= newAsmIndex != _typeCache.AssemblyIndex;
-            doApply |= newTypeIndex != _typeCache.TypeIndex;
             if (doApply)
             {
-                _typeCache.AssemblyIndex = newAsmIndex;
-                _typeCache.TypeIndex = newTypeIndex;
-
                 var typeNameProp = SO.FindProperty("_typeName");
                 if (typeNameProp.stringValue != _typeCache.CurrentType.FullName)
                 {
@@ -274,15 +311,48 @@ namespace Hinode.Editors
             return (doApply, position);
         }
 
+        /// <summary>
+        /// Targetと引数SOが参照しているものは同じですが、場合によってTargetがポインタ型の場合があるためプロパティを変更したい場合はSOの方を使用してください。
+        /// </summary>
+        /// <param name="SO"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        bool DrawTypePopUp(SerializedObject SO, GUILayoutPosition position, bool enableUpdate)
+        {
+            bool doApply = false;
+            var typeCache = GetOrCreateTypeCahce(SO, out var isNew);
+            if(isNew)
+            {
+                doApply = true;
+            }
+
+            var newAsmIndex = EditorGUI.Popup(position.GetSplitPos(layoutPosDivideCount, 1), typeCache.AssemblyIndex, typeCache.AssemblyNameList);
+            var newTypeIndex = EditorGUI.Popup(position.GetSplitPos(layoutPosDivideCount, 2), typeCache.TypeIndex, typeCache.TypeNameList);
+
+            doApply |= newAsmIndex != typeCache.AssemblyIndex;
+            doApply |= newTypeIndex != typeCache.TypeIndex;
+            if (doApply && enableUpdate)
+            {
+                typeCache.AssemblyIndex = newAsmIndex;
+                typeCache.TypeIndex = newTypeIndex;
+            }
+            return doApply;
+        }
+
+        /// <summary>
+        /// Targetと引数SOが参照しているものは同じですが、場合によってTargetがポインタ型の場合があるためプロパティを変更したい場合はSOの方を使用してください。
+        /// </summary>
+        /// <param name="SO"></param>
+        /// <param name="valuesProp"></param>
         protected override void OnApplyBefore(SerializedObject SO, SerializedProperty valuesProp)
         {
             //不正な状態にある値がないか検索する
-            var enumTypeNameProp = SO.FindProperty("_typeName");
+            var typeNameProp = SO.FindProperty("_typeName");
             foreach (var (elementProp, index) in valuesProp.GetArrayElementEnumerable())
             {
-                var typeNameProp = elementProp.FindPropertyRelative("_typeName");
-                if (typeNameProp.stringValue == enumTypeNameProp.stringValue) continue;
-                typeNameProp.stringValue = enumTypeNameProp.stringValue;
+                var elementTypeNameProp = elementProp.FindPropertyRelative("_typeName");
+                if (elementTypeNameProp.stringValue == typeNameProp.stringValue) continue;
+                elementTypeNameProp.stringValue = typeNameProp.stringValue;
             }
         }
     }
