@@ -54,5 +54,18 @@ namespace Hinode.Editors
                 bindingPath = bindingPath
             };
         }
+
+        public ObjectField GetObjectField<TObject>(T key, string name, string bindingPath, bool allowSceneObjects = true)
+        {
+            var f = new ObjectField()
+            {
+                name = name,
+                bindingPath = bindingPath,
+                value = this[key].objectReferenceValue,
+                objectType = typeof(TObject),
+                allowSceneObjects = allowSceneObjects,
+            };
+            return f;
+        }
     }
 }
