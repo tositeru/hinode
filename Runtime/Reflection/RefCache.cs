@@ -18,6 +18,7 @@ namespace Hinode
         Dictionary<string, FieldInfo> _fieldCaches = new Dictionary<string, FieldInfo>();
         Dictionary<string, PropertyInfo> _propCaches = new Dictionary<string, PropertyInfo>();
         Dictionary<MethodInfoKey, MethodInfo> _methodCaches = new Dictionary<MethodInfoKey, MethodInfo>();
+        Dictionary<string, ConstructorInfo> _ctorCaches = new Dictionary<string, ConstructorInfo>();
 
         public RefCache(System.Type target)
 		{
@@ -25,16 +26,7 @@ namespace Hinode
 			_targetType = target;
 		}
 
-        public object CreateInstance(params object[] args)
-        {
-            var constructor = TargetType.GetConstructors().First(_ctor => {
-                return _ctor.GetParameters()
-                    .Zip(args, (_p, _a) => (param: _p, arg: _a))
-                    .All(_pair => _pair.param.ParameterType == _pair.arg.GetType());
-            });
-            return constructor.Invoke(args);
-        }
-
+        #region Field
         public object GetField(object instance, string name)
         {
             var info = FindField(name, instance != null, true);
@@ -65,7 +57,8 @@ namespace Hinode
             _fieldCaches.Add(name, info);
             return info;
         }
-
+        #endregion
+        #region Property
         public object GetProp(object instance, string name)
         {
             var info = FindProp(name, instance != null, true);
@@ -99,16 +92,22 @@ namespace Hinode
             _propCaches.Add(name, info);
             return info;
         }
-
+        #endregion
+        #region Method
         public object Invoke(object instance, string name, params object[] args)
         {
-            var info = FindMethod(name, instance != null, args.Select(_a => _a.GetType()));
+            var info = FindAndCacheMethod(name, instance != null, args.Select(_a => _a.GetType()));
             return info.Invoke(instance, args);
         }
 
         public bool HasMethod(string name, params System.Type[] argumentTypes)
         {
             return GetMethodInfo(name, argumentTypes.AsEnumerable()) != null;
+        }
+        public MethodInfo GetMethodInfo(string name)
+        {
+            var key = _methodCaches.Keys.FirstOrDefault(_k => _k.Name == name);
+            return key != null ? _methodCaches[key] : null;
         }
         public MethodInfo GetMethodInfo(string name, IEnumerable<System.Type> argumentTypes)
         {
@@ -118,12 +117,12 @@ namespace Hinode
             return key != null ? _methodCaches[key] : null;
         }
 
-        public MethodInfo FindMethod(string name, bool isInstance, params System.Type[] argumentTypes)
+        public MethodInfo FindAndCacheMethod(string name, bool isInstance, params System.Type[] argumentTypes)
         {
-            return FindMethod(name, isInstance, argumentTypes);
+            return FindAndCacheMethod(name, isInstance, argumentTypes.AsEnumerable());
         }
 
-        public MethodInfo FindMethod(string name, bool isInstance, IEnumerable<System.Type> argumentTypes)
+        public MethodInfo FindAndCacheMethod(string name, bool isInstance, IEnumerable<System.Type> argumentTypes)
         {
             var info = GetMethodInfo(name, argumentTypes);
             if(info != null)
@@ -140,6 +139,56 @@ namespace Hinode
             _methodCaches.Add(new MethodInfoKey(name, argumentTypes.ToArray()), info);
             return info;
         }
+        #endregion
+        #region Constructor
+        public object CreateInstance(params object[] args)
+        {
+            var constructor = TargetType.GetConstructors().First(_ctor => {
+                return _ctor.GetParameters()
+                    .Zip(args, (_p, _a) => (param: _p, arg: _a))
+                    .All(_pair => _pair.param.ParameterType == _pair.arg.GetType());
+            });
+            return constructor.Invoke(args);
+        }
+
+        public object CreateInstanceWithCache(string name, params object[] args)
+        {
+            var info = FindAndCacheConstructor(name, true, args != null ? args.Select(_a => _a.GetType()):null);
+            return info.Invoke(args);
+        }
+
+        public bool HasConstructorInfo(string name)
+        {
+            return GetConstructorInfo(name) != null;
+        }
+        public ConstructorInfo GetConstructorInfo(string name)
+        {
+            var key = _ctorCaches.Keys.FirstOrDefault(_k => _k == name);
+            return key != null ? _ctorCaches[key] : null;
+        }
+
+        public ConstructorInfo FindAndCacheConstructor(string name, bool isInstance, params System.Type[] argumentTypes)
+        {
+            return FindAndCacheConstructor(name, isInstance, argumentTypes?.AsEnumerable() ?? null);
+        }
+
+        public ConstructorInfo FindAndCacheConstructor(string name, bool isInstance, IEnumerable<System.Type> argumentTypes)
+        {
+            var info = GetConstructorInfo(name);
+            if (info != null)
+            {
+                return info;
+            }
+
+            var bindFlags = BindingFlags.CreateInstance | commonBindingFlags;
+            bindFlags |= isInstance ? BindingFlags.Instance : BindingFlags.Static;
+            info = TargetType.GetConstructors(bindFlags)
+                .FirstOrDefault(_i => IsSameArgumentType(_i, argumentTypes));
+            Assert.IsNotNull(info, $"Don't exist constructor{ToStr(argumentTypes)}... key='{name}', {(isInstance ? "Instance" : "Static")}");
+            _ctorCaches.Add(name, info);
+            return info;
+        }
+        #endregion
 
         /// <summary>
         /// MethodBaseのExtensionsにしたい？
@@ -149,6 +198,8 @@ namespace Hinode
         /// <returns></returns>
         bool IsSameArgumentType(MethodBase info, IEnumerable<System.Type> argumentTypes)
         {
+            if (argumentTypes == null) return info.GetParameters().Count() <= 0;
+
             return info.GetParameters()
                     .Zip(argumentTypes, (_p, _a) => (param: _p, arg: _a))
                     .All(pair => pair.param.ParameterType == pair.arg);
@@ -157,8 +208,11 @@ namespace Hinode
         string ToStr(IEnumerable<System.Type> types)
         {
             string str = "(";
-            str += types.Select(_t => _t.FullName)
-                .Aggregate((_str, current) => _str + $"{(_str.Length<=0 ? "" : ", ")}{current}");
+            if (types != null && types.Count() > 0)
+            {
+                str += types.Select(_t => _t.FullName)
+                    .Aggregate((_str, current) => _str + $"{(_str.Length<=0 ? "" : ", ")}{current}");
+            }
             str += ")";
             return str;
         }
