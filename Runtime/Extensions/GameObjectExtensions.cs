@@ -6,6 +6,18 @@ namespace Hinode
 {
     public static class GameObjectExtensions
     {
+        public static T GetOrAddComponent<T>(this GameObject target) where T : Component
+        {
+            if(target.TryGetComponent<T>(out var com))
+            {
+                return com;
+            }
+            else
+            {
+                return target.AddComponent<T>();
+            }
+        }
+
         public static GameObject Create(string name, Transform parent)
         {
             var obj = new GameObject(name);

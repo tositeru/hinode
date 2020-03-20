@@ -6,6 +6,7 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.Linq;
 using UnityEngine.Assertions;
+using System.Reflection;
 
 namespace Hinode.Editors
 {
@@ -121,17 +122,24 @@ namespace Hinode.Editors
                 typeNameProp.stringValue = inst.HasType.FullName;
                 return true;
             }
-            else if (customLabel != null && customLabel.Parameter != null && customLabel.Parameter is UsedTypeAttribute)
+            else if (customLabel != null && customLabel.Parameter != null)
             {
-                var usedTypeAttr = customLabel.Parameter as UsedTypeAttribute;
-                inst.HasType = usedTypeAttr.UsedType;
-                typeNameProp.stringValue = usedTypeAttr.UsedType.FullName;
-                return true;
+                if(customLabel.Parameter is UsedTypeAttribute)
+                {
+                    var usedTypeAttr = customLabel.Parameter as UsedTypeAttribute;
+                    inst.HasType = usedTypeAttr.UsedType;
+                    typeNameProp.stringValue = usedTypeAttr.UsedType.FullName;
+                    return true;
+                }
+                else if (customLabel.Parameter is System.Type)
+                {
+                    inst.HasType = customLabel.Parameter as System.Type;
+                    typeNameProp.stringValue = inst.HasType.FullName;
+                    return true;
+                }
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
     }
 
@@ -407,18 +415,20 @@ namespace Hinode.Editors
             var valueProp = property.FindPropertyRelative("_value");
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
-                if (!CheckUsedTypeAttr(property, label))
+                if (CheckUsedTypeAttr(property, label))
+                {
+                    var inst = property.GetSelf() as KeyObjectRefObject;
+                    var currentType = inst.HasType;
+                    var newValue = EditorGUI.ObjectField(position, valueProp.objectReferenceValue, currentType, true);
+                    if (scope.changed)
+                    {
+                        valueProp.objectReferenceValue = newValue;
+                    }
+                }
+                else
                 {
                     EditorGUI.LabelField(position, "Please Use UsedUnityObject Attribute");
                     return;
-                }
-
-                var inst = property.GetSelf() as KeyObjectRefObject;
-                var currentType = inst.HasType;
-                var newValue = EditorGUI.ObjectField(position, valueProp.objectReferenceValue, currentType, true);
-                if (scope.changed)
-                {
-                    valueProp.objectReferenceValue = newValue;
                 }
             }
         }

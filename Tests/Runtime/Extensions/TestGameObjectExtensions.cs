@@ -9,10 +9,28 @@ namespace Hinode.Tests.Runtime.Extensions
 {
     public class TestGameObjectExtensions : TestBase
     {
-        // A Test behaves as an ordinary method
-        [Test]
-        public void CreateGameObjectPasses()
+        [UnityTest]
+        public IEnumerator GetOrAddComponentPasses()
         {
+            yield return null;
+
+            var obj = new GameObject("test");
+
+            Assert.IsNull(obj.GetComponent<BoxCollider>());
+            var box = obj.GetOrAddComponent<BoxCollider>();
+            Assert.IsNotNull(obj.GetComponent<BoxCollider>());
+            Assert.AreSame(obj.GetComponent<BoxCollider>(), box);
+
+            var box2 = obj.GetOrAddComponent<BoxCollider>();
+            Assert.AreSame(box2, box);
+        }
+
+        // A Test behaves as an ordinary method
+        [UnityTest]
+        public IEnumerator CreateGameObjectPasses()
+        {
+            yield return null;
+
             var createdList = new List<GameObject>();
             var root = GameObjectExtensions.Create(
                 ("root", (Transform)null, new CreateGameObjectParam[] {
@@ -65,9 +83,11 @@ namespace Hinode.Tests.Runtime.Extensions
             }
         }
 
-        [Test]
-        public void CreateGameObjectCallbackPasses()
+        [UnityTest]
+        public IEnumerator CreateGameObjectCallbackPasses()
         {
+            yield return null;
+
             int counter = 0;
             System.Action<GameObject> onCreated = (obj) => {
                 counter++;

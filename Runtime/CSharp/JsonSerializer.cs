@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
@@ -10,11 +11,41 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// 
+    /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer"/>
+    /// </summary>
     public class JsonSerializer : ISerializer
     {
         readonly char[] SPACE_CHARS = { ' ', '\t', '\r', '\n' };
         readonly Regex IS_KEYWORD_CHAR_REGEX = new Regex(@"\w", RegexOptions.IgnoreCase);
         readonly Regex IS_NUMBER_CHAR_REGEX = new Regex(@"[-\de\.]", RegexOptions.IgnoreCase);
+
+        public JsonSerializer(IInstanceCreator instanceCreator = null)
+            : base(instanceCreator)
+        {
+        }
+
+        public string Serialize(object obj)
+        {
+            using (var writer = new StringWriter())
+            {
+                Serialize(writer, obj);
+                return writer.ToString();
+            }
+        }
+
+        public object Deserialize(string json, System.Type type)
+        {
+            using (var reader = new StringReader(json))
+            {
+                return Deserialize(reader, type);
+            }
+        }
+        public T Deserialize<T>(string json)
+        {
+            return (T)Deserialize(json, typeof(T));
+        }
 
         protected override void WriteTo(TextWriter stream, SerializationInfo srcInfo)
         {
@@ -33,7 +64,7 @@ namespace Hinode
 
         void WriteValue(TextWriter stream, object value, System.Type type)
         {
-            if (type.IsPrimitive)
+            if (type.IsPrimitive || type.IsNumeric())
             {
                 stream.Write($"{value}");
             }
@@ -66,10 +97,11 @@ namespace Hinode
             }
         }
 
-        protected override void ReadTo(TextReader stream, SerializationInfo outInfo)
+        protected override void ReadTo(TextReader stream, SerializationInfo outInfo, IReadOnlyDictionary<string, System.Type> keyAndTypeDict)
         {
-            Assert.IsTrue(stream.MoveTo('{'));
-            Assert.IsTrue(stream.SkipTo(SPACE_CHARS));
+            if (!stream.SkipTo(SPACE_CHARS)) return;
+            if (!stream.MoveTo('{')) return;
+            if (!stream.SkipTo(SPACE_CHARS)) return;
 
             while(!stream.IsMatchPeek('}'))
             {
@@ -84,15 +116,22 @@ namespace Hinode
                 }
                 else
                 {
-                    var f = outInfo.ObjectType.GetField(key, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    Assert.IsNotNull(f, $"Don't found '{key}' field...");
-                    valueType = f.FieldType;
+                    valueType = (keyAndTypeDict != null && keyAndTypeDict.ContainsKey(key))
+                        ? keyAndTypeDict[key]
+                        : null;
+                    if(valueType == null)
+                    {
+                        var f = outInfo.ObjectType.GetFieldInHierarchy(key, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                        Assert.IsNotNull(f, $"Don't found '{key}' field...");
+                        valueType = f.FieldType;
+                    }
                 }
 
                 // move to next of ':'
                 Assert.IsTrue(SkipNextColon(stream));
                 Assert.IsTrue(stream.SkipTo(SPACE_CHARS));
 
+                //Debug.Log($"debug-- key={key}; next={(char)stream.Peek()},type={outInfo.FullTypeName}");
                 // read value
                 var value = ReadValue(stream, valueType);
                 //Debug.Log($"debug-- key={key}, value={value}; next={(char)stream.Peek()},type={outInfo.FullTypeName}");
@@ -125,17 +164,17 @@ namespace Hinode
                     return ReadArray(stream, valueType);
                 case '"':
                 case '\'': //string
-                    Assert.AreEqual(valueType, typeof(string));
+                    Assert.AreEqual(typeof(string), valueType);
                     return ReadString(stream);
                 case 't':
                 case 'T':
                 case 'f':
                 case 'F'://bool
-                    Assert.AreEqual(valueType, typeof(bool));
+                    Assert.AreEqual(typeof(bool), valueType);
                     return ReadBool(stream);
                 default: //number
-                    var numberValue = ReadNumber(stream);
-                    Assert.AreEqual(valueType, numberValue.GetType());
+                    var numberValue = ReadNumber(stream, valueType);
+                    Assert.IsTrue(numberValue.GetType().IsNumeric());
                     return numberValue;
             }
         }
@@ -248,28 +287,36 @@ namespace Hinode
                     return keyword == "true" || keyword == "t";
                 case 'f':
                     keyword = ReadKeyword(stream).ToLower();
-                    return keyword == "false" || keyword == "f";
+                    return !(keyword == "false" || keyword == "f");
                 default:
                     Assert.IsFalse(true, $"parse error!! not be Boolean Keyword");
                     return false;
             }
         }
 
-        object ReadNumber(TextReader stream)
+        object ReadNumber(TextReader stream, System.Type type=null)
         {
             var keyword = ReadKeyword(stream, IS_NUMBER_CHAR_REGEX);
-            if(int.TryParse(keyword, out var integer))
+
+            if(type == null)
             {
-                return integer;
-            }
-            else if(double.TryParse(keyword, out var number))
-            {
-                return number;
+                if(int.TryParse(keyword, out var integer))
+                {
+                    return integer;
+                }
+                else if(double.TryParse(keyword, out var number))
+                {
+                    return number;
+                }
+                else
+                {
+                    Assert.IsFalse(true, $"keyword({keyword}) not be number string...");
+                    return null;
+                }
             }
             else
             {
-                Assert.IsFalse(true, $"keyword({keyword}) not be number string...");
-                return null;
+                return type.ParseToNumber(keyword);
             }
         }
 
@@ -302,9 +349,10 @@ namespace Hinode
             else
             {
                 //数値の時
-                var num = ReadNumber(stream);
-                Assert.AreEqual(typeof(int), num.GetType());
-                return System.Enum.ToObject(type, (int)num);
+                var num = ReadNumber(stream, type);
+                Assert.IsNotNull(num);
+                Assert.IsTrue(num.GetType().IsNumeric());
+                return System.Enum.ToObject(type, num);
             }
         }
 

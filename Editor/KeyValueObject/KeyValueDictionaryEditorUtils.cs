@@ -158,10 +158,9 @@ namespace Hinode.Editors
             using (var scope = new EditorGUI.ChangeCheckScope())
             {
                 position.IncrementRow();
-                newArraySize = EditorGUI.IntField(position.Pos, "Size", valuesProp.arraySize);
+                newArraySize = Mathf.Max(0, EditorGUI.IntField(position.Pos, "Size", valuesProp.arraySize));
                 if (scope.changed)
                 {
-                    newArraySize = Mathf.Min(100, newArraySize);
                     doChanged |= true;
                 }
             }
@@ -171,31 +170,33 @@ namespace Hinode.Editors
             for (var i = _page * ELEMENT_PER_PAGE; i < endIndex; ++i)
             {
                 var element = valuesProp.GetArrayElementAtIndex(i);
-                using (var scope = new EditorGUI.ChangeCheckScope())
-                {
-                    position.IncrementRow();
+                position.IncrementRow();
 
-                    CustomGUIContent label = new CustomGUIContent();
-                    if (Target.CurrentType == SerializedTarget.Type.SerializedProperty)
+                // 使用する型が指定されていたらそれをKeyValueに渡す
+                CustomGUIContent label = new CustomGUIContent();
+                if (Target.CurrentType == SerializedTarget.Type.SerializedProperty)
+                {
+                    var usedTypeAttr = Target.SerializedProperty.GetFieldAttributes<UsedTypeAttribute>().FirstOrDefault();
+                    if(usedTypeAttr != null)
                     {
-                        var usedTypeAttr = Target.SerializedProperty.GetFieldAttributes<UsedTypeAttribute>().FirstOrDefault();
-                        if(usedTypeAttr != null)
-                        {
-                            label.Parameter = usedTypeAttr;
-                        }
+                        label.Parameter = usedTypeAttr;
                     }
-                    EditorGUI.PropertyField(position.Pos, element, label);
-                    if (scope.changed)
-                    {
-                        doChanged |= scope.changed;
-                    }
-                    var keyProp = element.FindPropertyRelative("_key");
-                    var doContains = nameHash.Contains(keyProp.stringValue);
-                    doChanged |= doContains;
-                    if (!doContains)
-                    {
-                        nameHash.Add(keyProp.stringValue);
-                    }
+                }
+                else if(SO.targetObject is IKeyValueDictionaryWithTypeName<TKeyValue, T>)
+                {
+                    var inst = SO.targetObject as IKeyValueDictionaryWithTypeName<TKeyValue, T>;
+                    label.Parameter = inst.HasType;
+                }
+
+                doChanged |= EditorGUI.PropertyField(position.Pos, element, label);
+
+                //キーが更新されたか？
+                var keyProp = element.FindPropertyRelative("_key");
+                var doContains = nameHash.Contains(keyProp.stringValue);
+                doChanged |= doContains;
+                if (!doContains)
+                {
+                    nameHash.Add(keyProp.stringValue);
                 }
             }
             if (doChanged)

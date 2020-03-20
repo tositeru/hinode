@@ -8,6 +8,9 @@ using UnityEditor;
 
 namespace Hinode
 {
+    /// <summary>
+    /// EditorGUIで使用する描画位置を計算するクラス
+    /// </summary>
     public class GUILayoutPosition
     {
         Rect _pos;
@@ -28,12 +31,29 @@ namespace Hinode
             return p;
         }
 
-        public void IncrementRow()
+        public void IncrementRow(float height=-1)
         {
-            GUILayout.Space(RowHeight);
-            _pos.y += RowHeight;
+            var H = height > 0 ? height : RowHeight;
+            GUILayout.Space(H);
+            _pos.y += H;
         }
 
+        /// <summary>
+        /// 指定したSerializedPropertyの高さ分、y座標を進める
+        /// </summary>
+        /// <param name="prop"></param>
+        /// <param name="includeChildren">propの子要素の内容も高さに含めるか？</param>
+        public void IncrementRow(SerializedProperty prop, bool includeChildren)
+        {
+            IncrementRow(EditorGUI.GetPropertyHeight(prop, includeChildren));
+        }
+
+        /// <summary>
+        /// インデントを加える
+        /// </summary>
+        /// <param name="isAuto">Unity標準のインデントを加える(Editorのみ)</param>
+        /// <param name="percent">インデントに加えるオフセット。現在の横幅からの割合(%)</param>
+        /// <returns></returns>
         public GUILayoutPosition Indent(bool isAuto, float percent=0.1f)
         {
             if(isAuto)
