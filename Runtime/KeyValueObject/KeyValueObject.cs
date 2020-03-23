@@ -80,7 +80,7 @@ namespace Hinode
     }
 
     /// <summary>
-    /// 値にRangeAttributeを使用したい場合はRangeFloatAttributeを使用してください。
+    /// 値にRangeAttributeを使用したい場合はRangeNumberAttributeを使用してください。
     /// <seealso cref="RangeNumberAttribute"/>
     /// </summary>
     [System.Serializable]
@@ -98,6 +98,10 @@ namespace Hinode
         }
     }
 
+    /// <summary>
+    /// 値にRangeAttributeを使用したい場合はRangeNumberAttributeを使用してください。
+    /// <seealso cref="RangeNumberAttribute"/>
+    /// </summary>
     [System.Serializable]
     public class KeyDoubleObject : IKeyValueObject<double>
     {

@@ -70,16 +70,16 @@ namespace Hinode.Editors
             });
             root.Add(objRef);
 
-            //Test
-            var SO = new SerializedObject(this);
-            var test = new PropertyField(SO.FindProperty("_testKeyObjRef"))
-            {
-                name = "test",
-                bindingPath = "_testKeyObjRef",
-            };
-            test.Bind(SO);
-            root.Add(test);
-            //Test
+            ////Test
+            //var SO = new SerializedObject(this);
+            //var test = new PropertyField(SO.FindProperty("_testKeyObjRef"))
+            //{
+            //    name = "test",
+            //    bindingPath = "_testKeyObjRef",
+            //};
+            //test.Bind(SO);
+            //root.Add(test);
+            ////Test
 
             var fileButtons = new VisualElement();
             fileButtons.style.flexDirection = new StyleEnum<FlexDirection>(FlexDirection.Row);

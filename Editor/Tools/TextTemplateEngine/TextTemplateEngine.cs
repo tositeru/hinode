@@ -256,23 +256,23 @@ namespace Hinode.Editors
         [System.Serializable]
         public class IgnorePair
         {
-            [SerializeField] List<KeyStringObject> _testpairs3 = new List<KeyStringObject>();
-            [SerializeField] List<string> _testpairs2 = new List<string>();
-            [SerializeField] List<KeyValuePair<string, string>> _testpairs = new List<KeyValuePair<string, string>>();
+            //[SerializeField] List<KeyStringObject> _testpairs3 = new List<KeyStringObject>();
+            //[SerializeField] List<string> _testpairs2 = new List<string>();
+            //[SerializeField] List<KeyValuePair<string, string>> _testpairs = new List<KeyValuePair<string, string>>();
 
-            [SerializeField] List<(string, string)> _pairs = new List<(string, string)>();
+            [SerializeField] List<KeyStringObject> _pairs = new List<KeyStringObject>();
 
-            public IEnumerable<(string, string)> Pairs { get => _pairs.AsEnumerable(); }
+            public IEnumerable<(string, string)> Pairs { get => _pairs.AsEnumerable().Select(_p => (_p.Key, _p.Value)); }
 
             public IgnorePair(params (string, string)[] pairs)
             {
-                _pairs.AddRange(pairs);
-                foreach(var p in pairs)
-                {
-                    _testpairs3.Add(new KeyStringObject(p.Item1, p.Item2));
-                    _testpairs2.Add(p.Item1);
-                    _testpairs.Add(new KeyValuePair<string, string>(p.Item1, p.Item2));
-                }
+                _pairs.AddRange(pairs.Select(_p => new KeyStringObject(_p.Item1, _p.Item2)));
+                //foreach(var p in pairs)
+                //{
+                //    _testpairs3.Add(new KeyStringObject(p.Item1, p.Item2));
+                //    _testpairs2.Add(p.Item1);
+                //    _testpairs.Add(new KeyValuePair<string, string>(p.Item1, p.Item2));
+                //}
             }
 
             public bool DoIgnore(IEnumerable<(string, string)> keywordPairs)

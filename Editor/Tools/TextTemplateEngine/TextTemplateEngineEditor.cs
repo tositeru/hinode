@@ -71,6 +71,34 @@ namespace Hinode.Editors.TextTemplateEngines
         public static readonly string CopyToClipboardButtonName = "CopyToClipboardButton";
         public static readonly string GeneratedTextName = "GeneratedText";
 
+        static readonly string HOW_TO_LABEL_CONTENT =
+@"このツールはテキストテンプレートエンジンになります。
+「$〇〇$」と'$'で囲まれたキーワードをテキスト内に埋め込むことで、キーワードに対応したパラメータの値が展開されます。
+キーワードは'Keywords'で入力することができます。
+一つのキーワードには複数の値を指定することができ、もしそのようなキーワードが存在する時は全てのキーワードの値の組み合わせが出力されます。
+
+この際、組み合わせたくないものがある場合は'Ignore Pairs'に指定してください。
+指定の仕方は'Ignore Pairs'の'Element X'に無視したい値の組み合わせを入力することでできます。
+    ex) Keyword1: Apple Orange
+        Keyword2: Grape Banana がある時に Keyword1=Orange, Keyword2=Grapeの組み合わせを無視したい時は
+        Ignored Pairに
+            Keyword1=Orange,
+            Keyword2=Grape
+        を指定してください
+
+また、他のテキストテンプレートのものを本文中に埋め込むことも可能です。
+その際は「%〇〇%」と'%'で埋め込みたいテキストテンプレートのキーを囲み、'Embbed Templates'に埋め込んだキーを入力してください
+
+使い方)
+1. テンプレートとなるテキストを入力する
+1-1. キーワードを埋め込む際は'$'で括ってください
+2. キーワードに対応した値を入力する
+3. キーワードの内、無視したいペアのものを指定する
+4. Generateボタンを押すことで、テキストが出力されます。
+option 1. 'Copy To Clipboard'を押すことでクリップボードに出力されたテキストをコピーできます。
+option 2. 'Newline'で出力されるテキストの改行コードを指定できます。
+option 3. (EditorWindowのみ)'Save To File'ボタンを押すことで、現在のパラメータをUnityアセットとして保存することが可能です。
+";
         public static VisualElement CreateElement(SerializedPropertyDictionary<PropType> propDict)
         {
             var container = new VisualElement();
@@ -113,6 +141,14 @@ namespace Hinode.Editors.TextTemplateEngines
             };
             scrollView.Add(generatedText);
 
+            var howToLabelFoldout = new Foldout {
+                text = "How To Usage",
+            };
+            var howtoScrollView = new ScrollView(ScrollViewMode.Horizontal);
+            var howToLabel = new Label(HOW_TO_LABEL_CONTENT);
+            howtoScrollView.Add(howToLabel);
+            howToLabelFoldout.Add(howtoScrollView);
+            scrollView.Add(howToLabelFoldout);
             container.Add(scrollView);
 
             copytoClipboardButton.clickable.clicked += () =>

@@ -238,7 +238,63 @@ namespace Hinode.Editors
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
-            return new Label("Not Implement");
+            var attributes = property.GetFieldAttributes();
+            if (attributes.Any(_a => _a is RangeNumberAttribute))
+            {
+                var range = attributes.First(_a => _a is RangeNumberAttribute) as RangeNumberAttribute;
+                var root = new VisualElement();
+                //root.style.justifyContent = new StyleEnum<Justify>(Justify.SpaceBetween);
+                root.style.flexDirection = new StyleEnum<FlexDirection>(FlexDirection.Row);
+                var slider = new Slider(range.Min, range.Max)
+                {
+                    bindingPath = $"{property.propertyPath}._value"
+                };
+                slider.style.marginLeft = new StyleLength(5);
+                slider.style.marginRight = new StyleLength(5);
+                slider.style.flexGrow = new StyleFloat(3);
+                root.Add(slider);
+                var valueField = new FloatField()
+                {
+                    bindingPath = $"{property.propertyPath}._value"
+                };
+                //intField.style.paddingLeft = new StyleLength(5);
+                valueField.style.marginRight = new StyleLength(5);
+                valueField.style.maxWidth = new StyleLength(150);
+                valueField.style.minWidth = new StyleLength(50);
+                EventCallback<ChangeEvent<float>> action = (e) =>
+                {
+                    var valueProp = property.FindPropertyRelative("_value");
+                    Debug.Log($"prop={valueProp.intValue}, value=>{e.newValue}; range=>({range.Min}:{range.Max})");
+                    if (range.IsInRange(e.newValue))
+                        return;
+                    var field = e.target as FloatField;
+                    field.value = range.Clamp(e.newValue);
+                };
+                valueField.RegisterValueChangedCallback(action);
+
+                //intField.style.flexGrow = new StyleFloat(1);
+                root.Add(valueField);
+                return root;
+            }
+            else if (attributes.Any(_a => _a is MinAttribute))
+            {
+                var min = attributes.First(_a => _a is MinAttribute) as MinAttribute;
+                var intField = new IntegerField();
+                intField.RegisterValueChangedCallback(_e =>
+                {
+                    if ((int)min.min > _e.newValue)
+                    {
+                        var valueProp = property.FindPropertyRelative("_value");
+                        valueProp.intValue = (int)min.min;
+                    }
+                });
+                return intField;
+            }
+            else
+            {
+                var intField = new IntegerField();
+                return intField;
+            }
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)
@@ -270,7 +326,10 @@ namespace Hinode.Editors
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
-            return new Label("Not Implement");
+            return new Toggle
+            {
+                bindingPath = $"{property.propertyPath}._value"
+            };
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)
@@ -292,7 +351,10 @@ namespace Hinode.Editors
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
-            return new Label("Not Implement");
+            return new TextField
+            {
+                bindingPath = $"{property.propertyPath}._value"
+            };
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)
@@ -315,7 +377,61 @@ namespace Hinode.Editors
     {
         protected override VisualElement CreateValueElement(SerializedProperty property)
         {
-            return new Label("Not Implement");
+            if (!CheckUsedTypeAttr(property, null))
+            {
+                return new Label("Please Use UsedEnum Attribute");
+            }
+
+            var inst = property.GetSelf() as KeyEnumObject;
+            if (inst.IsFlags)
+            {
+                return new Label("Not Support yet FlagsEnum...");
+
+                System.Enum defaultValue;
+                if(inst.IsValid)
+                {
+                    defaultValue = inst.Value;
+                }
+                else
+                {
+                    defaultValue = (System.Enum)System.Enum.GetValues(inst.Value.GetType()).GetValue(0);
+                }
+
+                var enumField = new EnumField(defaultValue)
+                {
+                    bindingPath = $"{property.propertyPath}._value",
+                };
+                return enumField;
+            }
+            else
+            {
+                var names = inst.HasType.GetEnumNames().ToList();
+                int index;
+                if (inst.IsValid)
+                {
+                    index = inst.EnumIndex;
+                }
+                else
+                {
+                    index = names.Count;
+                    names.Add("!! Invalid Value !!");
+                }
+
+                //var newValue = EditorGUI.Popup(position, index, names.ToArray());
+                //if (scope.changed)
+                //{
+                //    valueProp.intValue = newValue;
+                //}
+
+                var enumField = new PopupField<string>(names, index)
+                {
+                    bindingPath = $"{property.propertyPath}._value",
+                };
+                return enumField;
+                //DrawStandardEnum(inst, position, property, label);
+            }
+
+            return new Label("Not Support UIElement Enum...");
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)

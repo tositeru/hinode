@@ -161,7 +161,7 @@ namespace Hinode.Editors
                     foreach (var prop in _target.propertyPath.Split('.').AsEnumerable())
                     {
                         PropertyPathType type = GetPropertyPathType(prop, prev.type);
-                        Debug.Log($"debug-- ForEach -- cur={prop},{type} prev={prev.path},{prev.type}");
+                        //Debug.Log($"debug-- ForEach -- cur={prop},{type} prev={prev.path},{prev.type}");
                         GetFieldInfoAndInstance(out var fieldInfo, out var instance, prev, prop, type);
                         var data = new PropertyPathEnumerableData
                         {
