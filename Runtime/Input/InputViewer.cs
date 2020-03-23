@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -12,6 +14,7 @@ namespace Hinode
     /// 基本的にデバッグ用として作成しました
     /// 現状はBaseInputに対応しています
     ///
+    /// TODO ボタンの状態を表示するようにする？
     /// TODO InputとReplayableInputにも対応する
     /// TODO 再生状態を画面に表示する？
     /// </summary>
@@ -33,6 +36,7 @@ namespace Hinode
 
         Image _replayingCursorInstance;
         Image _mouseCursor;
+        Font _defaultFont;
         List<Image> _touchCursors = new List<Image>();
 
         Dictionary<ButtonInfoText, Text> _buttonInfoTextDict = new Dictionary<ButtonInfoText, Text>();
@@ -41,6 +45,24 @@ namespace Hinode
         {
             get => _target;
             set => _target = value;
+        }
+
+        public Font DefaultFont
+        {
+            get => _defaultFont;
+            set
+            {
+                _defaultFont = value;
+                if (_defaultFont == null) return;
+
+                //既に存在しているTextのフォントも合わせて変更する
+                foreach(var child in ButtonInfoPanel.GetHierarchyEnumerable()
+                    .Select(_c => _c.GetComponent<Text>())
+                    .Where(_t => _t != null))
+                {
+                    child.font = value;
+                }
+            }
         }
 
         #region タップ位置のカーソル
@@ -68,7 +90,8 @@ namespace Hinode
             }
         }
 
-        Image MouseCursor
+        public bool HasMouseCursor { get => _mouseCursor != null; }
+        public Image MouseCursor
         {
             get
             {
@@ -80,6 +103,24 @@ namespace Hinode
                     _mouseCursor.color = MOUSE_CURSOR_COLOR;
                 }
                 return _mouseCursor;
+            }
+        }
+
+        public Image GetTouchCursor(int index)
+        {
+            if (Target == null) return null;
+
+            ResizeTouchCursor(index);
+            var cursor = _touchCursors[index];
+            return cursor;
+        }
+
+        void ResizeTouchCursor(int index)
+        {
+            while(_touchCursors.Count <= index)
+            {
+                var newCursor = Instantiate(ReplayingCursorInstance, transform);
+                _touchCursors.Add(newCursor);
             }
         }
         #endregion
@@ -149,7 +190,7 @@ namespace Hinode
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
                 contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-                text.font = new Font("Arial");
+                text.font = DefaultFont;
                 text.raycastTarget = false;
                 _textPrefab = text;
                 return _textPrefab;
@@ -169,7 +210,6 @@ namespace Hinode
                 return text;
             }
         }
-
         #endregion
 
         private void Update()
@@ -178,30 +218,40 @@ namespace Hinode
 
             if(Target.mousePresent)
             {
+                MouseCursor.gameObject.SetActive(true);
                 MouseCursor.rectTransform.anchoredPosition = Target.mousePosition;
-                InputDefines.ButtonCondition mouseLeftButtonCondition = InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Left);
+                var mouseLeftButtonCondition = InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Left);
                 SetCursorColor(MouseCursor, mouseLeftButtonCondition);
-
                 //動的に読み込むと文字が表示されなかったので、一時的に無刻化している
-                //MouseLRMText.text = $"mouse: L={mouseLeftButtonCondition}, R={InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Right)}, M={InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Middle)}";
+                MouseLRMText.text = $"mouse: L={mouseLeftButtonCondition}, R={InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Right)}, M={InputDefines.ToButtonCondition(Target, InputDefines.MouseButton.Middle)}";
                 //MouseLRMText.font.RequestCharactersInTexture(MouseLRMText.text);
             }
-
+            else
+            {
+                if(HasMouseCursor) MouseCursor.gameObject.SetActive(false);
+            }
 
             if (Target.touchSupported)
             {
-                for(var i=0; i<Target.touchCount; ++i)
+                ResizeTouchCursor(Target.touchCount);
+                for (var i=0; i<Target.touchCount; ++i)
                 {
-                    if(_touchCursors.Count <= i)
-                    {
-                        var newCursor = Instantiate(ReplayingCursorInstance, transform);
-                        _touchCursors.Add(newCursor);
-                    }
-
                     var cursor = _touchCursors[i];
                     var touch = Target.GetTouch(i);
+                    _touchCursors[i].gameObject.SetActive(true);
                     cursor.rectTransform.anchoredPosition = touch.position;
                     SetCursorColor(cursor, InputDefines.ToButtonCondition(touch));
+                }
+                for(var i = Target.touchCount; i < _touchCursors.Count; ++i)
+                {
+                    _touchCursors[i].gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                for (var i = 0; i < _touchCursors.Count; ++i)
+                {
+                    _touchCursors[i].gameObject.SetActive(false);
                 }
             }
         }
@@ -221,6 +271,13 @@ namespace Hinode
             cursor.GetComponent<Outline>().effectColor = color;
         }
 
+        private void OnGUI()
+        {
+            if(DefaultFont == null)
+            {
+                DefaultFont = GUI.skin.font;
+            }
+        }
         #region SingletonMonoBehaviour<InputViewer> overrides
         override protected string DefaultInstanceName { get => "__inputViewerCanvas"; }
         override protected void OnAwaked()
