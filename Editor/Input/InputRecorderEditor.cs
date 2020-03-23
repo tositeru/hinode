@@ -42,6 +42,7 @@ namespace Hinode.Editors
                             inst.DoneInGameView(() => {
                                 inst.StopRecord();
                                 inst.SaveToTarget();
+                                EditorUtility.SetDirty(inst.Target);
                             });
                         }
                         break;
