@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 using Hinode.Editors;
 using System.IO;
 
-namespace Hinode.Tests.Editors
+namespace Hinode.Tests.Editors.Tools
 {
     public class TestTextTemplateEngine : TestBase
     {
@@ -61,6 +61,24 @@ namespace Hinode.Tests.Editors
                 + "This Grass is Nice.", generatedText);
         }
 
+        [Test, Description("値が設定されていない無視リストがある時のテスト")]
+        public void EmptyIgnorePairPasses()
+        {
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+
+            templateEngine.TemplateText = @"This $Item$ is $Condition$.";
+            templateEngine.AddKeyword("Item", "Pen", "Grass");
+            templateEngine.AddKeyword("Condition", "Good", "Nice");
+
+            templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
+
+            templateEngine.AddIgnorePair(("", "Grass"), ("Condition", ""));
+
+            var generatedText = templateEngine.Generate();
+            var newline = templateEngine.NewLineStr;
+            Assert.AreEqual("This $Item$ is $Condition$.", generatedText);
+        }
+
         [Test]
         public void EmbbedOtherTemplatePasses()
         {
@@ -81,10 +99,32 @@ namespace Hinode.Tests.Editors
             Assert.AreEqual("This Pen is Good. Apple! Apple! Apple!." + newline
                 + "This Pen is Nice. Apple! Apple! Apple!." + newline
                 + "This Grass is Nice. Apple! Apple! Apple!.", templateEngine.Generate());
-
-            var json = JsonUtility.ToJson(templateEngine);
-            File.WriteAllText("test.json", json);
         }
 
+        [Test, Description("キー名が空または値が設定されていない埋め込みテキストがあったときのテスト")]
+        public void EmptyEmbbedTemplatePasses()
+        {
+            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
+            embbedTemplate.AddKeyword("Word", "Apple");
+
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+
+            templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
+            templateEngine.AddKeyword("Item", "Pen", "Grass");
+            templateEngine.AddKeyword("Condition", "Good", "Nice");
+            templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
+
+            //埋め込みテンプレートのキー名が空の時はそれを無視する
+            templateEngine.AddEmbbed("", embbedTemplate);
+            //埋め込みテンプレートの値が空の時もそれを無視する
+            templateEngine.AddEmbbed("Yell", null);
+            Assert.DoesNotThrow(() => {
+                var newline = templateEngine.NewLineStr;
+                Assert.AreEqual("This Pen is Good. %Yell%" + newline
+                    + "This Pen is Nice. %Yell%" + newline
+                    + "This Grass is Nice. %Yell%", templateEngine.Generate());
+            });
+        }
     }
 }

@@ -99,6 +99,12 @@ namespace Hinode.Editors
             var keywordEnumerable = new AllKeywordEnumerable(this);
             if (!keywordEnumerable.Any()) return _templateText;
 
+            if(_ignorePairs.Any(_i => !_i.IsValid))
+            {
+                Debug.LogWarning($"キーワードまたは値が設定されていない無視リストのアイテムが存在しています。変換は行わずに出力します。");
+                return _templateText;
+            }
+
             string newline = NewLineStr;
             string text = "";
             foreach (var keywordList in keywordEnumerable
@@ -125,10 +131,18 @@ namespace Hinode.Editors
             {
                 text = text.Replace($"${k.Item1}$", k.Item2);
             }
+
             foreach(var pair in _embbedTemplates)
             {
-                var embbedText = pair.Template.Generate();
-                text = text.Replace($"%{pair.Key}%", embbedText);
+                if(pair.Key != "" && pair.Template != null)
+                {
+                    var embbedText = pair.Template.Generate();
+                    text = text.Replace($"%{pair.Key}%", embbedText);
+                }
+                else
+                {
+                    Debug.Log($"キー名または値が設定されていない埋め込みテキストが存在しています。この埋め込みテキストは展開しません。key={pair.Key}, value={pair.Template}");
+                }
             }
             return text;
         }
@@ -260,13 +274,15 @@ namespace Hinode.Editors
             //[SerializeField] List<string> _testpairs2 = new List<string>();
             //[SerializeField] List<KeyValuePair<string, string>> _testpairs = new List<KeyValuePair<string, string>>();
 
-            [SerializeField] List<KeyStringObject> _pairs = new List<KeyStringObject>();
+            [SerializeField] List<Pair> _pairs = new List<Pair>();
 
-            public IEnumerable<(string, string)> Pairs { get => _pairs.AsEnumerable().Select(_p => (_p.Key, _p.Value)); }
+            public IEnumerable<(string, string)> Pairs { get => _pairs.AsEnumerable().Select(_p => (_p.keyword, _p.value)); }
+
+            public bool IsValid { get => _pairs.All(_p => _p.IsValid); }
 
             public IgnorePair(params (string, string)[] pairs)
             {
-                _pairs.AddRange(pairs.Select(_p => new KeyStringObject(_p.Item1, _p.Item2)));
+                _pairs.AddRange(pairs.Select(_p => new Pair(_p.Item1, _p.Item2)));
                 //foreach(var p in pairs)
                 //{
                 //    _testpairs3.Add(new KeyStringObject(p.Item1, p.Item2));
@@ -278,6 +294,25 @@ namespace Hinode.Editors
             public bool DoIgnore(IEnumerable<(string, string)> keywordPairs)
             {
                 return _pairs.All(_p => keywordPairs.Contains(_p));
+            }
+
+            [System.Serializable]
+            public class Pair
+            {
+                [SerializeField] public string keyword;
+                [SerializeField] public string value;
+
+                public bool IsValid { get => keyword != "" && value != ""; }
+
+                public Pair() : this("", "") { }
+                public Pair(string keyword, string value)
+                {
+                    this.keyword = keyword;
+                    this.value = value;
+                }
+
+                public static implicit operator (string, string)(Pair t)
+                    => (t.keyword, t.value);
             }
         }
 
