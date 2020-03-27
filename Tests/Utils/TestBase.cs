@@ -19,9 +19,33 @@ namespace Hinode.Tests
     /// </summary>
     public abstract class TestBase
     {
-        #region Snapshot
-        SnapshotSettings _snapshotSetting;
         /// <summary>
+        /// テスト対象のパッケージのパス
+        ///
+        /// 何も設定されていない時は現在のProjectのパスを表します。
+        /// Snapshotの保存先になどに影響を与えます。
+        /// </summary>
+        protected string PackagePath { get; set; }
+
+        #region Snapshot
+        Snapshot _lastSnapshot;
+        SnapshotSettings _snapshotSetting;
+
+        /// <summary>
+        /// 最後に作成した/使用したSnapshotを返します。
+        ///
+        /// TakeOrValidWithCaptureScreen()で作成したSnapshotを取得したい場合はこちらを使用してください
+        /// </summary>
+        protected Snapshot LastSnapshot
+        {
+            get => _lastSnapshot;
+            private set => _lastSnapshot = value;
+        }
+
+        /// <summary>
+        /// スナップショットを作成するかどうかを表すフラグ。
+        /// 
+        /// ProjectSettingsのSnapshotから変更できます。
         /// Snapshotのテスト以外で値を変更しないでください
         /// </summary>
         public bool DoTakeSnapshot
@@ -47,12 +71,13 @@ namespace Hinode.Tests
         /// <param name="message"></param>
         protected Snapshot TakeOrValid<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int snapshotNo, System.Func<T, T, bool> validateFunc, string message)
         {
-            var newSnapshot = Snapshot.Create(snapshot, testStackFrame, snapshotNo);
+            var newSnapshot = Snapshot.Create(snapshot, testStackFrame, snapshotNo, PackagePath);
             var assetPath = newSnapshot.GetAssetPath();
-            if (_snapshotSetting.DoTakeSnapshot)
+            if (DoTakeSnapshot)
             {
                 var assetDirPath = Path.GetDirectoryName(assetPath);
                 EditorFileUtils.CreateDirectory(assetDirPath);
+                //Debug.Log($"debug -- create snapshot: {assetPath}");
                 AssetDatabase.CreateAsset(newSnapshot, assetPath);
                 AssetDatabase.SetLabels(newSnapshot, new string[] { "snapshot" });
             }
@@ -62,6 +87,7 @@ namespace Hinode.Tests
                 Assert.IsNotNull(recoredSnapshot, $"Don't exist Snapshot... paht=>{assetPath}");
                 Assert.IsTrue(validateFunc(recoredSnapshot.GetSnapshot<T>(), snapshot), $"Failed to validate snapshot... : {message}");
             }
+            LastSnapshot = newSnapshot;
             return newSnapshot;
         }
 
@@ -91,9 +117,7 @@ namespace Hinode.Tests
             captureTex.Apply();
             RenderTexture.active = holdActiveRT;
 
-            var screenshotFilepath = DoTakeSnapshot ? newSnapshot.ScreenshotFilepath : newSnapshot.ScreenshotFilepathAtTest;
-            Directory.CreateDirectory(Path.GetDirectoryName(screenshotFilepath));
-            File.WriteAllBytes(screenshotFilepath, captureTex.EncodeToPNG());
+            newSnapshot.SaveScreenshot(captureTex, !DoTakeSnapshot);
 
             foreach (var pair in Object.FindObjectsOfType<LabelObj>()
                 .Where(_l => _l.Contains(FOR_SCREENSHOT_LABEL))
@@ -105,8 +129,8 @@ namespace Hinode.Tests
             }
 
             Object.Destroy(cameraObj);
+            LastSnapshot = newSnapshot;
         }
-
         #endregion
 
         #region テスト用のファイル・ディレクトリ
@@ -123,6 +147,14 @@ namespace Hinode.Tests
         }
 
         HashSet<string> _deleteAssets = new HashSet<string>();
+
+        /// <summary>
+        /// 指定したファイルパスをテスト終了時に削除するよう登録します
+        ///
+        /// ファイル名を指定した時はファイルのみを、フォルダー名を指定した時は指定したフォルダーのみ削除します。
+        /// 削除したファイルのフォルダーや、親フォルダーは削除されませんので、削除したい時は別途指定してください。
+        /// </summary>
+        /// <param name="paths"></param>
         protected void ReserveDeleteAssets(params string[] paths)
         {
             foreach(var p in paths)
@@ -142,10 +174,14 @@ namespace Hinode.Tests
                 AssetDatabase.DeleteAsset(TEST_DIRPATH);
                 //Directory.Delete(TEST_DIRPATH, true);
             }
-            foreach(var p in _deleteAssets)
+            //var projectAssetPathRegex = new Regex($"^{Application.dataPath}");
+            //var packagesAssetPathRegex = new Regex($"^Packages/");
+            foreach (var p in _deleteAssets)
             {
-                var fullpath = Path.GetFullPath(p);
-                if(new Regex($"^{Application.dataPath}").IsMatch(fullpath))
+                //var fullpath = Path.GetFullPath(p);
+                Debug.Log($"delete test filepath {p}");
+                if(EditorFileUtils.IsProjectAssetPath(p)//projectAssetPathRegex.IsMatch(fullpath)
+                    || EditorFileUtils.IsPackageAssetPath(p))// packagesAssetPathRegex.IsMatch(p))
                 {
                     AssetDatabase.DeleteAsset(p);
                 }

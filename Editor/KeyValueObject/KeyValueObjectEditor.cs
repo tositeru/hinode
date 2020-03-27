@@ -387,21 +387,21 @@ namespace Hinode.Editors
             {
                 return new Label("Not Support yet FlagsEnum...");
 
-                System.Enum defaultValue;
-                if(inst.IsValid)
-                {
-                    defaultValue = inst.Value;
-                }
-                else
-                {
-                    defaultValue = (System.Enum)System.Enum.GetValues(inst.Value.GetType()).GetValue(0);
-                }
+                //System.Enum defaultValue;
+                //if(inst.IsValid)
+                //{
+                //    defaultValue = inst.Value;
+                //}
+                //else
+                //{
+                //    defaultValue = (System.Enum)System.Enum.GetValues(inst.Value.GetType()).GetValue(0);
+                //}
 
-                var enumField = new EnumField(defaultValue)
-                {
-                    bindingPath = $"{property.propertyPath}._value",
-                };
-                return enumField;
+                //var enumField = new EnumField(defaultValue)
+                //{
+                //    bindingPath = $"{property.propertyPath}._value",
+                //};
+                //return enumField;
             }
             else
             {
@@ -431,7 +431,7 @@ namespace Hinode.Editors
                 //DrawStandardEnum(inst, position, property, label);
             }
 
-            return new Label("Not Support UIElement Enum...");
+            //return new Label("Not Support UIElement Enum...");
         }
 
         protected override void OnGUIValue(Rect position, SerializedProperty property, GUIContent label)

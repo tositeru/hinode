@@ -6,27 +6,46 @@ using System.IO;
 
 namespace Hinode.Editors
 {
+    /// <summary>
+    /// <seealso cref="TextureFilepathAttribute"/>
+    /// </summary>
 	[CustomPropertyDrawer(typeof(TextureFilepathAttribute))]
     public class TextureFilepathAttributeDrawProperty : PropertyDrawer
 	{
+        string _usedFilepath;
         Texture2D _tex;
         Texture2D GetTexture(string filepath)
         {
-            if (!File.Exists(filepath))
-            {
-                _tex = null;
-                return null;
-            }
+            if (_usedFilepath == filepath) return _tex;
 
-            if (_tex != null) return _tex;
+            if(EditorFileUtils.IsExistAsset(filepath))
+            {//Assetの時
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(filepath);
+                if (tex == null) return null;
 
-            var tex = new Texture2D(128, 128);
-            var bytes = File.ReadAllBytes(filepath);
-            if (tex.LoadImage(bytes))
-            {
                 _tex = tex;
+                _usedFilepath = filepath;
+                return _tex;
             }
-            return _tex;
+            else
+            {//Assetではない場合
+                if (!File.Exists(filepath))
+                {
+                    _tex = null;
+                    return null;
+                }
+
+                if (_tex != null) return _tex;
+
+                var tex = new Texture2D(4, 4);
+                var bytes = File.ReadAllBytes(filepath);
+                if (tex.LoadImage(bytes))
+                {
+                    _tex = tex;
+                    _usedFilepath = filepath;
+                }
+                return _tex;
+            }
         }
 
 		// Draw the property inside the given rect

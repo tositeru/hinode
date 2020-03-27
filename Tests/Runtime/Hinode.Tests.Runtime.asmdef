@@ -4,7 +4,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Hinode.Tests.Utils",
-        "Hinode"
+        "Hinode",
+        "Hinode.Editors"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

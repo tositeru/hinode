@@ -12,9 +12,9 @@ namespace Hinode.Tests.Editors
         [SettingsProvider]
         public static SettingsProvider CreateProvider()
         {
-            var provider = new SettingsProvider("Project/Snapshot Test", SettingsScope.Project)
+            var provider = new SettingsProvider("Project/Hinode Snapshot Test", SettingsScope.Project)
             {
-                label = "Snapshot Test",
+                label = "Hinode Snapshot Test",
                 keywords = new HashSet<string>(new[] { "Test", "Snapshot", "Hinode" }),
                 guiHandler = (searchContext) =>
                 {

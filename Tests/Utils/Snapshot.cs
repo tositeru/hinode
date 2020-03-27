@@ -19,6 +19,11 @@ namespace Hinode.Tests
     public class Snapshot : ScriptableObject
     {
         [SerializeField] string _created;
+        /// <summary>
+        /// スナップショットが所属しているUnityのパッケージの名前。
+        /// 指定されていなければ、Projectに所属していると扱います。
+        /// </summary>
+        [SerializeField] string _packageName;
         [SerializeField] string _snapshotJson;
 
         [SerializeField] string _assemblyName;
@@ -33,25 +38,73 @@ namespace Hinode.Tests
         [SerializeField, TextureFilepath] string _screenshotFilepathAtTest;
 
         public string Created { get => _created; }
+        /// <summary>
+        /// プロジェクトのアセットかどうか?
+        ///
+        /// プロジェクトのアセットかパッケージのアセットかでファイルの保存先が異なりますので注意してください
+        /// </summary>
+        public bool IsProjectAsset { get => _packageName == null || _packageName == ""; }
+
+        /// <summary>
+        /// 自身のアセットパスを返す
+        /// </summary>
+        /// <returns></returns>
         public string GetAssetPath()
         {
-            return Path.Combine("Assets", "Snapshots", _assemblyName.Replace('.', '_'), _testClassName.Replace('.', '_'), $"{_testMethodName}_{_innerNumber}.asset");
+            var useRootPath = IsProjectAsset ? "Assets" : _packageName;
+            return Path.Combine(
+                useRootPath,
+                "Snapshots",
+                "asm_"+_assemblyName.Replace('.', '_'),
+                _testClassName.Replace('.', '_'),
+                $"{_testMethodName}_{_innerNumber}.asset");
         }
 
         public string ScreenshotFilepath { get => _screenshotFilepath; }
         public string ScreenshotFilepathAtTest { get => _screenshotFilepathAtTest; }
 
+        public void SaveScreenshot(Texture2D screenshot, bool isAtTest)
+        {
+            if(isAtTest)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(ScreenshotFilepathAtTest));
+                File.WriteAllBytes(ScreenshotFilepathAtTest, screenshot.EncodeToPNG());
+            }
+            else
+            {
+                EditorFileUtils.CreateDirectory(ScreenshotFilepath);
+                File.WriteAllBytes(ScreenshotFilepath, screenshot.EncodeToPNG());
+                AssetDatabase.ImportAsset(ScreenshotFilepath, ImportAssetOptions.Default);
+                var asset = AssetDatabase.LoadAssetAtPath<Texture2D>(ScreenshotFilepath);
+                AssetDatabase.SetLabels(asset, new string[] { "snapshot" });
+            }
+        }
+
         string GetScreenshotFilepath()
         {
-            return CreateScreenshotFilepath($"{_testMethodName}_{_innerNumber}.png");
+            return CreateScreenshotFilepath($"{_testMethodName}_{_innerNumber}.png", false);
         }
         string GetScreenshotFilepathAtTest()
         {
-            return CreateScreenshotFilepath($"{_testMethodName}_{_innerNumber}_AtTest.png");
+            return CreateScreenshotFilepath($"{_testMethodName}_{_innerNumber}_AtTest.png", true);
         }
-        string CreateScreenshotFilepath(string filename)
+        string CreateScreenshotFilepath(string filename, bool isAtTest)
         {
-            return Path.Combine("SnapshotScreenshots", _assemblyName.Replace('.', '_'), _testClassName.Replace('.', '_'), $"{filename}");
+            if(isAtTest)
+            {
+                return Path.Combine(
+                    "SnapshotScreenshots",
+                    IsProjectAsset ? "Project" : _packageName.Replace('.', '_'),
+                    _assemblyName.Replace('.', '_'),
+                    _testClassName.Replace('.', '_'),
+                    $"{filename}");
+            }
+            else
+            {
+                return Path.Combine(
+                    Path.GetDirectoryName(GetAssetPath()),
+                    filename);
+            }
         }
 
         public T GetSnapshot<T>()
@@ -129,11 +182,12 @@ namespace Hinode.Tests
         }
 
         readonly static Regex REGEX_CLASS_NAME = new Regex(@"<(.+)>d");
-        public static Snapshot Create(string snapshotJson, System.Diagnostics.StackFrame testStackFrame, int no)
+        public static Snapshot Create(string snapshotJson, System.Diagnostics.StackFrame testStackFrame, int no, string packageName)
         {
             var inst = ScriptableObject.CreateInstance<Snapshot>();
 
             inst._created = System.DateTime.Now.ToString();
+            inst._packageName = packageName;
             inst._snapshotJson = snapshotJson;
             var methodInfo = testStackFrame.GetMethod();
             inst._assemblyName = methodInfo.DeclaringType.Assembly.GetName().Name;
@@ -160,9 +214,9 @@ namespace Hinode.Tests
             return inst;
         }
 
-        public static Snapshot Create<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int no)
+        public static Snapshot Create<T>(T snapshot, System.Diagnostics.StackFrame testStackFrame, int no, string packageName)
         {
-            return Create(JsonUtility.ToJson(snapshot), testStackFrame, no);
+            return Create(JsonUtility.ToJson(snapshot), testStackFrame, no, packageName);
         }
 
         public Snapshot Copy()
