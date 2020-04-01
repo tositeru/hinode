@@ -30,6 +30,7 @@ namespace Hinode
                 return _instance;
             }
         }
+        public static bool DoExistInstance { get => _instance != null; }
 
         /// <summary>
         /// デフォルトの名前

@@ -205,13 +205,39 @@ namespace Hinode.Tests
         [TearDown]
         public virtual void CleanUpScene()
         {
-            var PlaymodeTestsControllerType = GetUnityTestRunnerController();
-
             var scene = SceneManager.GetActiveScene();
-            foreach(var root in scene.GetRootGameObjects()
-                .Where(_o => !_o.TryGetComponent(PlaymodeTestsControllerType, out var _)))
+            var objEnumerable = scene.GetRootGameObjects().AsEnumerable();
+
+            var PlaymodeTestsControllerType = GetUnityPlaymodeTestRunnerControllerType();
+            if (PlaymodeTestsControllerType != null)
+            {
+                objEnumerable = objEnumerable.Where(_o => !_o.TryGetComponent(PlaymodeTestsControllerType, out var _));
+            }
+
+            foreach (var root in objEnumerable)
             {
                 Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>
+        /// UnityのTestRunnerオブジェクトをDontDestroyOnLoadにする
+        /// テスト中にシーンを切り替える際に使用してください
+        /// </summary>
+        protected void SetDontDestroyTestRunner()
+        {
+            var scene = SceneManager.GetActiveScene();
+            var objEnumerable = scene.GetRootGameObjects().AsEnumerable();
+
+            var PlaymodeTestsControllerType = GetUnityPlaymodeTestRunnerControllerType();
+            if (PlaymodeTestsControllerType != null)
+            {
+                objEnumerable = objEnumerable.Where(_o => _o.TryGetComponent(PlaymodeTestsControllerType, out var _));
+            }
+
+            foreach (var root in objEnumerable)
+            {
+                Object.DontDestroyOnLoad(root);
             }
         }
 
@@ -219,7 +245,7 @@ namespace Hinode.Tests
         /// UnityEngine.TestTools.TestRunner.PlaymodeTestsControllerのvisibilityがinternalだったのでリフレクション経由でその型を取得するための関数
         /// </summary>
         /// <returns></returns>
-        System.Type GetUnityTestRunnerController()
+        System.Type GetUnityPlaymodeTestRunnerControllerType()
         {
             var asm = System.AppDomain.CurrentDomain.GetAssemblies().First(_asm => _asm.GetName().Name == "UnityEngine.TestRunner");
             var PlaymodeTestsControllerType = asm.GetTypes().Where(_t => _t.IsClass).First(_t => _t.Name == "PlaymodeTestsController");
