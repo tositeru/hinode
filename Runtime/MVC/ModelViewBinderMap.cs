@@ -101,22 +101,38 @@ namespace Hinode
                 _rootModel = value;
                 ClearBindInstances();
 
-                Add(_rootModel.GetHierarchyEnumerable());
+                if (_rootModel == null) return;
+
+                Add(true, _rootModel.GetHierarchyEnumerable());
                 _rootModel.OnChangedHierarchy.Add((type, target, models) => {
                     switch (type)
                     {
                         case ChangedModelHierarchyType.ChildAdd:
-                            Add(models);
+                            Add(true, models.SelectMany(_m => _m.GetHierarchyEnumerable()));
                             break;
                         case ChangedModelHierarchyType.ChildRemove:
-                            Remove(models);
+                            Remove(models.SelectMany(_m => _m.GetHierarchyEnumerable()));
                             break;
                         case ChangedModelHierarchyType.ParentChange:
-                            throw new System.NotImplementedException();
+                            var prevParent = models.ElementAt(0);
+                            var curParent = models.ElementAt(1);
+                            var isPrevParentInRootModel = prevParent?.GetTraversedRootEnumerable().Any(_m => _m == RootModel) ?? false;
+                            var isCurParentInRootModel = curParent?.GetTraversedRootEnumerable().Any(_m => _m == RootModel) ?? false;
+                            if (isCurParentInRootModel)
+                            {
+                                Add(true, target.GetHierarchyEnumerable());
+                            }
+                            else if(isPrevParentInRootModel)
+                            {
+                                Remove(target.GetHierarchyEnumerable());
+                            }
                             break;
                         default:
                             throw new System.NotImplementedException();
                     }
+                });
+                _rootModel.OnChangedModelIdentities.Add(model => {
+                    Rebind(model);
                 });
             }
         }
@@ -141,39 +157,80 @@ namespace Hinode
             get => BindInstances[model];
         }
 
-        public void AddImpl(Model model, bool doDelay)
+        public void AddImpl(Model model, bool doDelay, bool allowRebind)
         {
             if (doDelay)
             {
+                var addInfo = new Operation.AddParam() { allowRebind = allowRebind };
                 if (OperationList.ContainsKey(model))
+                {
                     OperationList[model].OperationFlags |= Operation.OpType.Add;
+                    OperationList[model].UseAddParam = addInfo;
+                }
                 else
-                    OperationList.Add(model, new Operation(model, Operation.OpType.Add));
+                    OperationList.Add(model, new Operation(model, addInfo));
             }
-            else
+            else if(allowRebind && _bindInstanceDict.ContainsKey(model))
             {
-                if (_bindInstanceDict.ContainsKey(model)) return;
+                RebindImpl(model, doDelay);
+            }
+            else if(!_bindInstanceDict.ContainsKey(model))
+            {
                 var bindInst = BinderMap.CreateBindInstance(model);
                 _bindInstanceDict.Add(model, bindInst);
                 bindInst.UpdateViewObjects();
             }
         }
 
-        public void Add(Model model)
+        public void Add(Model model, bool allowRebind=false)
         {
-            AddImpl(model, EnabledDelayOperation);
+            AddImpl(model, EnabledDelayOperation, allowRebind);
         }
 
-        public void Add(params Model[] models)
-            => Add(models.AsEnumerable());
+        public void Add(bool allowRebind, params Model[] models)
+            => Add(allowRebind, models.AsEnumerable());
 
-        public void Add(IEnumerable<Model> modelEnumerable)
+        public void Add(bool allowRebind, IEnumerable < Model> modelEnumerable)
         {
             foreach (var model in modelEnumerable
                 .Where(_m => !_bindInstanceDict.ContainsKey(_m)))
             {
-                Add(model);
+                Add(model, allowRebind);
             }
+        }
+
+        bool RebindImpl(Model model, bool doDelay)
+        {
+            if (doDelay)
+            {
+                if (OperationList.ContainsKey(model))
+                    OperationList[model].OperationFlags |= Operation.OpType.Rebind;
+                else
+                {
+                    if (!_bindInstanceDict.ContainsKey(model))
+                        return false;
+                    OperationList.Add(model, new Operation(model, Operation.OpType.Rebind));
+                }
+                return true;
+            }
+            else
+            {
+                if (!_bindInstanceDict.ContainsKey(model)) return false;
+                var bindInst = BinderMap.CreateBindInstance(model);
+                _bindInstanceDict[model] = bindInst;
+                bindInst.UpdateViewObjects();
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// 登録されているModelなら再バインドを行う関数
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public bool Rebind(Model model)
+        {
+            return RebindImpl(model, EnabledDelayOperation);
         }
 
         void RemoveImpl(Model model, bool doDelay)
@@ -234,15 +291,30 @@ namespace Hinode
             {
                 Remove = 0x1 << 0,
                 Add = 0x1 << 1,
+                Rebind = 0x1 << 2,
+            }
+
+            public class AddParam
+            {
+                public bool allowRebind;
             }
 
             public Model Model { get; }
             public OpType OperationFlags { get; set; }
 
+            public AddParam UseAddParam { get; set; }
+
             public Operation(Model model, OpType operationFlags)
             {
                 Model = model;
                 OperationFlags = operationFlags;
+            }
+
+            public Operation(Model model, AddParam addParam)
+            {
+                Model = model;
+                OperationFlags = OpType.Add;
+                UseAddParam = addParam;
             }
 
             public void Done(ModelViewBinderInstanceMap instanceMap)
@@ -253,7 +325,12 @@ namespace Hinode
                 }
                 else if (0 != (OperationFlags & Operation.OpType.Add))
                 {
-                    instanceMap.AddImpl(Model, false);
+                    var allowRebind = UseAddParam?.allowRebind ?? false;
+                    instanceMap.AddImpl(Model, false, allowRebind);
+                }
+                else if(0 != (OperationFlags & Operation.OpType.Rebind))
+                {
+                    instanceMap.RebindImpl(Model, false);
                 }
                 else
                 {

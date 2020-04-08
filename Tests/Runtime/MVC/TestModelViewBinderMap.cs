@@ -79,10 +79,12 @@ namespace Hinode.Tests.MVC
                 ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
             var orangeBinder = new ModelViewBinder("orange",
                 ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
+            var rebindBinder = new ModelViewBinder("Rebind",
+                ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
             Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
-            var binderMap = new ModelViewBinderMap(appleBinder, orangeBinder);
+            var binderMap = new ModelViewBinderMap(appleBinder, orangeBinder, rebindBinder);
             {//Constructorのテスト
-                Assert.AreEqual(2, binderMap.Binders.Count());
+                Assert.AreEqual(3, binderMap.Binders.Count());
                 Assert.IsTrue(binderMap.Binders.Any(_b => _b == appleBinder), "指定したBinderがBinderMapの中にありません");
                 Assert.IsTrue(binderMap.Binders.Any(_b => _b == orangeBinder), "指定したBinderがBinderMapの中にありません");
             }
@@ -111,7 +113,7 @@ namespace Hinode.Tests.MVC
 
                 {//BindInstanceMap#Addのテスト
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
-                    bindInstanceMap.Add(apple, orange);
+                    bindInstanceMap.Add(false, apple, orange);
                     Assert.AreEqual(2, bindInstanceMap.BindInstances.Count());
 
                     //追加された時は合わせてViewのパラメータもModelのものに更新する
@@ -121,7 +123,7 @@ namespace Hinode.Tests.MVC
                     Assert.AreEqual(orange.FloatValue, orangeViewObj.FloatValue);
 
                     //既に追加されていたら追加しない
-                    bindInstanceMap.Add(apple, orange);
+                    bindInstanceMap.Add(false, apple, orange);
                     Assert.AreEqual(2, bindInstanceMap.BindInstances.Count(), "同じModelが追加できないようにしてください");
                 }
 
@@ -145,13 +147,27 @@ namespace Hinode.Tests.MVC
                     Assert.AreEqual(orange.FloatValue, orangeViewObj.FloatValue);
                 }
 
+                {//BindInstanceMap#Rebindのテスト
+                    apple.Name = "Rebind";
+                    var isSuccess = bindInstanceMap.Rebind(apple);
+                    Assert.IsTrue(isSuccess, "Rebindに失敗しています");
+                    Assert.AreSame(rebindBinder, bindInstanceMap.BindInstances[apple].Binder);
+
+                    // 追加されていないものをRebindした時は何もしない
+                    var recordedBindInstances = bindInstanceMap.BindInstances.ToArray();
+                    var model = new ModelClass() { Name="Tmp" };
+                    isSuccess = bindInstanceMap.Rebind(model);
+                    Assert.IsFalse(isSuccess, "登録されていないModelの場合はRebindしないようにしてください");
+                    AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, recordedBindInstances, "ModelViewBinderInstanceMapに追加されていないModelをRebindした時は何もしないようにしてください。");
+                }
+
                 {//BindInstanceMap#Removeのテスト
                     bindInstanceMap.Remove(appleBindInstance.Model, orangeBindInstance.Model);
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
 
                 {//BindInstanceMap#ClearBindInstancesのテスト
-                    bindInstanceMap.Add(apple, orange);
+                    bindInstanceMap.Add(false, apple, orange);
                     bindInstanceMap.ClearBindInstances();
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
@@ -184,7 +200,7 @@ namespace Hinode.Tests.MVC
                 orangeBinder,
                 grapeOrangeBinder);
             var bindInstanceMap = binderMap.CreateBinderInstaceMap();
-            bindInstanceMap.Add(root.GetHierarchyEnumerable());
+            bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
 
             var rootBinderInstance = bindInstanceMap.BindInstances[root];
             Assert.AreSame(allBinder, rootBinderInstance.Binder);
@@ -220,7 +236,7 @@ namespace Hinode.Tests.MVC
             bindInstanceMap.EnabledDelayOperation = true;
 
             {//追加
-                bindInstanceMap.Add(root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
                 Assert.IsFalse(bindInstanceMap.BindInstances.Any(), "遅延操作が有効になっている場合はBindInstanceMap#DoDelayOperation()を呼び出されるまで、追加処理を実行しないでください。");
 
                 bindInstanceMap.DoDelayOperations();
@@ -253,7 +269,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//追加と削除が合わせて遅延処理に登録されていたら、何もしないようにする
-                bindInstanceMap.Add(root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
                 bindInstanceMap.Remove(root.GetHierarchyEnumerable());
                 Assert.IsFalse(bindInstanceMap.BindInstances.Any(), "遅延操作が有効になっている場合はBindInstanceMap#DoDelayOperation()を呼び出されるまで、追加・削除処理を実行しないでください。");
 
@@ -282,7 +298,7 @@ namespace Hinode.Tests.MVC
             bindInstanceMap.EnabledDelayOperation = true;
 
             {//操作は対象になっているIModel分だけ生成されるようにする
-                bindInstanceMap.Add(root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
                 bindInstanceMap.Remove(root.GetHierarchyEnumerable());
 
                 var correctOpCount = root.GetHierarchyEnumerable().Count();
@@ -296,7 +312,7 @@ namespace Hinode.Tests.MVC
 
                 Assert.AreEqual(correctOpCount, opCount, "登録された操作の個数が想定されたものになっていません。操作対象となっているIModelの数だけ操作を生成してくください。");
 
-                bindInstanceMap.Add(root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
                 correctOpCount = root.GetHierarchyEnumerable().Count();
                 opCount = 0;
                 while(enumerator.MoveNext() && enumerator.Current != null)
@@ -307,11 +323,11 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        [Test, Description("Modelの変更に合わせて、自動的にバインドを行う機能のテスト")]
-        public void AutoBindPasses()
+        [Test, Description("Model階層の変更に合わせて、自動的にバインドを行う機能のテスト")]
+        public void AutoBindOnChangedModelHierarchyPasses()
         {
             var allBinder = new ModelViewBinder("*",
-                    ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+                    ModelViewBinder.CreateBindInfoDict((typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder())));
 
             var binderMap = new ModelViewBinderMap(allBinder);
             var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
@@ -360,6 +376,11 @@ namespace Hinode.Tests.MVC
             }
 
             {//自動生成のテスト
+                root.ClearChildren();
+                apple.ClearChildren();
+                orange.ClearChildren();
+                grape.ClearChildren();
+
                 // 子Modelの追加
                 //   Appleをrootの子に追加
                 // root(RootModel)
@@ -367,7 +388,9 @@ namespace Hinode.Tests.MVC
                 bindInstanceMap.RootModel = root;
                 var count = bindInstanceMap.BindInstances.Count;
                 var errorMessage = "子を追加した時は、それに対してのバインドを自動的に追加してください";
+
                 root.AddChildren(apple);
+
                 Assert.AreEqual(count+1, bindInstanceMap.BindInstances.Count, errorMessage);
                 Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
 
@@ -379,14 +402,21 @@ namespace Hinode.Tests.MVC
                 //     - grape <- Auto Add
                 count = bindInstanceMap.BindInstances.Count;
                 errorMessage = "親子構造を持つModelを追加した時は、その全てのModelに対してバインドを行うようにしてください";
+
                 grape.Parent = orange;
                 orange.Parent = root;
+
                 Assert.AreEqual(count + 2, bindInstanceMap.BindInstances.Count, errorMessage);
                 Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(orange), $"Model(orange)がバインドに追加されていません。{errorMessage}");
                 Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(grape), $"Model(grape)がバインドに追加されていません。{errorMessage}");
             }
 
             {//自動削除のテスト
+                root.ClearChildren();
+                apple.ClearChildren();
+                orange.ClearChildren();
+                grape.ClearChildren();
+
                 // 子Modelの削除
                 // BindInstanceMapからappleを削除する
                 // root(RootModel)
@@ -402,6 +432,7 @@ namespace Hinode.Tests.MVC
                 var errorMessage = "子が削除された時は、それに関連するバインドも削除してください。";
 
                 root.RemoveChildren(apple);
+
                 Assert.AreEqual(count-1, bindInstanceMap.BindInstances.Count, errorMessage);
                 Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
 
@@ -437,7 +468,133 @@ namespace Hinode.Tests.MVC
                 Assert.AreEqual(count, bindInstanceMap.BindInstances.Count, errorMessage);
                 AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, saveBindInstances, errorMessage);
             }
-            //Name,LogicalID,StylingIDの変更に合わせたバインド
         }
+
+        [Test, Description("ModelのName,LogicalID,StylingIDの変更に合わせて、自動的にバインドを行う機能のテスト")]
+        public void AutoBindOnChangedModelIdentitiesPasses()
+        {
+            var nameBinderQueryPath = "name";
+            var logicalBinderQueryPath = "#log";
+            var styleBinderQueryPath = ".stl";
+
+            var allBinder = new ModelViewBinder("*",
+                    ModelViewBinder.CreateBindInfoDict((typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder())));
+            var nameBinder = new ModelViewBinder(nameBinderQueryPath,
+                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+            var logicalBinder = new ModelViewBinder(logicalBinderQueryPath,
+                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+            var styleBinder = new ModelViewBinder(styleBinderQueryPath,
+                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+
+            var binderMap = new ModelViewBinderMap(allBinder, nameBinder, logicalBinder, styleBinder);
+            var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+
+            var root = new ModelClass() { Name = "root" };
+            var apple = new ModelClass() { Name = "apple", Parent = root };
+            var orange = new ModelClass() { Name = "orange", Parent = root };
+            var grape = new ModelClass() { Name = "grape", Parent = orange };
+
+            bindInstanceMap.RootModel = root;
+
+            {//Nameを切り替えた時のテスト
+                // root.Name => "name"
+                // - rootのBinder -> nameBinderに変更される
+                root.Name = nameBinderQueryPath;
+                Assert.AreSame(nameBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                // root.Name => "root"
+                // - rootのBinder -> allBinderに変更される
+                root.Name = "root";
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                // apple.Name => "name"
+                // - appleのBinder -> nameBinderに変更される
+                apple.Name = nameBinderQueryPath;
+                Assert.AreSame(nameBinder, bindInstanceMap.BindInstances[apple].Binder, "ルートModelの階層内のModelのNameが変更された時も、バインドを切り替えるようにしてください");
+
+                // apple.Name => "apple"
+                // - appleのBinder -> allBinderに変更される
+                apple.Name = "apple";
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[apple].Binder, "ルートModelの階層内のModelのNameが変更された時も、バインドを切り替えるようにしてください");
+
+                // grape.Name => "name"
+                // - grapeのBinder -> nameBinderに変更される
+                grape.Name = nameBinderQueryPath;
+                Assert.AreSame(nameBinder, bindInstanceMap.BindInstances[grape].Binder, "ルートModelの階層内のModelのNameが変更された時も、バインドを切り替えるようにしてください");
+
+                // grape.Name => "root"
+                // - grapeのBinder -> allBinderに変更される
+                grape.Name = "grape";
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[grape].Binder, "ルートModelの階層内のModelのNameが変更された時も、バインドを切り替えるようにしてください");
+            }
+
+            {//LogicalIDを切り替えた時のテスト
+                // root.LogicalID => "log"
+                // - rootのBinder -> logicalBinderに変更される
+                root.AddLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(logicalBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                // root.LogicalID => ""
+                // - rootのBinder -> allBinderに変更される
+                root.RemoveLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                var errorMessage = "ルートModelの階層内のModelのLogicalIDが変更された時も、バインドを切り替えるようにしてください";
+                // orange.LogicalID => "log"
+                // - orangeのBinder -> logicalBinderに変更される
+                orange.AddLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(logicalBinder, bindInstanceMap.BindInstances[orange].Binder, errorMessage);
+
+                // orange.LogicalID => ""
+                // - orangeのBinder -> allBinderに変更される
+                orange.RemoveLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[orange].Binder, errorMessage);
+
+                // grape.LogicalID => "log"
+                // - grapeのBinder -> logicalBinderに変更される
+                grape.AddLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(logicalBinder, bindInstanceMap.BindInstances[grape].Binder, errorMessage);
+
+                // grape.LogicalID => ""
+                // - grapeのBinder -> allBinderに変更される
+                grape.RemoveLogicalID(logicalBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[grape].Binder, errorMessage);
+            }
+
+            {//StylingIDを切り替えた時のテスト
+                // root.StylingID => "stl"
+                // - rootのBinder -> styleBinderに変更される
+                root.AddStylingID(styleBinderQueryPath);
+                Assert.AreSame(styleBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                // root.StylingID => ""
+                // - rootのBinder -> allBinderに変更される
+                root.RemoveStylingID(styleBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[root].Binder);
+
+                var errorMessage = "ルートModelの階層内のModelのStylingIDが変更された時も、バインドを切り替えるようにしてください";
+                // orange.StylingID => "log"
+                // - orangeのBinder -> styleBinderに変更される
+                orange.AddStylingID(styleBinderQueryPath);
+                Assert.AreSame(styleBinder, bindInstanceMap.BindInstances[orange].Binder, errorMessage);
+
+                // orange.StylingID => ""
+                // - orangeのBinder -> allBinderに変更される
+                orange.RemoveStylingID(styleBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[orange].Binder, errorMessage);
+
+                // grape.StylingID => "log"
+                // - grapeのBinder -> styleBinderに変更される
+                grape.AddStylingID(styleBinderQueryPath);
+                Assert.AreSame(styleBinder, bindInstanceMap.BindInstances[grape].Binder, errorMessage);
+
+                // grape.StylingID => ""
+                // - grapeのBinder -> allBinderに変更される
+                grape.RemoveStylingID(styleBinderQueryPath);
+                Assert.AreSame(allBinder, bindInstanceMap.BindInstances[grape].Binder, errorMessage);
+            }
+
+        }
+
     }
 }
