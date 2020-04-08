@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.CSharp
+namespace Hinode.Tests.CSharp.Extensions
 {
     public class TestDictionaryExtensions
     {

@@ -8,9 +8,23 @@ namespace Hinode
     /// <summary>
     /// アプリ上の全てのModelのルートとなるモデル
     /// </summary>
-    public class ModelRooter : IModelMonoBehaivour
+    public class ModelRooter : SingletonMonoBehaviour<ModelRooter>
     {
-        IModel _model = new Model() { Name = "__root" };
-        public override IModel Model { get => _model; }
+        public static readonly string NAME = "__root";
+        Model _model = new Model() { Name = NAME };
+        public virtual Model Model { get => _model; }
+
+        #region SingletonMonoBehaviour<> interface
+        protected override string DefaultInstanceName => "__ModelRooter";
+
+        protected override void OnAwaked()
+        {
+            DontDestroyOnLoad(this);
+        }
+
+        protected override void OnDestroyed(bool isInstance)
+        {
+        }
+        #endregion
     }
 }

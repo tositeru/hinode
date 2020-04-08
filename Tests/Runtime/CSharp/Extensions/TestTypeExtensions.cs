@@ -6,10 +6,36 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.CSharp
+namespace Hinode.Tests.CSharp.Extensions
 {
     public class TestTypeExtensions
     {
+        interface DoHasInterfacePassesInterface
+        {
+            void Func();
+        }
+
+        interface DoHasInterfacePassesInterface2
+        {
+            void Func();
+        }
+
+
+        class DoHasInterfacePassesClass : DoHasInterfacePassesInterface
+        {
+            public void Func() { }
+        }
+
+        [Test]
+        public void DoHasInterfacePasses()
+        {
+            Assert.IsTrue(typeof(DoHasInterfacePassesClass).DoHasInterface(typeof(DoHasInterfacePassesInterface)));
+            Assert.IsTrue(typeof(DoHasInterfacePassesClass).DoHasInterface<DoHasInterfacePassesInterface>());
+
+            Assert.IsFalse(typeof(DoHasInterfacePassesClass).DoHasInterface<DoHasInterfacePassesInterface2>());
+            Assert.IsFalse(typeof(DoHasInterfacePassesClass).DoHasInterface<TestTypeExtensions>());
+        }
+
         class GetFieldInHierarchyBaseClass : ScriptableObject
         {
 #pragma warning disable CS0649, CS0414

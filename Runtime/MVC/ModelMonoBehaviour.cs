@@ -10,6 +10,6 @@ namespace Hinode
     /// </summary>
     public abstract class IModelMonoBehaivour : MonoBehaviour
     {
-        public abstract IModel Model { get; }
+        public abstract Model Model { get; }
     }
 }

@@ -11,6 +11,26 @@ namespace Hinode
     public static class TypeExtensions
     {
         /// <summary>
+        /// 指定されたInterfaceを実装しているかどうか?
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="interfaceType"></param>
+        /// <returns></returns>
+        public static bool DoHasInterface(this System.Type t, System.Type interfaceType)
+        {
+            return interfaceType.IsInterface && t.GetInterfaces().Any(_i => _i == interfaceType);
+        }
+
+        /// <summary>
+        /// 指定されたInterfaceを実装しているかどうか?
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="interfaceType"></param>
+        /// <returns></returns>
+        public static bool DoHasInterface<InterfaceType>(this System.Type t)
+            => t.DoHasInterface(typeof(InterfaceType));
+
+        /// <summary>
         /// 整数型かどうか?
         /// System.Numeric.BigIntegerも含みます
         /// </summary>

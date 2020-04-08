@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Reflection
+namespace Hinode.Tests.CSharp.Reflection
 {
     public class TestRefCache
     {
