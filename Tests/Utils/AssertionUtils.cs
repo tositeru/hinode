@@ -11,6 +11,9 @@ namespace Hinode.Tests
     {
         public static void AssertEnumerable<T>(IEnumerable<T> gots, IEnumerable<T> corrects, string message)
         {
+            if (gots == null && corrects == null) return;
+            Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots !=null}");
+
             var index = 0;
             foreach (var (t, correct) in gots.Zip(corrects, (_t, _c) => (t: _t, c: _c)))
             {

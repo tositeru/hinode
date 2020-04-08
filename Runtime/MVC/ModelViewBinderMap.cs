@@ -79,6 +79,8 @@ namespace Hinode
     public class ModelViewBinderInstanceMap
     {
         Dictionary<Model, Operation> _operationList;
+        Dictionary<Model, ModelViewBinderInstance> _bindInstanceDict = new Dictionary<Model, ModelViewBinderInstance>();
+        Model _rootModel;
 
         /// <summary>
         /// 生成・削除・更新などの処理を遅延させるかどうか?
@@ -86,11 +88,40 @@ namespace Hinode
         public bool EnabledDelayOperation { get; set; } = false;
 
         public ModelViewBinderMap BinderMap { get; }
-        Dictionary<Model, ModelViewBinderInstance> _bindInstanceDict = new Dictionary<Model, ModelViewBinderInstance>();
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances
         {
             get => _bindInstanceDict;
         }
+
+        public Model RootModel
+        {
+            get => _rootModel;
+            set
+            {
+                _rootModel = value;
+                ClearBindInstances();
+
+                Add(_rootModel.GetHierarchyEnumerable());
+                _rootModel.OnChangedHierarchy.Add((type, target, models) => {
+                    switch (type)
+                    {
+                        case ChangedModelHierarchyType.ChildAdd:
+                            Add(models);
+                            break;
+                        case ChangedModelHierarchyType.ChildRemove:
+                            Remove(models);
+                            break;
+                        case ChangedModelHierarchyType.ParentChange:
+                            throw new System.NotImplementedException();
+                            break;
+                        default:
+                            throw new System.NotImplementedException();
+                    }
+                });
+            }
+        }
+
+        public bool EnableAutoBind { get => RootModel != null; }
 
         /// <summary>
         /// 遅延操作のためのデータ
@@ -179,6 +210,9 @@ namespace Hinode
                 Remove(m);
             }
         }
+
+        public void ClearBindInstances()
+            => Remove(_bindInstanceDict.Keys.ToArray());
 
         public void UpdateViewObjects()
         {

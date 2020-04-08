@@ -155,32 +155,73 @@ namespace Hinode.Tests.MVC
             }
         }
 
+        [Test, Description("Name,LogicalID,StyleIDが変更された時にParentに設定されたコールバックが呼び出されるかテスト")]
+        public void OnChangedIdentityCallbackInParentPasses()
+        {
+            var root = new Model() { Name = "root" };
+            var apple = new Model() { Name = "apple" };
+            var orange = new Model() { Name = "orange" };
+
+            int callbackCounter = 0;
+            OnChangedModelIdentitiesCallback incrementCounter = (m) => { callbackCounter++; };
+            root.OnChangedModelIdentities.Add(incrementCounter);
+            apple.Parent = root;
+            orange.Parent = apple;
+
+            {//子ModelのIdentityを変更した時のテスト
+                callbackCounter = 0;
+                apple.Name = "APPLE";
+                Assert.AreEqual(1, callbackCounter, "子ModelのNameが変更された時にその親のコールバックも呼び出されるようにしてください。");
+                apple.AddLogicalID("APPLE");
+                Assert.AreEqual(2, callbackCounter, "子ModelのLogicalが変更された時にその親のコールバックも呼び出されるようにしてください。");
+                apple.RemoveLogicalID("APPLE");
+                Assert.AreEqual(3, callbackCounter, "子ModelのLogicalが変更された時にその親のコールバックも呼び出されるようにしてください。");
+                apple.AddStylingID("APPLE");
+                Assert.AreEqual(4, callbackCounter, "子ModelのStylingが変更された時にその親のコールバックも呼び出されるようにしてください。");
+                apple.RemoveStylingID("APPLE");
+                Assert.AreEqual(5, callbackCounter, "子ModelのStylingが変更された時にその親のコールバックも呼び出されるようにしてください。");
+
+                callbackCounter = 0;
+                orange.Name = "ORANGE";
+                Assert.AreEqual(1, callbackCounter, "孫ModelのIdentityが変更された時にその親のコールバックも呼び出されるようにしてください。");
+            }
+        }
+
         class OnChangedHierarchyTestModel : Model
         {
             ChangedModelHierarchyType _changedType;
-            Model _changedModel;
+            Model _changedTarget;
+            Model[] _changedModels;
 
             public OnChangedHierarchyTestModel()
             {
                 OnChangedHierarchy.Add(ChangedHierarchy);
             }
 
-            public void AssertCallback(ChangedModelHierarchyType type, Model model, string message)
+            public void AssertCallback(ChangedModelHierarchyType type, Model target, IEnumerable<Model> models, string message)
             {
                 Assert.AreEqual(type, _changedType, $"想定されたタイプになっていません... {message}");
-                Assert.AreSame(model, _changedModel, $"想定されたModelが設定されていません... {message} correct={model?.GetPath() ?? "(null)"}, got={_changedModel?.GetPath() ?? "(null)"}");
+                Assert.AreSame(target, _changedTarget, $"想定されたTargetが設定されていません... {message} correct={this?.GetPath() ?? "(null)"}, got={_changedTarget?.GetPath() ?? "(null)"}");
+                //string changedModelsLog = "";
+                //if(_changedModels != null) foreach(var c in _changedModels) { changedModelsLog += (c?.GetPath() ?? "(null)") + ","; }
+                //string modelsLog = "";
+                //if(models != null) foreach (var c in models) { modelsLog += (c?.GetPath() ?? "(null)") + ","; }
+                //Debug.Log($"correct=>{modelsLog}{System.Environment.NewLine}    gots=>{changedModelsLog}");
+                AssertionUtils.AssertEnumerable(_changedModels, models, $"想定されたModelsが設定されていません... {message}");
             }
 
             public void Reset()
             {
                 _changedType = (ChangedModelHierarchyType)(-1);
-                _changedModel = null;
+                _changedTarget = null;
+                _changedModels = null;
             }
 
-            void ChangedHierarchy(ChangedModelHierarchyType type, Model model)
+            void ChangedHierarchy(ChangedModelHierarchyType type, Model target, IEnumerable<Model> models)
             {
                 _changedType = type;
-                _changedModel = model;
+                _changedTarget = target;
+                _changedModels = models.ToArray();
             }
         }
 
@@ -205,8 +246,8 @@ namespace Hinode.Tests.MVC
 
             apple.Parent = root;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, apple, "子Modelが追加");
-            apple.AssertCallback(ChangedModelHierarchyType.ParentSet, root, "子Modelが追加");
+            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, root, new Model[] { apple }, "子Modelが追加");
+            apple.AssertCallback(ChangedModelHierarchyType.ParentChange, apple, new Model[] { null, root }, "子Modelが追加");
 
             // Test. 他の子Modelがある時に子Modelが追加
             // root
@@ -222,9 +263,9 @@ namespace Hinode.Tests.MVC
 
             orange.Parent = root;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, orange, "他の子Modelがある時に子Modelが追加");
-            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, "他の子Modelがある時に子Modelが追加");
-            orange.AssertCallback(ChangedModelHierarchyType.ParentSet, root, "他の子Modelがある時に子Modelが追加");
+            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, root, new Model[]{ orange }, "他の子Modelがある時に子Modelが追加");
+            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "他の子Modelがある時に子Modelが追加");
+            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { null, root }, "他の子Modelがある時に子Modelが追加");
 
             // Test. 孫Modelが追加
             // root
@@ -242,10 +283,10 @@ namespace Hinode.Tests.MVC
             var grape = new OnChangedHierarchyTestModel() { Name = "apple" };
             grape.Parent = orange;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, grape, "孫Modelが追加");
-            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, "孫Modelが追加");
-            orange.AssertCallback(ChangedModelHierarchyType.ChildAdd, grape, "孫Modelが追加");
-            grape.AssertCallback(ChangedModelHierarchyType.ParentSet, orange, "孫Modelが追加");
+            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, orange, new Model[] { grape }, "孫Modelが追加");
+            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "孫Modelが追加");
+            orange.AssertCallback(ChangedModelHierarchyType.ChildAdd, orange, new Model[] { grape }, "孫Modelが追加");
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, grape, new Model[] { null, orange }, "孫Modelが追加");
 
             // Test. 子Modelが削除
             // root
@@ -262,10 +303,10 @@ namespace Hinode.Tests.MVC
 
             apple.Parent = null;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, apple, "子Modelが削除");
-            apple.AssertCallback(ChangedModelHierarchyType.ParentRemove, root, "子Modelが削除");
-            orange.AssertCallback((ChangedModelHierarchyType)(-1), null, "子Modelが削除");
-            grape.AssertCallback((ChangedModelHierarchyType)(-1), null, "子Modelが削除");
+            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, root, new Model[] { apple }, "子Modelが削除");
+            apple.AssertCallback(ChangedModelHierarchyType.ParentChange, apple, new Model[] { root, null }, "子Modelが削除");
+            orange.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "子Modelが削除");
+            grape.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "子Modelが削除");
 
             // Test. 孫Modelが削除
             // root
@@ -284,10 +325,10 @@ namespace Hinode.Tests.MVC
 
             grape.Parent = null;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, grape, "孫Modelが削除");
-            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, "孫Modelが削除");
-            orange.AssertCallback(ChangedModelHierarchyType.ChildRemove, grape, "孫Modelが削除");
-            grape.AssertCallback(ChangedModelHierarchyType.ParentRemove, orange, "孫Modelが削除");
+            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, orange, new Model[] { grape }, "孫Modelが削除");
+            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "孫Modelが削除");
+            orange.AssertCallback(ChangedModelHierarchyType.ChildRemove, orange, new Model[] { grape }, "孫Modelが削除");
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, grape, new Model[] { orange, null }, "孫Modelが削除");
 
             // Test. 孫を持つ子Modelが削除
             // root
@@ -306,10 +347,10 @@ namespace Hinode.Tests.MVC
 
             orange.Parent = null;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, orange, "孫を持つ子Modelが削除");
-            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, "孫を持つ子Modelが削除");
-            orange.AssertCallback(ChangedModelHierarchyType.ParentRemove, root, "孫を持つ子Modelが削除");
-            grape.AssertCallback(ChangedModelHierarchyType.ParentRemove, root, "孫を持つ子Modelが削除");
+            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, root, new Model[] { orange }, "孫を持つ子Modelが削除");
+            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "孫を持つ子Modelが削除");
+            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, null }, "孫を持つ子Modelが削除"); ; ;
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, null }, "孫を持つ子Modelが削除");
 
             // Test. 孫を持つ子Modelが別の親に移動
             // root
@@ -332,11 +373,59 @@ namespace Hinode.Tests.MVC
             var root2 = new OnChangedHierarchyTestModel() { Name = "root2" };
             orange.Parent = root2;
 
-            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, orange, "孫を持つ子Modelが別の親に移動");
-            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, "孫を持つ子Modelが別の親に移動");
-            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, root, "孫を持つ子Modelが別の親に移動");
-            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, root, "孫を持つ子Modelが別の親に移動");
-            root2.AssertCallback(ChangedModelHierarchyType.ChildAdd, orange, "孫を持つ子Modelが別の親に移動");
+            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, root, new Model[] { orange }, "孫を持つ子Modelが別の親に移動");
+            apple.AssertCallback((ChangedModelHierarchyType)(-1), null, null, "孫を持つ子Modelが別の親に移動");
+            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, root2 }, "孫を持つ子Modelが別の親に移動");
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, root2 }, "孫を持つ子Modelが別の親に移動");
+            root2.AssertCallback(ChangedModelHierarchyType.ChildAdd, root2, new Model[] { orange }, "孫を持つ子Modelが別の親に移動");
+
+            //Test. 複数の子を同時追加
+            // root
+            //   - apple <- Add
+            //   - orange <- Add
+            //     - grape
+            // 以下のイベントの発生を想定
+            //  - rootにてChildAdd apple,orangeでイベント発生
+            //  - appleにてParentChange null,rootでイベント発生
+            //  - orangeにてParentChange null,rootでイベント発生
+            //  - grapeにてParentChange null,rootでイベント発生
+            apple.Parent = null;
+            orange.Parent = null;
+            root.Reset();
+            apple.Reset();
+            orange.Reset();
+            grape.Reset();
+
+            root.AddChildren(apple, orange);
+
+            root.AssertCallback(ChangedModelHierarchyType.ChildAdd, root, new Model[] { apple, orange }, "複数の子Modelを同時追加");
+            apple.AssertCallback(ChangedModelHierarchyType.ParentChange, apple, new Model[] { null, root }, "複数の子Modelを同時追加");
+            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { null, root }, "複数の子Modelを同時追加");
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { null, root }, "複数の子Modelを同時追加");
+
+            //Test. 複数の子を同時削除
+            // root
+            //   - apple <- Remove
+            //   - orange <- Remove
+            //     - grape
+            // 以下のイベントの発生を想定
+            //  - rootにてChildRemove apple,orangeでイベント発生
+            //  - appleにてParentChange root,nullでイベント発生
+            //  - orangeにてParentChange root,nullでイベント発生
+            //  - grapeにてParentChange root,nullでイベント発生
+            apple.Parent = root;
+            orange.Parent = root;
+            root.Reset();
+            apple.Reset();
+            orange.Reset();
+            grape.Reset();
+
+            root.RemoveChildren(apple, orange);
+
+            root.AssertCallback(ChangedModelHierarchyType.ChildRemove, root, new Model[] { apple, orange }, "複数の子Modelを同時削除");
+            apple.AssertCallback(ChangedModelHierarchyType.ParentChange, apple, new Model[] { root, null }, "複数の子Modelを同時削除");
+            orange.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, null }, "複数の子Modelを同時削除");
+            grape.AssertCallback(ChangedModelHierarchyType.ParentChange, orange, new Model[] { root, null }, "複数の子Modelを同時削除");
         }
 
         [Test]
@@ -421,9 +510,13 @@ namespace Hinode.Tests.MVC
 
             root.AddChildren(apple, grape, null);
             AssertionUtils.AssertEnumerable(root.Children, new Model[] { apple, grape }, "nullを追加しようとした時は、それを除外してください。");
+            Assert.AreSame(root, apple.Parent);
+            Assert.AreSame(root, grape.Parent);
 
             root.RemoveChildren(apple, grape, null);
             AssertionUtils.AssertEnumerable(root.Children, new Model[] { }, "nullを削除しようとした時は、それを除外してください。");
+            Assert.AreSame(null, apple.Parent);
+            Assert.AreSame(null, grape.Parent);
         }
 
         [Test]
@@ -437,6 +530,8 @@ namespace Hinode.Tests.MVC
 
             root.ClearChildren();
             AssertionUtils.AssertEnumerable(root.Children, new Model[] { }, "");
+            Assert.AreSame(null, apple.Parent);
+            Assert.AreSame(null, grape.Parent);
         }
 
         [Test]
@@ -933,42 +1028,6 @@ namespace Hinode.Tests.MVC
                 Assert.AreNotEqual(-1, index, $"don't found child(path={path})... msg:{message}");
                 correctList.RemoveAt(index);
             }
-        }
-
-        [Test]
-        public void UseBindInstanceMapPasses()
-        {
-            var root = new Model() { Name = "root" };
-            var apple = new Model() { Name = "apple" };
-            var grape = new Model() { Name = "grape" };
-            root.AddChildren(apple, grape);
-            var orange = new Model() { Name = "orange" };
-            grape.AddChildren(orange);
-
-            //初期状態だとNullが設定されるようにしている
-            foreach (var m in root.GetHierarchyEnumerable())
-            {
-                Assert.IsNull(m.UseBindInstanceMap);
-            }
-
-            root.UseBindInstanceMap = new ModelViewBinderInstanceMap(new ModelViewBinderMap());
-            Assert.AreSame(root.UseBindInstanceMap, root.UseBindInstanceMap);
-            Assert.AreSame(root.UseBindInstanceMap, apple.UseBindInstanceMap);
-            Assert.AreSame(root.UseBindInstanceMap, grape.UseBindInstanceMap);
-            Assert.AreSame(root.UseBindInstanceMap, orange.UseBindInstanceMap);
-
-            //最も近い親のUseBindInstanceMapを使用するようにしてください
-            grape.UseBindInstanceMap = new ModelViewBinderInstanceMap(new ModelViewBinderMap());
-            Assert.AreSame(root.UseBindInstanceMap, root.UseBindInstanceMap);
-            Assert.AreSame(root.UseBindInstanceMap, apple.UseBindInstanceMap);
-            Assert.AreSame(grape.UseBindInstanceMap, grape.UseBindInstanceMap);
-            Assert.AreSame(grape.UseBindInstanceMap, orange.UseBindInstanceMap);
-        }
-
-        [Test, Description("Model階層の変更に合わせて自動的にViewObjectを生成・削除を行うかどうかのテスト")]
-        public void AutoAddRemoveViewObjectsPasses()
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

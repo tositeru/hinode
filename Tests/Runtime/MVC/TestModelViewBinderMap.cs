@@ -18,6 +18,21 @@ namespace Hinode.Tests.MVC
             public float FloatValue { get; set; }
         }
 
+        /// <summary>
+        /// 何もしないViewオブジェクト
+        /// </summary>
+        class EmptyViewObjClass : IViewObject
+        {
+            public void Dispose() { }
+
+            public class Binder : IModelViewParamBinder
+            {
+                public void Update(Model model, IViewObject viewObj)
+                {
+                }
+            }
+        }
+
         class IntViewObjClass : IViewObject
         {
             public int IntValue { get; set; }
@@ -132,6 +147,12 @@ namespace Hinode.Tests.MVC
 
                 {//BindInstanceMap#Removeのテスト
                     bindInstanceMap.Remove(appleBindInstance.Model, orangeBindInstance.Model);
+                    Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
+                }
+
+                {//BindInstanceMap#ClearBindInstancesのテスト
+                    bindInstanceMap.Add(apple, orange);
+                    bindInstanceMap.ClearBindInstances();
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
             }
@@ -286,5 +307,137 @@ namespace Hinode.Tests.MVC
             }
         }
 
+        [Test, Description("Modelの変更に合わせて、自動的にバインドを行う機能のテスト")]
+        public void AutoBindPasses()
+        {
+            var allBinder = new ModelViewBinder("*",
+                    ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+
+            var binderMap = new ModelViewBinderMap(allBinder);
+            var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+            Assert.IsFalse(bindInstanceMap.EnableAutoBind);
+
+            var root = new Model() { Name = "root" };
+            var apple = new Model() { Name = "apple" };
+            var orange = new Model() { Name = "orange" };
+            var grape = new Model() { Name = "grape" };
+
+            {//自動バインドのルートモデルの設定のテスト
+                //RootModelの設定
+                // root <- set to RootModel
+                bindInstanceMap.RootModel = root;
+                Assert.IsTrue(bindInstanceMap.EnableAutoBind, "ModelViewBinderInstaneMap#RootModelを設定した時はEnableAutoBindはtrueになるようにしてください。");
+                var errorMessage = "ModelViewBinderInstaneMap#RootModelを設定した時はバインドも行うようにしてください。";
+                Assert.AreEqual(1, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(root), errorMessage);
+
+                //RootModelをnullにした時
+                // root <- unset to RootModel
+                bindInstanceMap.RootModel = null;
+                Assert.IsFalse(bindInstanceMap.EnableAutoBind, "ModelViewBinderInstaneMap#RootModelをnullにした時はEnableAutoBindはfalseになるようにしてください。");
+                errorMessage = "ModelViewBinderInstaneMap#RootModelをnullにした時は既存のバインドを全て削除してください。";
+                Assert.AreEqual(0, bindInstanceMap.BindInstances.Count, errorMessage);
+
+                //子を持つModelをRootModelにした時
+                // root <- set to RootModel
+                //   - apple <- Auto Add
+                //     - orange <- Auto Add
+                apple.AddChildren(orange);
+                root.AddChildren(apple);
+                bindInstanceMap.RootModel = root;
+                Assert.IsTrue(bindInstanceMap.EnableAutoBind, "ModelViewBinderInstaneMap#RootModelを設定した時はEnableAutoBindはtrueになるようにしてください。");
+                errorMessage = "子を持つModelをModelViewBinderInstaneMap#RootModelに設定した時はバインドも行うようにしてください。";
+                Assert.AreEqual(3, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(root), errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(orange), errorMessage);
+
+                bindInstanceMap.RootModel = null;
+                root.Parent = null;
+                apple.Parent = null;
+                orange.Parent = null;
+                grape.Parent = null;
+            }
+
+            {//自動生成のテスト
+                // 子Modelの追加
+                //   Appleをrootの子に追加
+                // root(RootModel)
+                //   - apple <- Add
+                bindInstanceMap.RootModel = root;
+                var count = bindInstanceMap.BindInstances.Count;
+                var errorMessage = "子を追加した時は、それに対してのバインドを自動的に追加してください";
+                root.AddChildren(apple);
+                Assert.AreEqual(count+1, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
+
+                // 親子構造を持つModelの追加
+                //   grapeを子に持つorangeをrootの子に追加
+                // root(RootModel)
+                //   - apple
+                //   - orange <- Add
+                //     - grape <- Auto Add
+                count = bindInstanceMap.BindInstances.Count;
+                errorMessage = "親子構造を持つModelを追加した時は、その全てのModelに対してバインドを行うようにしてください";
+                grape.Parent = orange;
+                orange.Parent = root;
+                Assert.AreEqual(count + 2, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(orange), $"Model(orange)がバインドに追加されていません。{errorMessage}");
+                Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(grape), $"Model(grape)がバインドに追加されていません。{errorMessage}");
+            }
+
+            {//自動削除のテスト
+                // 子Modelの削除
+                // BindInstanceMapからappleを削除する
+                // root(RootModel)
+                //   - apple <- Remove
+                //   - orange
+                //     - grape
+                apple.Parent = root;
+                orange.Parent = root;
+                grape.Parent = orange;
+                bindInstanceMap.RootModel = root;
+
+                var count = bindInstanceMap.BindInstances.Count;
+                var errorMessage = "子が削除された時は、それに関連するバインドも削除してください。";
+
+                root.RemoveChildren(apple);
+                Assert.AreEqual(count-1, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
+
+                //孫を持つModelの削除
+                // BindInstanceMapからorangeを削除する
+                // root(RootModel)
+                //   - apple
+                //   - orange <- Remove
+                //     - grape <- Auto Remove
+                apple.Parent = root;
+                count = bindInstanceMap.BindInstances.Count;
+                errorMessage = "孫を持つModelを削除した時はそのModel階層以下のModel全てのバインドも削除してください";
+                orange.Parent = null;
+                Assert.AreEqual(count - 2, bindInstanceMap.BindInstances.Count, $"想定した個数のModelが削除されていません。{errorMessage}");
+                Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(orange), $"Model(orange)のバインドが削除されていません。{errorMessage}");
+                Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(grape), $"Model(grape)のバインドが削除されていません。{errorMessage}");
+
+                orange.Parent = root;//後のテストのために元に戻す
+            }
+
+            {//ルートModelに親を追加した時のテスト
+                // ルートModelに親を追加
+                // - rootParent <- Add
+                //   - root(RootModel)
+                //     - apple
+                //     - orange
+                //       - grape
+                var count = bindInstanceMap.BindInstances.Count;
+                var errorMessage = "ルートModelに親を設定した時はその親に対してはバインドを行いません。";
+                var saveBindInstances = bindInstanceMap.BindInstances.ToArray();
+                var rootParent = new Model() { Name = "rootParent" };
+                root.Parent = rootParent;
+                Assert.AreEqual(count, bindInstanceMap.BindInstances.Count, errorMessage);
+                AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, saveBindInstances, errorMessage);
+            }
+            //Name,LogicalID,StylingIDの変更に合わせたバインド
+        }
     }
 }

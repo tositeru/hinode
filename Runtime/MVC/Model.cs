@@ -13,10 +13,14 @@ namespace Hinode
 
     /// <summary>
     /// Modelの階層が変更された時のイベント
+    /// typeによってmodelsに渡されるものが代わります。
+    /// - ChildAdd     追加された全Model
+    /// - ChildRemove  削除された全Model
+    /// - ParentSet    以前の親と設定された親
     /// </summary>
     /// <param name="type"></param>
     /// <param name="model"></param>
-    public delegate void OnChangedModelHierarchyCallback(ChangedModelHierarchyType type, Model model);
+    public delegate void OnChangedModelHierarchyCallback(ChangedModelHierarchyType type, Model target, IEnumerable<Model> models);
 
     /// <summary>
     /// Modelの階層が変更された時の種類
@@ -25,8 +29,6 @@ namespace Hinode
     {
         ChildAdd,
         ChildRemove,
-        ParentSet,
-        ParentRemove,
         ParentChange,
     }
 
@@ -89,12 +91,26 @@ namespace Hinode
             {
                 var isSame = _name == value;
                 _name = value;
-                if (!isSame) _onChangedIdentitiesCallback.Instance?.Invoke(this);
+                if (!isSame) InvokeChangedIdentities(this);
             }
         }
 
-        //public string Tag { get; set; }
-        //public string LayerName { get; set; }
+        /// <summary>
+        /// Model階層を表すパスを返す
+        /// </summary>
+        public string GetPath()
+        {
+            var path = this.Name;
+            var model = this.Parent;
+            while (model != null)
+            {
+                path = model.Name + "/" + path;
+                model = model.Parent;
+            }
+            return path;
+        }
+
+        #region Logical && Styling ID
 
         public IReadOnlyCollection<string> LogicalID
         {
@@ -139,86 +155,62 @@ namespace Hinode
         {
             bool doCallEvent = false;
             foreach (var id in idList
-                .Where(_i => !list.Contains(_i)))
+                .Where(_i => !list.Contains(_i) && _i != ""))
             {
                 list.Add(id);
                 doCallEvent = true;
             }
-            if (doCallEvent) _onChangedIdentitiesCallback.Instance?.Invoke(this);
+            if (doCallEvent) InvokeChangedIdentities(this);
         }
 
         void RemoveIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
             foreach (var id in idList
-                .Where(_i => list.Contains(_i)))
+                .Where(_i => list.Contains(_i) && _i != ""))
             {
                 list.Remove(id);
                 doCallEvent = true;
             }
-            if(doCallEvent) _onChangedIdentitiesCallback.Instance?.Invoke(this);
+            if (doCallEvent) InvokeChangedIdentities(this);
         }
+
+        void InvokeChangedIdentities(Model model)
+        {
+            _onChangedIdentitiesCallback.Instance?.Invoke(model);
+
+            if(Parent != null)
+            {
+                Parent.InvokeChangedIdentities(model);
+            }
+        }
+
+        #endregion
+
+        #region Parent && Children
 
         public Model Parent
         {
             get => _parent;
             set
             {
+                if (_parent == value) return;
+
                 var prevParent = _parent;
-                if(_parent != null)
-                {
-                    _parent.RemoveChildren(this);
-                }
                 _parent = value;
+
+                if (prevParent != null)
+                {
+                    prevParent.RemoveChildren(this);
+                }
                 if(_parent != null)
                 {
                     _parent.AddChildren(this);
                 }
 
-                if(prevParent == null && _parent != null)
-                {
-                    InvokeChangedParentHierarchy(ChangedModelHierarchyType.ParentSet, _parent);
-                }
-                else if (prevParent != null && _parent != null)
-                {
-                    InvokeChangedParentHierarchy(ChangedModelHierarchyType.ParentChange, prevParent);
-                }
-                else if (prevParent != null && _parent == null)
-                {
-                    InvokeChangedParentHierarchy(ChangedModelHierarchyType.ParentRemove, prevParent);
-                }
+                InvokeChangedParentHierarchy(ChangedModelHierarchyType.ParentChange, this, new Model[] { prevParent, _parent });
             }
         }
-
-        void InvokeChangedParentHierarchy(ChangedModelHierarchyType typeOfParent, Model model)
-        {
-            Assert.IsTrue(ChangedModelHierarchyType.ParentChange == typeOfParent
-                || ChangedModelHierarchyType.ParentRemove == typeOfParent
-                || ChangedModelHierarchyType.ParentSet == typeOfParent,
-                $"親に対する変更のみ実行できるようにしています... type={typeOfParent}");
-
-            _onChangedHierarchyCallback.Instance?.Invoke(typeOfParent, model);
-
-            foreach(var child in Children)
-            {
-                child.InvokeChangedParentHierarchy(typeOfParent, model);
-            }
-        }
-
-        void InvokeChangedChildHierarchy(ChangedModelHierarchyType typeOfChild, Model model)
-        {
-            Assert.IsTrue(ChangedModelHierarchyType.ChildAdd == typeOfChild
-                || ChangedModelHierarchyType.ChildRemove == typeOfChild,
-                $"子に対する変更のみ実行できるようにしています... type={typeOfChild}");
-
-            _onChangedHierarchyCallback.Instance?.Invoke(typeOfChild, model);
-
-            if(Parent != null)
-            {
-                Parent.InvokeChangedChildHierarchy(typeOfChild, model);
-            }
-        }
-
 
         public IEnumerable<Model> Children
         {
@@ -232,37 +224,37 @@ namespace Hinode
 
         public int ChildCount { get => _children.Count(); }
 
-        public void AddChildren(params Model[] children) => AddChildren(children.AsEnumerable());
-        public void AddChildren(IEnumerable<Model> children)
+        public void AddChildren(params Model[] models) => AddChildren(models.AsEnumerable());
+        public void AddChildren(IEnumerable<Model> models)
         {
-            children = children.Where(_c => _c != null);
-            foreach(var child in children
-                .Where(_c => _c.Parent != this))
-            {
-                child.Parent = this;
-            }
-
-            foreach(var child in children
-                .Where(_c => !_children.Contains(_c)))
+            var addToListModels = models.Where(_c => _c != null && !_children.Contains(_c));
+            bool doCallEvent = addToListModels.Any();
+            foreach (var child in addToListModels)
             {
                 _children.Add(child);
+                if(child.Parent != this) child.Parent = this;
+            }
 
-                InvokeChangedChildHierarchy(ChangedModelHierarchyType.ChildAdd, child);
+            if(doCallEvent)
+            {
+                InvokeChangedChildHierarchy(ChangedModelHierarchyType.ChildAdd, this, _children.Where(_c => models.Contains(_c)));
             }
         }
 
-        public void RemoveChildren(params Model[] children)
-            => RemoveChildren(children.AsEnumerable());
-        public void RemoveChildren(IEnumerable<Model> children)
+        public void RemoveChildren(params Model[] models)
+            => RemoveChildren(models.AsEnumerable());
+        public void RemoveChildren(IEnumerable<Model> models)
         {
-            children = children.Where(_c => _c != null);
-            foreach(var child in children
-                .Where(_c => _c.Parent == this && _children.Contains(_c)))
+            var removeFromListModels = models.Where(_c => _c != null && _children.Contains(_c));
+            var doCallEvent = removeFromListModels.Any();
+            foreach (var child in removeFromListModels)
             {
                 _children.Remove(child);
-                child.Parent = null;
-
-                InvokeChangedChildHierarchy(ChangedModelHierarchyType.ChildRemove, child);
+                if(child.Parent == this) child.Parent = null;
+            }
+            if(doCallEvent)
+            {
+                InvokeChangedChildHierarchy(ChangedModelHierarchyType.ChildRemove, this, models.Where(_c => !_children.Contains(_c)));
             }
         }
 
@@ -270,22 +262,32 @@ namespace Hinode
             => RemoveChildren(_children.ToArray());
 
 
-        ModelViewBinderInstanceMap _useBindInstanceMap;
-
-        public ModelViewBinderInstanceMap UseBindInstanceMap
+        void InvokeChangedParentHierarchy(ChangedModelHierarchyType typeOfParent, Model target, IEnumerable<Model> models)
         {
-            get
+            Assert.IsTrue(ChangedModelHierarchyType.ParentChange == typeOfParent,
+                $"親に対する変更のみ実行できるようにしています... type={typeOfParent}");
+
+            _onChangedHierarchyCallback.Instance?.Invoke(typeOfParent, target, models);
+
+            foreach (var child in Children)
             {
-                return  (_useBindInstanceMap != null)
-                    ? _useBindInstanceMap
-                    : Parent?.UseBindInstanceMap ?? null;
-            }
-            set
-            {
-                _useBindInstanceMap = value;
+                child.InvokeChangedParentHierarchy(typeOfParent, target, models);
             }
         }
 
+        void InvokeChangedChildHierarchy(ChangedModelHierarchyType typeOfChild, Model target, IEnumerable<Model> models)
+        {
+            Assert.IsTrue(ChangedModelHierarchyType.ChildAdd == typeOfChild
+                || ChangedModelHierarchyType.ChildRemove == typeOfChild,
+                $"子に対する変更のみ実行できるようにしています... type={typeOfChild}");
+
+            _onChangedHierarchyCallback.Instance?.Invoke(typeOfChild, target, models);
+
+            if (Parent != null)
+            {
+                Parent.InvokeChangedChildHierarchy(typeOfChild, target, models);
+            }
+        }
 
         /// <summary>
         /// ルートModelを返します。
@@ -313,6 +315,20 @@ namespace Hinode
             return Children.ElementAt(index);
         }
 
+        /// <summary>
+        /// 親モデルの子供の中の添字を返します
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public int GetSiblingIndex()
+        {
+            if (null == Parent) return -1;
+            return Parent._children.IndexOf(this);
+        }
+
+        #endregion
+
+        #region Query & QueryPath
         /// <summary>
         /// クエリとマッチしているか調べる関数
         /// 親子階層をまたいでマッチしているかどうかを調べたい時はDoMatchQueryPath()を使用してください。
@@ -418,33 +434,6 @@ namespace Hinode
             {
                 return GetEnumerator();
             }
-        }
-
-
-        /// <summary>
-        /// 親モデルの子供の中の添字を返します
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public int GetSiblingIndex()
-        {
-            if (null == Parent) return -1;
-            return Parent._children.IndexOf(this);
-        }
-
-        /// <summary>
-        /// Model階層を表すパスを返す
-        /// </summary>
-        public string GetPath()
-        {
-            var path = this.Name;
-            var model = this.Parent;
-            while (model != null)
-            {
-                path = model.Name + "/" + path;
-                model = model.Parent;
-            }
-            return path;
         }
 
         /// <summary>
@@ -761,6 +750,7 @@ namespace Hinode
                 }
             }
         }
+        #endregion
     }
 
     /// <summary>
