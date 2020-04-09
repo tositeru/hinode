@@ -37,7 +37,8 @@ namespace Hinode
     /// </summary>
     public interface IViewObject : System.IDisposable
     {
-
+        Model UseModel { get; }
+        void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap);
     }
 
     /// <summary>
@@ -74,7 +75,7 @@ namespace Hinode
         public int BindInfoCount { get => _bindInfoDict.Count; }
 
         /// <summary>
-        /// ModelとViewを関連づけるため情報クラス
+        /// ModelとViewを関連づけるための情報を持つクラス
         /// </summary>
         public interface IBindInfo
         {
@@ -82,13 +83,6 @@ namespace Hinode
             /// 使用するIModelViewParamBinder
             /// </summary>
             IModelViewParamBinder ParamBinder { get; }
-
-            /// <summary>
-            /// このBindInfoが対応しているViewオブジェクトの型かどうか？
-            /// </summary>
-            /// <param name="type"></param>
-            /// <returns></returns>
-            bool IsValidViewObjType(System.Type type);
 
             /// <summary>
             /// このBindInfoが対応しているViewオブジェクトを作成する
@@ -102,8 +96,8 @@ namespace Hinode
         /// </summary>
         /// <param name="bindInfoCreator"></param>
         /// <param name="elements"></param>
-        /// <returns></returns>
-        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(System.Func<System.Type, IModelViewParamBinder, IBindInfo> bindInfoCreator, params (System.Type, IModelViewParamBinder)[] elements)
+        /// <returns>ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</returns>
+        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(System.Func<System.Type, IModelViewParamBinder, IBindInfo> bindInfoCreator, params (System.Type viewObjType, IModelViewParamBinder)[] elements)
         {
             var dict = new Dictionary<System.Type, IBindInfo>();
             foreach(var e in elements)
@@ -117,17 +111,16 @@ namespace Hinode
         /// BindInfoの辞書を簡単に作成するための関数
         /// こちらの関数はDefaultBindInfoが辞書の値に設定されます。
         /// </summary>
-        /// <param name="bindInfoCreator"></param>
         /// <param name="elements"></param>
-        /// <returns></returns>
-        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(params (System.Type, IModelViewParamBinder)[] elements)
+        /// <returns>ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</returns>
+        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(params (System.Type viewObjType, IModelViewParamBinder)[] elements)
             => CreateBindInfoDict((viewObjType, paramBinder) => new DefaultBindInfo(paramBinder, viewObjType), elements);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="queryPath">Modelのクエリパス</param>
-        /// <param name="bindInfoList">ModelとViewを関連づけるための情報の辞書</param>
+        /// <param name="bindInfoDict">ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</param>
         public ModelViewBinder(string queryPath, IReadOnlyDictionary<System.Type, IBindInfo> bindInfoDict)
         {
             QueryPath = queryPath;
@@ -156,7 +149,7 @@ namespace Hinode
         /// </summary>
         /// <param name="viewObj"></param>
         /// <returns></returns>
-        public IModelViewParamBinder GetBinder(IViewObject viewObj)
+        public IModelViewParamBinder GetParamBinder(IViewObject viewObj)
         {
             var type = viewObj.GetType();
             if (_bindInfoDict.ContainsKey(type))
@@ -180,13 +173,15 @@ namespace Hinode
         }
 
         /// <summary>
-        /// ModelとViewを実際に関連付けしたインスタンスを作成する
+        /// ModelとViewを実際に関連付けしたインスタンスを作成します。
+        ///
+        /// Modelの状態が変更された結果クエリパスと一致するようになるかもしれないので、生成自体は行うようにしています。
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public ModelViewBinderInstance CreateBindInstance(Model model)
+        public ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
-            return new ModelViewBinderInstance(this, model);
+            return new ModelViewBinderInstance(this, model, binderInstanceMap);
         }
 
         /// <summary>
@@ -194,11 +189,16 @@ namespace Hinode
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public IViewObject[] CreateViewObjects(Model model)
+        public IViewObject[] CreateViewObjects(Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
             Assert.IsTrue(DoMatch(model));
 
-            return BindInfos.Select(_i => _i.CreateViewObject()).ToArray();
+            return BindInfos.Select(_i =>
+            {
+                var obj = _i.CreateViewObject();
+                obj.OnCreated(model, binderInstanceMap);
+                return obj;
+            }).ToArray();
         }
     }
 
@@ -212,19 +212,19 @@ namespace Hinode
         public Model Model { get; }
         public IViewObject[] ViewObjects { get; }
 
-        public ModelViewBinderInstance(ModelViewBinder binder, Model model)
+        public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
             Binder = binder;
             Model = model;
-            ViewObjects = binder.CreateViewObjects(Model);
+            ViewObjects = binder.CreateViewObjects(Model, binderInstanceMap);
         }
 
         public void UpdateViewObjects()
         {
             foreach (var viewObj in ViewObjects)
             {
-                var binder = Binder.GetBinder(viewObj);
-                binder.Update(Model, viewObj);
+                var paramBinder = Binder.GetParamBinder(viewObj);
+                paramBinder.Update(Model, viewObj);
             }
         }
     }
@@ -260,11 +260,6 @@ namespace Hinode
         {
             var cstor = ViewObjType.GetConstructor(new System.Type[]{});
             return cstor.Invoke(null) as IViewObject;
-        }
-
-        public bool IsValidViewObjType(System.Type type)
-        {
-            return ViewObjType.Equals(type);
         }
         #endregion
     }

@@ -23,6 +23,13 @@ namespace Hinode.Tests.MVC
         /// </summary>
         class EmptyViewObjClass : IViewObject
         {
+            public Model UseModel { get; set; }
+
+            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            {
+                UseModel = targetModel;
+            }
+
             public void Dispose() { }
 
             public class Binder : IModelViewParamBinder
@@ -36,6 +43,14 @@ namespace Hinode.Tests.MVC
         class IntViewObjClass : IViewObject
         {
             public int IntValue { get; set; }
+
+            public Model UseModel { get; set; }
+
+            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            {
+                UseModel = targetModel;
+            }
+
             public void Dispose() { }
 
             public class Binder : IModelViewParamBinder
@@ -52,6 +67,14 @@ namespace Hinode.Tests.MVC
         class FloatViewObjClass : IViewObject
         {
             public float FloatValue { get; set; }
+
+            public Model UseModel { get; set; }
+
+            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            {
+                UseModel = targetModel;
+            }
+
             public void Dispose() { }
 
             public class Binder : IModelViewParamBinder
@@ -90,12 +113,12 @@ namespace Hinode.Tests.MVC
             }
 
             {//ModelViewBindMap#CreateBindInstanceのテスト
-                var appleBindInstance = binderMap.CreateBindInstance(apple);
-                var orangeBindInstance = binderMap.CreateBindInstance(orange);
+                var appleBindInstance = binderMap.CreateBindInstance(apple, null);
+                var orangeBindInstance = binderMap.CreateBindInstance(orange, null);
                 Assert.IsNotNull(appleBindInstance);
                 Assert.IsNotNull(orangeBindInstance);
-                Assert.IsNull(binderMap.CreateBindInstance(root));
-                Assert.IsNull(binderMap.CreateBindInstance(grape));
+                Assert.IsNull(binderMap.CreateBindInstance(root, null));
+                Assert.IsNull(binderMap.CreateBindInstance(grape, null));
 
                 Assert.AreSame(apple, appleBindInstance.Model);
                 Assert.AreSame(appleBinder, appleBindInstance.Binder);
@@ -125,6 +148,14 @@ namespace Hinode.Tests.MVC
                     //既に追加されていたら追加しない
                     bindInstanceMap.Add(false, apple, orange);
                     Assert.AreEqual(2, bindInstanceMap.BindInstances.Count(), "同じModelが追加できないようにしてください");
+                }
+
+                {//マッチしないModelを追加した時のテスト
+                    var empty = new Model() { Name = "__empty" };
+                    Assert.DoesNotThrow(() => {
+                        bindInstanceMap.Add(empty);
+                        Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(empty), "マッチしないModelを追加した時はModelViewBinderInstanceを生成しないようにしてください");
+                    }, "マッチしないModelを追加した時でもModelViewBinderInstanceMapから例外を発生させないようにしてください。");
                 }
 
                 var appleBindInstance = bindInstanceMap[apple];
@@ -596,5 +627,90 @@ namespace Hinode.Tests.MVC
 
         }
 
+
+        /// <summary>
+        /// 何もしないViewオブジェクト
+        /// </summary>
+        class TestOnCreatedViewObjClass : IViewObject
+        {
+            public ModelViewBinderInstanceMap UsedBinderInstanceMap { get; set; }
+            public Model UseModel { get; set; }
+
+            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            {
+                UseModel = targetModel;
+                UsedBinderInstanceMap = binderInstanceMap;
+            }
+
+            public void Dispose() { }
+
+            public class ParamBinder : IModelViewParamBinder
+            {
+                public void Update(Model model, IViewObject viewObj)
+                {
+                }
+            }
+        }
+
+        [Test, Description("IViewObject#OnCreatedのテスト")]
+        public void IViewObjectOnCreatedPasses()
+        {
+            var allBinder = new ModelViewBinder("*",
+                ModelViewBinder.CreateBindInfoDict((typeof(TestOnCreatedViewObjClass), new TestOnCreatedViewObjClass.ParamBinder())));
+
+            {//ModeViewBinder#CreateViewObjectsのテスト
+                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+                var root = new Model() { Name = "root" };
+
+                var viewObjs = allBinder.CreateViewObjects(root, binderInstanceMap);
+                Assert.AreEqual(1, viewObjs.Length);
+                var onCreatedViewObj = viewObjs[0] as TestOnCreatedViewObjClass;
+                Assert.AreSame(root, onCreatedViewObj.UseModel,
+                    $"ModeViewBinder#CreateViewObjectsに渡したModelがIViewObbject#OnCreatedに渡されるようにしてください");
+                Assert.AreSame(binderInstanceMap, onCreatedViewObj.UsedBinderInstanceMap,
+                    $"ModeViewBinder#CreateViewObjectsに渡したModelViewBinderInstanceMapがIViewObbject#OnCreatedに渡されるようにしてください");
+
+                //ModelViewBinderInstanceMapを指定しなかった時のテスト
+                viewObjs = allBinder.CreateViewObjects(root, null);
+                Assert.AreEqual(1, viewObjs.Length);
+                onCreatedViewObj = viewObjs[0] as TestOnCreatedViewObjClass;
+                Assert.AreSame(root, onCreatedViewObj.UseModel,
+                    $"ModeViewBinder#CreateViewObjectsに渡したModelがIViewObbject#OnCreatedに渡されるようにしてください");
+                Assert.AreSame(null, onCreatedViewObj.UsedBinderInstanceMap,
+                    $"ModeViewBinder#CreateViewObjectsに渡したModelViewBinderInstanceMapがIViewObbject#OnCreatedに渡されるようにしてください");
+            }
+
+            {//ModelViewBinderInstanceMap#Addのテスト
+                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+                var root = new Model() { Name = "root" };
+
+                var bindInstance = binderMap.CreateBindInstance(root, binderInstanceMap);
+
+                Assert.AreEqual(1, bindInstance.ViewObjects.Length);
+                var onCreatedViewObj = bindInstance.ViewObjects[0] as TestOnCreatedViewObjClass;
+                Assert.AreSame(root, onCreatedViewObj.UseModel,
+                    $"ModelViewBinderMap#CreateBindInstanceに渡したModelがIViewObbject#OnCreatedに渡されるようにしてください");
+                Assert.AreSame(binderInstanceMap, onCreatedViewObj.UsedBinderInstanceMap,
+                    $"ModelViewBinderMap#CreateBindInstanceに渡したModelViewBinderInstanceMapがIViewObbject#OnCreatedに渡されるようにしてください");
+            }
+
+            {//ModelViewBinderInstanceMap#Addのテスト
+                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+                var root = new Model() { Name = "root" };
+
+                binderInstanceMap.Add(root);
+                var bindInstance = binderInstanceMap.BindInstances[root];
+
+                Assert.AreEqual(1, bindInstance.ViewObjects.Length);
+                var onCreatedViewObj = bindInstance.ViewObjects[0] as TestOnCreatedViewObjClass;
+                Assert.AreSame(root, onCreatedViewObj.UseModel,
+                    $"ModelViewBinderInstanceMap#Addに渡したModelがIViewObbject#OnCreatedに渡されるようにしてください");
+                Assert.AreSame(binderInstanceMap, onCreatedViewObj.UsedBinderInstanceMap,
+                    $"ModelViewBinderInstanceMap#Addに渡したModelViewBinderInstanceMapがIViewObbject#OnCreatedに渡されるようにしてください");
+            }
+        }
     }
 }

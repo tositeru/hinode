@@ -17,11 +17,23 @@ namespace Hinode
         public SceneObject(string objPath)
         {
             var scene = SceneManager.GetActiveScene();
-            var rootObjName = objPath.Split('/')[0];
-            var root = scene.GetRootGameObjects().First(_obj => _obj.name == rootObjName);
+            var splitPath = objPath.Split('/');
+            Assert.IsTrue(splitPath.Length > 0);
+            var rootObjName = splitPath[0];
+            var root = scene.GetRootGameObjects().FirstOrDefault(_obj => _obj.name == rootObjName);
+            Assert.IsNotNull(root);
 
-            var childObjPath = objPath.Substring(rootObjName.Length+1);
-            var obj = root.transform.Find(childObjPath);
+            Transform obj = null;
+            if(splitPath.Length > 1)
+            {
+                var childObjPath = objPath.Substring(rootObjName.Length+1);
+                obj = root.transform.Find(childObjPath);
+            }
+            else
+            {
+                obj = root.transform;
+            }
+            Assert.IsNotNull(obj);
             Instance = obj.GetComponent<T>();
             Assert.IsNotNull(Instance);
         }
@@ -30,5 +42,12 @@ namespace Hinode
             => Instance.GetComponent<U>();
         public U[] GetComponents<U>() where U : Component
             => Instance.GetComponents<U>();
+
+        public static T GetOrCreate(ref SceneObject<T> target, string objPath)
+        {
+            if (target != null) return target.Instance;
+            target = new SceneObject<T>(objPath);
+            return target.Instance;
+        }
     }
 }

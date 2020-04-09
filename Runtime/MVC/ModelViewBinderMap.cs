@@ -55,7 +55,7 @@ namespace Hinode
             return new ModelViewBinderInstanceMap(this);
         }
 
-        public ModelViewBinderInstance CreateBindInstance(Model model)
+        public ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
             var binder = Binders
                 .Select(_b => (binder: _b, priority: model.GetQueryPathPriority(_b.QueryPath)))
@@ -65,7 +65,7 @@ namespace Hinode
                 .FirstOrDefault();
             if (binder == null) return null;
 
-            return binder.CreateBindInstance(model);
+            return binder.CreateBindInstance(model, binderInstanceMap);
         }
     }
 
@@ -176,9 +176,12 @@ namespace Hinode
             }
             else if(!_bindInstanceDict.ContainsKey(model))
             {
-                var bindInst = BinderMap.CreateBindInstance(model);
-                _bindInstanceDict.Add(model, bindInst);
-                bindInst.UpdateViewObjects();
+                var bindInst = BinderMap.CreateBindInstance(model, this);
+                if(bindInst != null)
+                {
+                    _bindInstanceDict.Add(model, bindInst);
+                    bindInst.UpdateViewObjects();
+                }
             }
         }
 
@@ -216,7 +219,7 @@ namespace Hinode
             else
             {
                 if (!_bindInstanceDict.ContainsKey(model)) return false;
-                var bindInst = BinderMap.CreateBindInstance(model);
+                var bindInst = BinderMap.CreateBindInstance(model, this);
                 _bindInstanceDict[model] = bindInst;
                 bindInst.UpdateViewObjects();
                 return true;
