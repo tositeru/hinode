@@ -206,7 +206,7 @@ namespace Hinode
     /// ModelとViewを関連付けしたもの
     /// <seealso cref="ModelViewBinder"/>
     /// </summary>
-    public class ModelViewBinderInstance
+    public class ModelViewBinderInstance : System.IDisposable
     {
         public ModelViewBinder Binder { get; }
         public Model Model { get; }
@@ -219,6 +219,22 @@ namespace Hinode
             ViewObjects = binder.CreateViewObjects(Model, binderInstanceMap);
         }
 
+        void ModelOnUpdated(Model m)
+        {
+            UpdateViewObjects();
+        }
+
+        public void AttachModelOnUpdated()
+        {
+            Model.OnUpdated.Remove(ModelOnUpdated);
+            Model.OnUpdated.Add(ModelOnUpdated);
+        }
+
+        public void DettachModelOnUpdated()
+        {
+            Model.OnUpdated.Remove(ModelOnUpdated);
+        }
+
         public void UpdateViewObjects()
         {
             foreach (var viewObj in ViewObjects)
@@ -226,6 +242,11 @@ namespace Hinode
                 var paramBinder = Binder.GetParamBinder(viewObj);
                 paramBinder.Update(Model, viewObj);
             }
+        }
+
+        public void Dispose()
+        {
+            Model?.OnUpdated.Remove(ModelOnUpdated);
         }
     }
 

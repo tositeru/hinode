@@ -284,9 +284,25 @@ namespace Hinode.Tests.MVC
                 }
             }
 
-            {//更新は対象外
-                //bindInstanceMap.UpdateViewObjects();
-                //bindInstanceMap.DoDelayOperations();
+            {//更新 Model#OnUpdatedが呼び出されるかどうかでテストしている
+                var viewObj = bindInstanceMap.BindInstances[root].ViewObjects.First() as IntViewObjClass;
+                {//ModelViewBindInstanceMap#UpdateViewObjects()
+                    root.IntValue = 9874;
+                    bindInstanceMap.UpdateViewObjects();
+                    Assert.AreNotEqual(viewObj.IntValue, root.IntValue, $"遅延操作が有効な時は、ModelViewBindInstanceMap#DoDelayOperation()が呼び出されるまで更新処理を実行しないでください。");
+
+                    bindInstanceMap.DoDelayOperations();
+                    Assert.AreEqual(viewObj.IntValue, root.IntValue, $"遅延操作が更新に対応していません。");
+                }
+
+                {//Model#DoneUpdate()
+                    root.IntValue++;
+                    root.DoneUpdate();
+                    Assert.AreNotEqual(viewObj.IntValue, root.IntValue, $"遅延操作が有効な時は、ModelViewBindInstanceMap#DoDelayOperation()が呼び出されるまで更新処理を実行しないでください。");
+
+                    bindInstanceMap.DoDelayOperations();
+                    Assert.AreEqual(viewObj.IntValue, root.IntValue, $"遅延操作が更新に対応していません。");
+                }
             }
 
             {//削除

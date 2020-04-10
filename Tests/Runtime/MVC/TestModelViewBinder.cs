@@ -117,13 +117,63 @@ namespace Hinode.Tests.MVC
                 }
             }
 
-            {//
-                //Modelの状態が変更された結果クエリパスと一致するようになるかもしれないので、生成自体は行うようにしています。
-                Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
-                    var empty = new ModelClass { Name = "empty" };
-                    var bindInstance = binder.CreateBindInstance(empty, null);
-                });
+            {//Model#OnUpdatedと連動しているかテスト
+                var obj = new ModelClass() { Name="apple", Value1 = 456, Value2 = 6.7f };
+                var bindInstance = binder.CreateBindInstance(obj, null);
+                var intViewObj = bindInstance.ViewObjects.FirstOrDefault(_o => _o is IntViewObjClass) as IntViewObjClass;
+                var floatViewObj = bindInstance.ViewObjects.FirstOrDefault(_o => _o is FloatViewObjClass) as FloatViewObjClass;
+
+                {//Model#DoneUpdatedとの連動テスト
+                    obj.DoneUpdate();
+
+                    var errorMessage = "ModelViewBindInstace#AttachModelOnUpdated()を呼び出すまでModel#OnUpdatedと連動しないようにしてください";
+                    Assert.AreNotEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+                    Assert.AreNotEqual(obj.Value2, floatViewObj.FloatValue, errorMessage);
+
+                    errorMessage = "ModelViewBindInstace#AttachModelOnUpdated()を呼び出した後はModel#OnUpdatedと連動するようにしてください";
+                    bindInstance.AttachModelOnUpdated();
+                    obj.DoneUpdate();
+                    Assert.AreEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+                    Assert.AreEqual(obj.Value2, floatViewObj.FloatValue, errorMessage);
+
+                    obj.Value1 = -1234;
+                    obj.DoneUpdate();
+                    Assert.AreEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+
+                    //
+                    errorMessage = $"ModelViewBindInstace#DettachModelOnUpdated()を呼び出した後はModel#OnUpdatedとの連しないようにしてください。";
+                    bindInstance.DettachModelOnUpdated();
+                    obj.Value1 = -678;
+                    obj.DoneUpdate();
+                    Assert.AreNotEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+                }
+
+                {//ModelViewBindInstance#Disposeテスト
+                    bindInstance.Dispose();
+                    obj.Value1 = -48593;
+                    obj.DoneUpdate();
+                    Assert.AreNotEqual(obj.Value1, intViewObj.IntValue, $"ModelViewBindInstance#DisposeのあとはModel#OnUpdatedと連動しないようにしてください。");
+                }
             }
         }
+
+        [Test, Description("QueryPathと一致しない時のテスト")]
+        public void DonotMatchQueryPathFailed()
+        {
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var empry = new ModelClass { Name = "empty" };
+
+            //作成のテスト
+            var bindInfoList = ModelViewBinder.CreateBindInfoDict(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder()));
+            var binder = new ModelViewBinder("apple", bindInfoList);
+
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+                var empty = new ModelClass { Name = "empty" };
+                var bindInstance = binder.CreateBindInstance(empty, null);
+            }, "クエリパスが一致しない時は例外を投げて、生成しないようにしてください");
+        }
+
     }
 }

@@ -125,7 +125,7 @@ namespace Hinode.Tests.MVC
             orangeModelHome.RootModel = orange;
             bananaModelHome.RootModel = banana;
 
-            var errorMessage = "想定した結果ではありません。";
+            //var errorMessage = "想定した結果ではありません。";
             Assert.AreSame(rootModelHome, IModelHome.GetNearestHome(root));
             Assert.AreSame(rootModelHome, IModelHome.GetNearestHome(apple));
             Assert.AreSame(orangeModelHome, IModelHome.GetNearestHome(orange));

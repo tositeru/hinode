@@ -71,6 +71,26 @@ namespace Hinode.Tests.MVC
             }
         }
 
+        [Test, Description("Modelが更新された時のコールバック呼び出しのテスト")]
+        public void OnUpdatedCallbackPasses()
+        {
+            var model = new Model() { Name = "model" };
+
+            var count = 0;
+            OnUpdatedCallback incrementCounter = (m) => {
+                Assert.AreSame(model, m); count++;
+            };
+
+            model.OnUpdated.Add(incrementCounter);
+            model.DoneUpdate();
+
+            Assert.AreEqual(1, count);
+
+            model.OnUpdated.Remove(incrementCounter);
+            model.DoneUpdate();
+            Assert.AreEqual(1, count);
+        }
+
         [Test, Description("Name,LogicalID,StyleIDが変更された時のコールバック呼び出しのテスト")]
         public void OnChangedIdentityCallbackPasses()
         {

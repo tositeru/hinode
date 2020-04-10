@@ -15,8 +15,8 @@ namespace Hinode.Tests.CSharp.Extensions
     {
         class GetEnumerablePassesClass
         {
-            public int intValue;
-            public float floatValue;
+            public int intValue = 0;
+            public float floatValue = 0f;
         }
 
         [Test]

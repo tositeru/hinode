@@ -7,6 +7,12 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
+    /// Modelが更新された時に呼び出されるイベント
+    /// </summary>
+    /// <param name="model"></param>
+    public delegate void OnUpdatedCallback(Model model);
+
+    /// <summary>
     /// Model#Name,Model#LogicalID,Model#StyleIDのいずれかが変更された時に呼び出されるイベント
     /// </summary>
     public delegate void OnChangedModelIdentitiesCallback(Model model);
@@ -69,13 +75,17 @@ namespace Hinode
         public const string QUERY_ONLY_AT_ROOT = "/";
         public const string QUERY_EXCULDED_AT_ROOT = "~";
 
-        Model _parent;
-        List<Model> _children = new List<Model>();
-        string _name = "";
-        HashSet<string> _logicalIDs = new HashSet<string>();
-        HashSet<string> _stylingIDs = new HashSet<string>();
-        SmartDelegate<OnChangedModelIdentitiesCallback> _onChangedIdentitiesCallback = new SmartDelegate<OnChangedModelIdentitiesCallback>();
-        SmartDelegate<OnChangedModelHierarchyCallback> _onChangedHierarchyCallback = new SmartDelegate<OnChangedModelHierarchyCallback>();
+        private Model _parent;
+        private List<Model> _children = new List<Model>();
+        private string _name = "";
+        private HashSet<string> _logicalIDs = new HashSet<string>();
+        private HashSet<string> _stylingIDs = new HashSet<string>();
+
+        private SmartDelegate<OnUpdatedCallback> _onUpdatedCallback = new SmartDelegate<OnUpdatedCallback>();
+        private SmartDelegate<OnChangedModelIdentitiesCallback> _onChangedIdentitiesCallback = new SmartDelegate<OnChangedModelIdentitiesCallback>();
+        private SmartDelegate<OnChangedModelHierarchyCallback> _onChangedHierarchyCallback = new SmartDelegate<OnChangedModelHierarchyCallback>();
+
+        public NotInvokableDelegate<OnUpdatedCallback> OnUpdated { get => _onUpdatedCallback; }
 
         /// <summary>
         /// Model#Name,Model#LogicalID,Model#StyleIDのいずれかが変更された時に呼び出されるDelegate
@@ -109,6 +119,20 @@ namespace Hinode
             }
             return path;
         }
+
+        #region OnUpdated callback
+        /// <summary>
+        /// 更新したことを知らせるための関数
+        /// OnUpdatedイベントが発生します。
+        ///
+        /// デフォルト実装ではModelのもつ値が変更されたかどうかの判定は行っていませんので、
+        /// もしその判定を行いたい時はoverrideして自前で実装してください。
+        /// </summary>
+        public virtual void DoneUpdate()
+        {
+            _onUpdatedCallback.Instance?.Invoke(this);
+        }
+        #endregion
 
         #region Logical && Styling ID
 

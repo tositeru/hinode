@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode
 {
@@ -179,6 +180,8 @@ namespace Hinode
                 var bindInst = BinderMap.CreateBindInstance(model, this);
                 if(bindInst != null)
                 {
+                    bindInst.DettachModelOnUpdated();
+                    model.OnUpdated.Add(ModelOnUpdated);
                     _bindInstanceDict.Add(model, bindInst);
                     bindInst.UpdateViewObjects();
                 }
@@ -251,6 +254,7 @@ namespace Hinode
                 {
                     return;
                 }
+                model.OnUpdated.Remove(ModelOnUpdated);
                 _bindInstanceDict.Remove(model);
             }
         }
@@ -278,7 +282,38 @@ namespace Hinode
         {
             foreach (var bindInstance in BindInstances.Values)
             {
-                bindInstance.UpdateViewObjects();
+                if(EnabledDelayOperation)
+                {
+                    if (OperationList.ContainsKey(bindInstance.Model))
+                    {
+                        OperationList[bindInstance.Model].OperationFlags |= Operation.OpType.Update;
+                    }
+                    else
+                        OperationList.Add(bindInstance.Model, new Operation(bindInstance.Model, Operation.OpType.Update));
+                }
+                else
+                {
+                    bindInstance.UpdateViewObjects();
+                }
+            }
+        }
+
+        void ModelOnUpdated(Model model)
+        {
+            Assert.IsTrue(BindInstances.ContainsKey(model), $"This BindInstaneMap don't have model({model.GetPath()})...");
+
+            if (EnabledDelayOperation)
+            {
+                if (OperationList.ContainsKey(model))
+                {
+                    OperationList[model].OperationFlags |= Operation.OpType.Update;
+                }
+                else
+                    OperationList.Add(model, new Operation(model, Operation.OpType.Update));
+            }
+            else
+            {
+                BindInstances[model].UpdateViewObjects();
             }
         }
 
@@ -295,6 +330,7 @@ namespace Hinode
                 Remove = 0x1 << 0,
                 Add = 0x1 << 1,
                 Rebind = 0x1 << 2,
+                Update = 0x1 << 3,
             }
 
             public class AddParam
@@ -331,9 +367,13 @@ namespace Hinode
                     var allowRebind = UseAddParam?.allowRebind ?? false;
                     instanceMap.AddImpl(Model, false, allowRebind);
                 }
-                else if(0 != (OperationFlags & Operation.OpType.Rebind))
+                else if (0 != (OperationFlags & Operation.OpType.Rebind))
                 {
                     instanceMap.RebindImpl(Model, false);
+                }
+                else if(0 != (OperationFlags & OpType.Update))
+                {
+                    instanceMap.BindInstances[Model].UpdateViewObjects();
                 }
                 else
                 {

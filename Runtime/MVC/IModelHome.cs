@@ -28,6 +28,11 @@ namespace Hinode
             return BinderInstanceMap.BindInstances.ContainsKey(target);
         }
 
+        public static IModelHome[] GetAllHomes()
+        {
+            return FindObjectsOfType<IModelHome>();
+        }
+
         /// <summary>
         /// 指定したtargetが所属しているIModelHomeを検索する
         /// </summary>
@@ -35,7 +40,7 @@ namespace Hinode
         /// <returns></returns>
         public static IEnumerable<IModelHome> GetJoinHomes(Model target)
         {
-            return Object.FindObjectsOfType<IModelHome>().Where(_m => _m.DoJoin(target));
+            return FindObjectsOfType<IModelHome>().Where(_m => _m.DoJoin(target));
         }
 
         /// <summary>
