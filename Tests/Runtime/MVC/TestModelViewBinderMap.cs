@@ -25,12 +25,12 @@ namespace Hinode.Tests.MVC
         {
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
             }
 
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -46,12 +46,12 @@ namespace Hinode.Tests.MVC
 
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
             }
 
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -70,12 +70,12 @@ namespace Hinode.Tests.MVC
 
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
             }
 
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -152,7 +152,8 @@ namespace Hinode.Tests.MVC
 
                 {//マッチしないModelを追加した時のテスト
                     var empty = new Model() { Name = "__empty" };
-                    Assert.DoesNotThrow(() => {
+                    Assert.DoesNotThrow(() =>
+                    {
                         bindInstanceMap.Add(empty);
                         Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(empty), "マッチしないModelを追加した時はModelViewBinderInstanceを生成しないようにしてください");
                     }, "マッチしないModelを追加した時でもModelViewBinderInstanceMapから例外を発生させないようにしてください。");
@@ -186,7 +187,7 @@ namespace Hinode.Tests.MVC
 
                     // 追加されていないものをRebindした時は何もしない
                     var recordedBindInstances = bindInstanceMap.BindInstances.ToArray();
-                    var model = new ModelClass() { Name="Tmp" };
+                    var model = new ModelClass() { Name = "Tmp" };
                     isSuccess = bindInstanceMap.Rebind(model);
                     Assert.IsFalse(isSuccess, "登録されていないModelの場合はRebindしないようにしてください");
                     AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, recordedBindInstances, "ModelViewBinderInstanceMapに追加されていないModelをRebindした時は何もしないようにしてください。");
@@ -276,7 +277,7 @@ namespace Hinode.Tests.MVC
                 {//一度操作が実行された後は同じ操作を繰り返し実行されないようにする
                     var e = bindInstanceMap.GetDoDelayOperationsEnumerator();
                     var opCount = 0;
-                    while(e.MoveNext() && e.Current != null)
+                    while (e.MoveNext() && e.Current != null)
                     {
                         opCount++;
                     }
@@ -352,7 +353,7 @@ namespace Hinode.Tests.MVC
                 var enumerator = bindInstanceMap.GetDoDelayOperationsEnumerator();
 
                 var opCount = 0;
-                while(enumerator.MoveNext() && enumerator.Current != null)
+                while (enumerator.MoveNext() && enumerator.Current != null)
                 {
                     opCount++;
                 }
@@ -362,7 +363,7 @@ namespace Hinode.Tests.MVC
                 bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
                 correctOpCount = root.GetHierarchyEnumerable().Count();
                 opCount = 0;
-                while(enumerator.MoveNext() && enumerator.Current != null)
+                while (enumerator.MoveNext() && enumerator.Current != null)
                 {
                     opCount++;
                 }
@@ -438,7 +439,7 @@ namespace Hinode.Tests.MVC
 
                 root.AddChildren(apple);
 
-                Assert.AreEqual(count+1, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.AreEqual(count + 1, bindInstanceMap.BindInstances.Count, errorMessage);
                 Assert.IsTrue(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
 
                 // 親子構造を持つModelの追加
@@ -480,7 +481,7 @@ namespace Hinode.Tests.MVC
 
                 root.RemoveChildren(apple);
 
-                Assert.AreEqual(count-1, bindInstanceMap.BindInstances.Count, errorMessage);
+                Assert.AreEqual(count - 1, bindInstanceMap.BindInstances.Count, errorMessage);
                 Assert.IsFalse(bindInstanceMap.BindInstances.ContainsKey(apple), errorMessage);
 
                 //孫を持つModelの削除
@@ -652,13 +653,13 @@ namespace Hinode.Tests.MVC
             public ModelViewBinderInstanceMap UsedBinderInstanceMap { get; set; }
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
                 UsedBinderInstanceMap = binderInstanceMap;
             }
 
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class ParamBinder : IModelViewParamBinder
             {

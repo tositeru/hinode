@@ -26,9 +26,10 @@ namespace Hinode.Tests.MVC
                 {
                 }
 
-                public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+                public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
                 {
                 }
+                public void Destroy() { }
 
                 public class ParamBinder : IModelViewParamBinder
                 {
@@ -68,7 +69,8 @@ namespace Hinode.Tests.MVC
             rootModelHome.Set(null, null);
             Assert.IsNull(rootModelHome.RootModel);
 
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
                 rootModelHome.RootModel = root; // <- throw exception
             }, "BinderInstanceMapがNullの時にIModelHome#RootModelを設定した場合は例外を投げるようにしてください。");
         }

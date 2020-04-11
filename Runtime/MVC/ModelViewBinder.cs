@@ -33,15 +33,6 @@ namespace Hinode
     }
 
     /// <summary>
-    /// Viewに当たるオブジェクトを表すinterface
-    /// </summary>
-    public interface IViewObject : System.IDisposable
-    {
-        Model UseModel { get; }
-        void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap);
-    }
-
-    /// <summary>
     /// ModelとViewを関連づけるクラス
     ///
     /// このクラスは関連付けのための情報を保持するだけなので、
@@ -141,7 +132,7 @@ namespace Hinode
         /// <param name="sourceCode"></param>
         public ModelViewBinder(string sourceCode)
         {
-
+            throw new System.NotImplementedException();
         }
 
         /// <summary>
@@ -195,9 +186,9 @@ namespace Hinode
 
             return BindInfos.Select(_i =>
             {
-                var obj = _i.CreateViewObject();
-                obj.OnCreated(model, binderInstanceMap);
-                return obj;
+                var view = _i.CreateViewObject();
+                view.Create(model, binderInstanceMap);
+                return view;
             }).ToArray();
         }
     }
@@ -246,6 +237,11 @@ namespace Hinode
 
         public void Dispose()
         {
+            foreach(var view in ViewObjects)
+            {
+                view.Destroy();
+            }
+
             Model?.OnUpdated.Remove(ModelOnUpdated);
         }
     }

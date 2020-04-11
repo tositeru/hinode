@@ -4,8 +4,11 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.UpdateObserver
+namespace Hinode.Tests.CSharp.IUpdateObserver
 {
+    /// <summary>
+	/// <seealso cref="UpdateObserver"/>
+	/// </summary>
     public class TestUpdateObserver
     {
         [Test]

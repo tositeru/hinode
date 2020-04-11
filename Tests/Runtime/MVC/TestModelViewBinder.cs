@@ -26,12 +26,11 @@ namespace Hinode.Tests.MVC
 
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
             }
-
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -39,7 +38,7 @@ namespace Hinode.Tests.MVC
                 {
                     var m = model as ModelClass;
                     var v = viewObj as IntViewObjClass;
-                    if(v.IntValue != m.Value1)
+                    if (v.IntValue != m.Value1)
                     {
                         v.IntValue = m.Value1;
                     }
@@ -53,12 +52,12 @@ namespace Hinode.Tests.MVC
 
             public Model UseModel { get; set; }
 
-            public void OnCreated(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
             }
 
-            public void Dispose() { }
+            public void Destroy() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -118,7 +117,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//Model#OnUpdatedと連動しているかテスト
-                var obj = new ModelClass() { Name="apple", Value1 = 456, Value2 = 6.7f };
+                var obj = new ModelClass() { Name = "apple", Value1 = 456, Value2 = 6.7f };
                 var bindInstance = binder.CreateBindInstance(obj, null);
                 var intViewObj = bindInstance.ViewObjects.FirstOrDefault(_o => _o is IntViewObjClass) as IntViewObjClass;
                 var floatViewObj = bindInstance.ViewObjects.FirstOrDefault(_o => _o is FloatViewObjClass) as FloatViewObjClass;
@@ -169,7 +168,8 @@ namespace Hinode.Tests.MVC
                 (typeof(FloatViewObjClass), new FloatViewObjClass.Binder()));
             var binder = new ModelViewBinder("apple", bindInfoList);
 
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
                 var empty = new ModelClass { Name = "empty" };
                 var bindInstance = binder.CreateBindInstance(empty, null);
             }, "クエリパスが一致しない時は例外を投げて、生成しないようにしてください");
