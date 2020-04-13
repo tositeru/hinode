@@ -24,13 +24,13 @@ namespace Hinode.Tests.MVC
         class EmptyViewObjClass : IViewObject
         {
             public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                UseModel = targetModel;
             }
 
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -45,13 +45,13 @@ namespace Hinode.Tests.MVC
             public int IntValue { get; set; }
 
             public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                UseModel = targetModel;
             }
 
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -69,13 +69,13 @@ namespace Hinode.Tests.MVC
             public float FloatValue { get; set; }
 
             public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                UseModel = targetModel;
             }
 
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -98,18 +98,29 @@ namespace Hinode.Tests.MVC
             var orange = new ModelClass() { Name = "orange" };
             grape.AddChildren(orange);
 
-            var appleBinder = new ModelViewBinder("apple",
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
-            var orangeBinder = new ModelViewBinder("orange",
-                ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
-            var rebindBinder = new ModelViewBinder("Rebind",
-                ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
+            var appleBinder = new ModelViewBinder("apple", null,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var orangeBinder = new ModelViewBinder("orange", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
+            var rebindBinder = new ModelViewBinder("Rebind", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
             Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
-            var binderMap = new ModelViewBinderMap(appleBinder, orangeBinder, rebindBinder);
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, appleBinder, orangeBinder, rebindBinder);
             {//Constructorのテスト
                 Assert.AreEqual(3, binderMap.Binders.Count());
                 Assert.IsTrue(binderMap.Binders.Any(_b => _b == appleBinder), "指定したBinderがBinderMapの中にありません");
                 Assert.IsTrue(binderMap.Binders.Any(_b => _b == orangeBinder), "指定したBinderがBinderMapの中にありません");
+                Assert.IsTrue(binderMap.Binders.Any(_b => _b == rebindBinder), "指定したBinderがBinderMapの中にありません");
+
+                Assert.AreSame(viewInstanceCreator, binderMap.ViewInstanceCreator);
+                string errorMessage = "ModelViewBinderMapに設定されたModelViewBinder#ViewInstaceCreatorはModelViewBinderMap#ViewInstanceCreatorと同じものになるようにしてください。";
+                Assert.AreSame(binderMap.ViewInstanceCreator, appleBinder.ViewInstaceCreator, errorMessage);
+                Assert.AreSame(binderMap.ViewInstanceCreator, orangeBinder.ViewInstaceCreator, errorMessage);
+                Assert.AreSame(binderMap.ViewInstanceCreator, rebindBinder.ViewInstaceCreator, errorMessage);
             }
 
             {//ModelViewBindMap#CreateBindInstanceのテスト
@@ -130,6 +141,30 @@ namespace Hinode.Tests.MVC
                 Assert.AreEqual(1, orangeBindInstance.ViewObjects.Count());
                 Assert.AreEqual(typeof(FloatViewObjClass), orangeBindInstance.ViewObjects.First().GetType());
             }
+        }
+
+        [Test]
+        public void BinderInstanceMapBasicUsagePasses()
+        {
+            var root = new ModelClass() { Name = "root" };
+            var apple = new ModelClass() { Name = "apple" };
+            var grape = new ModelClass() { Name = "grape" };
+            root.AddChildren(apple, grape);
+            var orange = new ModelClass() { Name = "orange" };
+            grape.AddChildren(orange);
+
+            var appleBinder = new ModelViewBinder("apple", null,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var orangeBinder = new ModelViewBinder("orange", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
+            var rebindBinder = new ModelViewBinder("Rebind", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
+            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, appleBinder, orangeBinder, rebindBinder);
 
             {//BinderInstanceMapのテスト
                 var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
@@ -216,17 +251,22 @@ namespace Hinode.Tests.MVC
             var orange = new ModelClass() { Name = "orange" };
             grape.AddChildren(orange);
 
-            var allBinder = new ModelViewBinder("*",
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
-            var appleBinder = new ModelViewBinder("apple",
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
-            var orangeBinder = new ModelViewBinder("orange",
-                ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
-            var grapeOrangeBinder = new ModelViewBinder("grape/orange",
-                ModelViewBinder.CreateBindInfoDict((typeof(FloatViewObjClass), new FloatViewObjClass.Binder())));
+            var allBinder = new ModelViewBinder("*", null,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var appleBinder = new ModelViewBinder("apple", null,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var orangeBinder = new ModelViewBinder("orange", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
+            var grapeOrangeBinder = new ModelViewBinder("grape/orange", null,
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
             Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
 
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
             var binderMap = new ModelViewBinderMap(
+                viewInstanceCreator,
                 allBinder,
                 appleBinder,
                 orangeBinder,
@@ -258,10 +298,14 @@ namespace Hinode.Tests.MVC
             var orange = new ModelClass() { Name = "orange" };
             grape.AddChildren(orange);
 
-            var allBinder = new ModelViewBinder("*",
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+            var allBinder = new ModelViewBinder("*", null,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
 
-            var binderMap = new ModelViewBinderMap(allBinder);
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
             var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
 
             Assert.IsFalse(bindInstanceMap.EnabledDelayOperation);
@@ -336,10 +380,13 @@ namespace Hinode.Tests.MVC
             var orange = new ModelClass() { Name = "orange" };
             grape.AddChildren(orange);
 
-            var allBinder = new ModelViewBinder("*",
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+            var allBinder = new ModelViewBinder("*", null, new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
 
-            var binderMap = new ModelViewBinderMap(allBinder);
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
             var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
 
             Assert.IsFalse(bindInstanceMap.EnabledDelayOperation);
@@ -374,10 +421,12 @@ namespace Hinode.Tests.MVC
         [Test, Description("Model階層の変更に合わせて、自動的にバインドを行う機能のテスト")]
         public void AutoBindOnChangedModelHierarchyPasses()
         {
-            var allBinder = new ModelViewBinder("*",
-                    ModelViewBinder.CreateBindInfoDict((typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder())));
+            var allBinder = new ModelViewBinder("*", null, new ModelViewBinder.BindInfo(typeof(EmptyViewObjClass)));
 
-            var binderMap = new ModelViewBinderMap(allBinder);
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
             var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
             Assert.IsFalse(bindInstanceMap.EnableAutoBind);
 
@@ -525,16 +574,24 @@ namespace Hinode.Tests.MVC
             var logicalBinderQueryPath = "#log";
             var styleBinderQueryPath = ".stl";
 
-            var allBinder = new ModelViewBinder("*",
-                    ModelViewBinder.CreateBindInfoDict((typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder())));
-            var nameBinder = new ModelViewBinder(nameBinderQueryPath,
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
-            var logicalBinder = new ModelViewBinder(logicalBinderQueryPath,
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
-            var styleBinder = new ModelViewBinder(styleBinderQueryPath,
-                ModelViewBinder.CreateBindInfoDict((typeof(IntViewObjClass), new IntViewObjClass.Binder())));
+            var allBinder = new ModelViewBinder("*", null
+                , new ModelViewBinder.BindInfo(typeof(EmptyViewObjClass)));
+            var nameBinder = new ModelViewBinder(nameBinderQueryPath, null
+                , new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var logicalBinder = new ModelViewBinder(logicalBinderQueryPath, null
+                , new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
+            var styleBinder = new ModelViewBinder(styleBinderQueryPath, null
+                , new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
 
-            var binderMap = new ModelViewBinderMap(allBinder, nameBinder, logicalBinder, styleBinder);
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(EmptyViewObjClass), new EmptyViewObjClass.Binder()),
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder())
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator,
+                allBinder,
+                nameBinder,
+                logicalBinder,
+                styleBinder);
             var bindInstanceMap = new ModelViewBinderInstanceMap(binderMap);
 
             var root = new ModelClass() { Name = "root" };
@@ -651,15 +708,18 @@ namespace Hinode.Tests.MVC
         class TestOnCreatedViewObjClass : IViewObject
         {
             public ModelViewBinderInstanceMap UsedBinderInstanceMap { get; set; }
-            public Model UseModel { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
                 UseModel = targetModel;
+                UseBindInfo = bindInfo;
                 UsedBinderInstanceMap = binderInstanceMap;
             }
 
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class ParamBinder : IModelViewParamBinder
             {
@@ -672,11 +732,15 @@ namespace Hinode.Tests.MVC
         [Test, Description("IViewObject#OnCreatedのテスト")]
         public void IViewObjectOnCreatedPasses()
         {
-            var allBinder = new ModelViewBinder("*",
-                ModelViewBinder.CreateBindInfoDict((typeof(TestOnCreatedViewObjClass), new TestOnCreatedViewObjClass.ParamBinder())));
+            var allBinder = new ModelViewBinder("*", null,
+                new ModelViewBinder.BindInfo(typeof(TestOnCreatedViewObjClass)));
+
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(TestOnCreatedViewObjClass), new TestOnCreatedViewObjClass.ParamBinder())
+            );
 
             {//ModeViewBinder#CreateViewObjectsのテスト
-                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
                 var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
                 var root = new Model() { Name = "root" };
 
@@ -699,7 +763,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//ModelViewBinderInstanceMap#Addのテスト
-                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
                 var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
                 var root = new Model() { Name = "root" };
 
@@ -714,7 +778,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//ModelViewBinderInstanceMap#Addのテスト
-                var binderMap = new ModelViewBinderMap(allBinder);
+                var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
                 var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
                 var root = new Model() { Name = "root" };
 

@@ -20,16 +20,13 @@ namespace Hinode.Tests.MVC
 
             class ViewObj : IViewObject
             {
-                public Model UseModel { get; }
+                public Model UseModel { get; set; }
+                public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-                public void Dispose()
+                public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
                 {
                 }
-
-                public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
-                {
-                }
-                public void Destroy() { }
+                public void Unbind() { }
 
                 public class ParamBinder : IModelViewParamBinder
                 {
@@ -41,10 +38,13 @@ namespace Hinode.Tests.MVC
 
             private void Awake()
             {
-                var allBinder = new ModelViewBinder("*", ModelViewBinder.CreateBindInfoDict(
+                var allBinder = new ModelViewBinder("*", null,
+                    new ModelViewBinder.BindInfo(typeof(ViewObj))
+                );
+                var viewInstanceCreator = new DefaultViewInstanceCreator(
                     (typeof(ViewObj), new ViewObj.ParamBinder())
-                    ));
-                _binderMap = new ModelViewBinderMap(allBinder);
+                );
+                _binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder);
                 _binderInstanceMap = _binderMap.CreateBinderInstaceMap();
             }
 

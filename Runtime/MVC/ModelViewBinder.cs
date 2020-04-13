@@ -48,17 +48,19 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinder
     {
-        IReadOnlyDictionary<System.Type, IBindInfo> _bindInfoDict;
+        Dictionary<string, BindInfo> _bindInfoDict = new Dictionary<string, BindInfo>();
 
         /// <summary>
         /// 対応するModelのクエリパス
         /// </summary>
         public string QueryPath { get; private set; }
 
+        public IViewInstanceCreator ViewInstaceCreator { get; set; }
+
         /// <summary>
         /// ModelとViewの関連付けるための情報
         /// </summary>
-        public IEnumerable<IBindInfo> BindInfos { get => _bindInfoDict.Values; }
+        public IEnumerable<BindInfo> BindInfos { get => _bindInfoDict.Values; }
 
         /// <summary>
         /// ModelとViewの関連付けるための情報の個数
@@ -68,54 +70,66 @@ namespace Hinode
         /// <summary>
         /// ModelとViewを関連づけるための情報を持つクラス
         /// </summary>
-        public interface IBindInfo
+        public class BindInfo
         {
-            /// <summary>
-            /// 使用するIModelViewParamBinder
-            /// </summary>
-            IModelViewParamBinder ParamBinder { get; }
+            public string ID { get; }
+            public string InstanceKey { get; }
+            public string BinderKey { get; }
 
-            /// <summary>
-            /// このBindInfoが対応しているViewオブジェクトを作成する
-            /// </summary>
-            /// <returns></returns>
-            IViewObject CreateViewObject();
-        }
+            //TODO public ViewLayoutet? ViewLayouter? { get; set; }
+            //TODO public HashSet<IController> UseControllers { get; set; }
 
-        /// <summary>
-        /// BindInfoの辞書を簡単に作成するための関数
-        /// </summary>
-        /// <param name="bindInfoCreator"></param>
-        /// <param name="elements"></param>
-        /// <returns>ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</returns>
-        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(System.Func<System.Type, IModelViewParamBinder, IBindInfo> bindInfoCreator, params (System.Type viewObjType, IModelViewParamBinder)[] elements)
-        {
-            var dict = new Dictionary<System.Type, IBindInfo>();
-            foreach(var e in elements)
+            public BindInfo(string id, string instanceKey, string binderKey)
             {
-                dict.Add(e.Item1, bindInfoCreator(e.Item1, e.Item2));
+                ID = id;
+                InstanceKey = instanceKey;
+                BinderKey = binderKey;
             }
-            return dict;
+
+            public BindInfo(string id, System.Type viewType)
+                : this(id, viewType.FullName, viewType.FullName)
+            { }
+
+            public BindInfo(System.Type viewType)
+                : this(viewType.FullName, viewType.FullName, viewType.FullName)
+            { }
         }
 
         /// <summary>
-        /// BindInfoの辞書を簡単に作成するための関数
-        /// こちらの関数はDefaultBindInfoが辞書の値に設定されます。
+        /// IViewObjectとIModelViewParamBinderを作成する抽象クラス
         /// </summary>
-        /// <param name="elements"></param>
-        /// <returns>ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</returns>
-        public static Dictionary<System.Type, IBindInfo> CreateBindInfoDict(params (System.Type viewObjType, IModelViewParamBinder)[] elements)
-            => CreateBindInfoDict((viewObjType, paramBinder) => new DefaultBindInfo(paramBinder, viewObjType), elements);
+        public abstract class IViewInstanceCreator
+        {
+            public IViewObject CreateViewObj(string instanceKey)
+            {
+                var viewObj = CreateViewObjImpl(instanceKey);
+                Assert.IsNotNull(viewObj, $"Fialed to create ViewObject because don't match ViewObject Key({instanceKey})...");
+                return viewObj;
+            }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="queryPath">Modelのクエリパス</param>
-        /// <param name="bindInfoDict">ModelとViewを関連づけるための情報の辞書 Key=ViewObjType, Value=IBindInfo</param>
-        public ModelViewBinder(string queryPath, IReadOnlyDictionary<System.Type, IBindInfo> bindInfoDict)
+            public IModelViewParamBinder GetParamBinderObj(BindInfo bindInfo)
+            {
+                var paramBinder = GetParamBinderImpl(bindInfo.BinderKey);
+                Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({paramBinder})...");
+                return paramBinder;
+            }
+
+            protected abstract IViewObject CreateViewObjImpl(string instanceKey);
+            protected abstract IModelViewParamBinder GetParamBinderImpl(string binderKey);
+        }
+
+        public ModelViewBinder(string queryPath, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
+            : this(queryPath, instanceCreator, bindInfos.AsEnumerable())
+        { }
+
+        public ModelViewBinder(string queryPath, IViewInstanceCreator instanceCreator, IEnumerable<BindInfo> bindInfos)
         {
             QueryPath = queryPath;
-            _bindInfoDict = bindInfoDict;
+            ViewInstaceCreator = instanceCreator;
+            foreach (var i in bindInfos)
+            {
+                _bindInfoDict.Add(i.ID, i);
+            }
         }
 
         /// <summary>
@@ -136,21 +150,13 @@ namespace Hinode
         }
 
         /// <summary>
-        /// 指定されたViewオブジェクトと対応するIModelViewParamBinderを取得する
+        /// 指定されたBindInfoオブジェクトと対応するIModelViewParamBinderを取得する
         /// </summary>
-        /// <param name="viewObj"></param>
+        /// <param name="bindInfo"></param>
         /// <returns></returns>
-        public IModelViewParamBinder GetParamBinder(IViewObject viewObj)
+        public IModelViewParamBinder GetParamBinder(BindInfo bindInfo)
         {
-            var type = viewObj.GetType();
-            if (_bindInfoDict.ContainsKey(type))
-            {
-                return _bindInfoDict[type].ParamBinder;
-            }
-            else
-            {
-                return null;
-            }
+            return ViewInstaceCreator.GetParamBinderObj(bindInfo);
         }
 
         /// <summary>
@@ -186,8 +192,10 @@ namespace Hinode
 
             return BindInfos.Select(_i =>
             {
-                var view = _i.CreateViewObject();
-                view.Create(model, binderInstanceMap);
+                var view = ViewInstaceCreator.CreateViewObj(_i.InstanceKey);
+                view.UseModel = model;
+                view.UseBindInfo = _i;
+                view.Bind(model, _i, binderInstanceMap);
                 return view;
             }).ToArray();
         }
@@ -230,16 +238,23 @@ namespace Hinode
         {
             foreach (var viewObj in ViewObjects)
             {
-                var paramBinder = Binder.GetParamBinder(viewObj);
+                var paramBinder = Binder.GetParamBinder(viewObj.UseBindInfo);
                 paramBinder.Update(Model, viewObj);
             }
+        }
+
+        public IEnumerable<IViewObject> QueryViews(string query)
+        {
+            throw new System.NotImplementedException();
         }
 
         public void Dispose()
         {
             foreach(var view in ViewObjects)
             {
-                view.Destroy();
+                view.Unbind();
+                view.UseModel = null;
+                view.UseBindInfo = null;
             }
 
             Model?.OnUpdated.Remove(ModelOnUpdated);
@@ -247,37 +262,46 @@ namespace Hinode
     }
 
     /// <summary>
-    /// 汎用のModelViewBinder.BindInfo
+    /// 汎用のModelViewBinder.IViewInstanceCreator
     ///
     /// 引数無しのコンストラクを持つIViewBinderObject型に対応しています
     /// <seealso cref="ModelViewBinder"/>
     /// <seealso cref="ModelViewBinder.IBindInfo"/>
     /// </summary>
-    public class DefaultBindInfo : ModelViewBinder.IBindInfo
+    public class DefaultViewInstanceCreator : ModelViewBinder.IViewInstanceCreator
     {
-        public System.Type ViewObjType { get; }
+        Dictionary<string, (System.Type viewObjType, IModelViewParamBinder paramBinder)> _dict = new Dictionary<string, (System.Type viewObjType, IModelViewParamBinder paramBinder)>();
 
-        public DefaultBindInfo(IModelViewParamBinder paramBinder, System.Type viewObjType)
+        System.Type[] _emptryArgs = new System.Type[] { };
+
+        public DefaultViewInstanceCreator(params (System.Type viewType, IModelViewParamBinder paramBinder)[] data)
+            : this(data.AsEnumerable())
+        { }
+
+        public DefaultViewInstanceCreator(IEnumerable<(System.Type viewType, IModelViewParamBinder paramBinder)> data)
         {
-            ParamBinder = paramBinder;
-            ViewObjType = viewObjType;
-            Assert.IsTrue(ViewObjType.DoHasInterface(typeof(IViewObject)));
+            foreach(var d in data)
+            {
+                var cstor = d.viewType.GetConstructor(_emptryArgs);
+                Assert.IsNotNull(cstor, $"空引数のコンストラクターがあるクラスだけに対応しています... viewType={d.viewType.FullName}");
+                Assert.IsTrue(d.viewType.DoHasInterface<IViewObject>(), $"IViewObject型を継承した型だけ対応しています... viewType={d.viewType.FullName}");
+                Assert.IsNotNull(d.paramBinder, $"paramBinderは必ず設定してください...");
+                _dict.Add(d.viewType.FullName, (d.viewType, d.paramBinder));
+            }
         }
 
-        public static DefaultBindInfo Create<T>(IModelViewParamBinder paramBinder)
-            where T : IViewObject
+        protected override IViewObject CreateViewObjImpl(string instanceKey)
         {
-            return new DefaultBindInfo(paramBinder, typeof(T));
-        }
-
-        #region ModelViewBinder.IBindInfo interface
-        public IModelViewParamBinder ParamBinder { get; }
-
-        public IViewObject CreateViewObject()
-        {
-            var cstor = ViewObjType.GetConstructor(new System.Type[]{});
+            if (!_dict.ContainsKey(instanceKey)) return null;
+            var type = _dict[instanceKey].viewObjType;
+            var cstor = type.GetConstructor(_emptryArgs);
             return cstor.Invoke(null) as IViewObject;
         }
-        #endregion
+
+        protected override IModelViewParamBinder GetParamBinderImpl(string binderKey)
+        {
+            if (!_dict.ContainsKey(binderKey)) return null;
+            return _dict[binderKey].paramBinder;
+        }
     }
 }

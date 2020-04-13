@@ -12,7 +12,7 @@ namespace Hinode.Tests.MVC
     /// <seealso cref="IViewObject"/>
     /// <seealso cref="IModelViewParamBinder"/>
     /// </summary>
-    public class TestModelViewBinder : TestBase
+    public class TestModelViewBinder
     {
         class ModelClass : Model
         {
@@ -25,12 +25,12 @@ namespace Hinode.Tests.MVC
             public int IntValue { get; set; }
 
             public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                UseModel = targetModel;
             }
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -51,13 +51,13 @@ namespace Hinode.Tests.MVC
             public float FloatValue { get; set; }
 
             public Model UseModel { get; set; }
+            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
 
-            public void Create(Model targetModel, ModelViewBinderInstanceMap binderInstanceMap)
+            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                UseModel = targetModel;
             }
 
-            public void Destroy() { }
+            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -77,11 +77,20 @@ namespace Hinode.Tests.MVC
             var empry = new ModelClass { Name = "empty" };
 
             //作成のテスト
-            var bindInfoList = ModelViewBinder.CreateBindInfoDict(
-                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
-                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder()));
-            var binder = new ModelViewBinder("apple", bindInfoList);
+            //var bindInfoList = ModelViewBinder.CreateBindInfoDict(
+            //    (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+            //    (typeof(FloatViewObjClass), new FloatViewObjClass.Binder()));
+            //var binder = new ModelViewBinder("apple", bindInfoList);
 
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binder = new ModelViewBinder("apple", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+            );
+            Assert.AreSame(binder.ViewInstaceCreator, viewInstanceCreator);
             { //QueryPathの検証のテスト
                 Assert.IsTrue(binder.DoMatch(model));
                 Assert.IsFalse(binder.DoMatch(new Model { Name = "orange" }));
@@ -101,20 +110,40 @@ namespace Hinode.Tests.MVC
                 //対応するModelViewBinderの取得のテスト
                 {//IntViewObjClass
                     model.Value1 = -1234;
-                    var paramBinder = binder.GetParamBinder(intViewObj);
+                    Assert.IsTrue(binder.BindInfos.Any(_i => _i == intViewObj.UseBindInfo));
+                    var paramBinder = binder.GetParamBinder(intViewObj.UseBindInfo);
                     Assert.IsNotNull(paramBinder);
+                    Assert.AreEqual(typeof(IntViewObjClass.Binder), paramBinder.GetType());
                     paramBinder.Update(model, intViewObj);
                     Assert.AreEqual(model.Value1, intViewObj.IntValue);
                 }
 
                 {//FloatViewObjClass
                     model.Value2 = 0.987f;
-                    var paramBinder = binder.GetParamBinder(floatViewObj);
+                    Assert.IsTrue(binder.BindInfos.Any(_i => _i == floatViewObj.UseBindInfo));
+                    var paramBinder = binder.GetParamBinder(floatViewObj.UseBindInfo);
                     Assert.IsNotNull(paramBinder);
+                    Assert.AreEqual(typeof(FloatViewObjClass.Binder), paramBinder.GetType());
                     paramBinder.Update(model, floatViewObj);
                     Assert.AreEqual(model.Value2, floatViewObj.FloatValue);
                 }
             }
+        }
+
+        [Test, Description("Model#OnUpdatedと連動しているか確認するテスト")]
+        public void ModelOnUpdatedPasses()
+        {
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var empry = new ModelClass { Name = "empty" };
+
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binder = new ModelViewBinder("apple", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+            );
 
             {//Model#OnUpdatedと連動しているかテスト
                 var obj = new ModelClass() { Name = "apple", Value1 = 456, Value2 = 6.7f };
@@ -163,10 +192,14 @@ namespace Hinode.Tests.MVC
             var empry = new ModelClass { Name = "empty" };
 
             //作成のテスト
-            var bindInfoList = ModelViewBinder.CreateBindInfoDict(
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
                 (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
-                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder()));
-            var binder = new ModelViewBinder("apple", bindInfoList);
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binder = new ModelViewBinder("apple", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+            );
 
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
             {

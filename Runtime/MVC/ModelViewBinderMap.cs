@@ -15,22 +15,25 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinderMap
     {
+        public ModelViewBinder.IViewInstanceCreator ViewInstanceCreator { get; }
+
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
         public ModelViewBinderMap() { }
 
-        public ModelViewBinderMap(params ModelViewBinder[] binders)
-            : this(binders.AsEnumerable())
+        public ModelViewBinderMap(ModelViewBinder.IViewInstanceCreator creator, params ModelViewBinder[] binders)
+            : this(creator, binders.AsEnumerable())
         { }
 
-        public ModelViewBinderMap(List<ModelViewBinder> binders)
+        public ModelViewBinderMap(ModelViewBinder.IViewInstanceCreator creator, IEnumerable<ModelViewBinder> binders)
         {
-            Binders = binders;
-        }
-
-        public ModelViewBinderMap(IEnumerable<ModelViewBinder> binders)
-        {
+            ViewInstanceCreator = creator;
             Binders = binders.ToList();
+
+            foreach(var binder in Binders)
+            {
+                binder.ViewInstaceCreator = ViewInstanceCreator;
+            }
         }
 
         /// <summary>
