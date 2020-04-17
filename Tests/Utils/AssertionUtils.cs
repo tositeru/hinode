@@ -23,6 +23,22 @@ namespace Hinode.Tests
             Assert.AreEqual(corrects.Count(), index, $"{message}: Don't Equal count...");
         }
 
+        public static void AssertEnumerableByUnordered<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message)
+        {
+            if (gots == null && corrects == null) return;
+            Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots != null}");
+
+            var correctList = corrects.ToList();
+            Assert.AreEqual(corrects.Count(), gots.Count(), $"{message}: Don't Equal count...");
+
+            foreach(var g in gots)
+            {
+                Assert.IsTrue(correctList.Any(_o => _o.Equals(g)), $"{message}: Don't exist {g}...");
+                correctList.Remove(correctList.First(_o => _o.Equals(g)));
+            }
+            Assert.IsTrue(0 == correctList.Count(), $"{message}: Don't match elements...");
+        }
+
         public static void AreNearlyEqual(float correct, float got, float epsilon, string message)
         {
             Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");

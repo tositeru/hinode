@@ -397,7 +397,14 @@ namespace Hinode
         {
             foreach(var op in OperationList.Values)
             {
-                op.Done(this);
+                try
+                {
+                    op.Done(this);
+                }
+                catch(System.Exception e)
+                {
+                    Debug.LogError($"Exception!! -- {e.Message}{System.Environment.NewLine}{e.StackTrace}{System.Environment.NewLine}--");
+                }
             }
             OperationList.Clear();
         }

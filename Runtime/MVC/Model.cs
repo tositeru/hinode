@@ -120,6 +120,16 @@ namespace Hinode
             return path;
         }
 
+        public override string ToString()
+        {
+            string logicalIds = "";
+            if (LogicalID.Any())
+                logicalIds = LogicalID.Aggregate(" ", (_sum, _cur) => _sum + " #" + _cur);
+            string stylingIds = "";
+            if (StylingID.Any())
+                stylingIds = StylingID.Aggregate(" ", (_sum, _cur) => _sum + " ." + _cur);
+            return $"{GetType().FullName}:{GetPath()}{logicalIds}{stylingIds}";
+        }
         #region OnUpdated callback
         /// <summary>
         /// 更新したことを知らせるための関数

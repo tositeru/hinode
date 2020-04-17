@@ -100,10 +100,11 @@ namespace Hinode
         /// </summary>
         public abstract class IViewInstanceCreator
         {
-            public IViewObject CreateViewObj(string instanceKey)
+            public IViewObject CreateViewObj(BindInfo bindInfo)
             {
-                var viewObj = CreateViewObjImpl(instanceKey);
-                Assert.IsNotNull(viewObj, $"Fialed to create ViewObject because don't match ViewObject Key({instanceKey})...");
+                var viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
+                Assert.IsNotNull(viewObj, $"Failed to create ViewObject because don't match ViewObject Key({bindInfo.InstanceKey})...");
+                viewObj.UseBindInfo = bindInfo;
                 return viewObj;
             }
 
@@ -192,9 +193,8 @@ namespace Hinode
 
             return BindInfos.Select(_i =>
             {
-                var view = ViewInstaceCreator.CreateViewObj(_i.InstanceKey);
+                var view = ViewInstaceCreator.CreateViewObj(_i);
                 view.UseModel = model;
-                view.UseBindInfo = _i;
                 view.Bind(model, _i, binderInstanceMap);
                 return view;
             }).ToArray();
@@ -245,7 +245,7 @@ namespace Hinode
 
         public IEnumerable<IViewObject> QueryViews(string query)
         {
-            throw new System.NotImplementedException();
+            return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
         }
 
         public void Dispose()

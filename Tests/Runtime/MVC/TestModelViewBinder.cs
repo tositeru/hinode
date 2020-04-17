@@ -208,5 +208,46 @@ namespace Hinode.Tests.MVC
             }, "クエリパスが一致しない時は例外を投げて、生成しないようにしてください");
         }
 
+        [Test, Description("QueryViewsのテスト")]
+        public void QueryViewsPasses()
+        {
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var empry = new ModelClass { Name = "empty" };
+
+            //作成のテスト
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var binder = new ModelViewBinder("apple", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)),
+                new ModelViewBinder.BindInfo("Int", typeof(IntViewObjClass))
+            );
+            var binderInstance = binder.CreateBindInstance(model, null);
+
+            {//query => typeof(IntViewObjClass).FullName
+                var queryViewResult = binderInstance.QueryViews(typeof(IntViewObjClass).FullName);
+                Assert.AreEqual(1, queryViewResult.Count());
+                var intViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == typeof(IntViewObjClass).FullName);
+                Assert.IsTrue(intViewObj == queryViewResult.First());
+            }
+
+            {//query => typeof(FloatViewObjClass).FullName
+                var queryViewResult = binderInstance.QueryViews(typeof(FloatViewObjClass).FullName);
+                Assert.AreEqual(1, queryViewResult.Count());
+                var floatViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == typeof(FloatViewObjClass).FullName);
+                Assert.IsTrue(floatViewObj == queryViewResult.First());
+            }
+
+            {//query => Int
+                var queryViewResult = binderInstance.QueryViews("Int");
+                Assert.AreEqual(1, queryViewResult.Count());
+                var intIdViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == "Int");
+                Assert.IsTrue(intIdViewObj == queryViewResult.First());
+            }
+
+        }
+
     }
 }
