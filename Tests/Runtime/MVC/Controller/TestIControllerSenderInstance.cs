@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -11,19 +12,6 @@ namespace Hinode.Tests.MVC.Controller
     /// </summary>
     public class TestIControllerSenderInstance
     {
-        void SetControllerTypeSettings()
-        {
-            ControllerTypeManager.EntryPair<ITestSender, ITestReciever>();
-            ControllerTypeManager.EntryPair<ITest2Sender, ITest2Reciever>();
-
-            ControllerTypeManager.EntryRecieverExecuter<ITestReciever, int>((reciever, sender, eventData) => {
-                reciever.Test(sender, eventData);
-            });
-            ControllerTypeManager.EntryRecieverExecuter<ITest2Reciever, int>((reciever, sender, eventData) => {
-                reciever.Test2(sender, eventData);
-            });
-        }
-
         [Test]
         public void BasicUsageOfDefaultControllerSenderGroupPasses()
         {
@@ -40,7 +28,7 @@ namespace Hinode.Tests.MVC.Controller
             binderInstanceMap.RootModel = model;
             #endregion
 
-            SetControllerTypeSettings();
+            TestSenderInstance.SetControllerTypeSettings();
 
             var useEvents = new Dictionary<string, System.Type>()
             {
@@ -50,8 +38,8 @@ namespace Hinode.Tests.MVC.Controller
             var testEvents = new DefaultControllerSenderGroup<TestSenderInstance>(useEvents);
 
             {//Test HasEventKeyword
-                Assert.IsTrue(testEvents.DoHasSenderKeyword(TestSenderInstance.KEYWORD_ON_TEST));
-                Assert.IsFalse(testEvents.DoHasSenderKeyword("invalid"));
+                Assert.IsTrue(testEvents.ContainsSenderKeyword(TestSenderInstance.KEYWORD_ON_TEST));
+                Assert.IsFalse(testEvents.ContainsSenderKeyword("invalid"));
             }
 
             {//Test GetEventType
@@ -65,9 +53,11 @@ namespace Hinode.Tests.MVC.Controller
             }
 
             {//test DefaultControllerSenderGroup#CreateInstance
-                var controllerInstance = testEvents.CreateInstance(model, binderInstanceMap);
+                var viewObj = binderInstanceMap[model].ViewObjects.First();
+                var controllerInstance = testEvents.CreateInstance(viewObj, model, binderInstanceMap);
                 Assert.AreEqual(typeof(TestSenderInstance), controllerInstance.GetType());
                 Assert.AreSame(model, controllerInstance.Target);
+                Assert.AreSame(viewObj, controllerInstance.TargetViewObj);
                 Assert.AreSame(binderInstanceMap, controllerInstance.UseBinderInstanceMap);
                 Assert.AreSame(testEvents, controllerInstance.UseSenderGroup);
                 Assert.IsFalse(controllerInstance.DoEnableSender<ITestSender>());
@@ -119,7 +109,7 @@ namespace Hinode.Tests.MVC.Controller
                 // - ClearSelectorList
                 // - ClearSelectorDict
                 // - Send
-                var controllerInstance = testEvents.CreateInstance(model, binderInstanceMap);
+                var controllerInstance = testEvents.CreateInstance(null, model, binderInstanceMap);
                 var testControllerInst = controllerInstance as TestSenderInstance;
                 {
                     //Test IControllerSenderInstance
@@ -225,7 +215,7 @@ namespace Hinode.Tests.MVC.Controller
             binderInstanceMap.RootModel = model;
             #endregion
 
-            SetControllerTypeSettings();
+            TestSenderInstance.SetControllerTypeSettings();
 
             var useEvents = new Dictionary<string, System.Type>()
             {
@@ -233,7 +223,7 @@ namespace Hinode.Tests.MVC.Controller
                 { "__empty", typeof(IEmptySender) },
             };
             var testEvents = new DefaultControllerSenderGroup<TestSenderInstance>(useEvents);
-            var controllerInstance = testEvents.CreateInstance(model, binderInstanceMap);
+            var controllerInstance = testEvents.CreateInstance(null, model, binderInstanceMap);
             var testControllerInst = controllerInstance as TestSenderInstance;
 
             //Test IControllerSenderInstance
@@ -244,8 +234,8 @@ namespace Hinode.Tests.MVC.Controller
             // - DoEnableSender
             // - DisableSender
             // - Send
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.ContainsSelector<ITest2Sender>());
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.SelectorCount<ITest2Sender>());
+            Assert.IsFalse(controllerInstance.ContainsSelector<ITest2Sender>());
+            Assert.AreEqual(0, controllerInstance.SelectorCount<ITest2Sender>());
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
                 controllerInstance.AddSelector(typeof(ITest2Sender), new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "")));
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.DoEnableSender<ITest2Sender>());

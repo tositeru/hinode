@@ -37,6 +37,19 @@ namespace Hinode.Tests.MVC.Controller
         public static readonly string KEYWORD_ON_TEST = "onTest";
         public static readonly string KEYWORD_ON_TEST2 = "onTest2";
 
+        public static void SetControllerTypeSettings()
+        {
+            ControllerTypeManager.EntryPair<ITestSender, ITestReciever>();
+            ControllerTypeManager.EntryPair<ITest2Sender, ITest2Reciever>();
+
+            ControllerTypeManager.EntryRecieverExecuter<ITestReciever, int>((reciever, sender, eventData) => {
+                reciever.Test(sender, eventData);
+            });
+            ControllerTypeManager.EntryRecieverExecuter<ITest2Reciever, int>((reciever, sender, eventData) => {
+                reciever.Test2(sender, eventData);
+            });
+        }
+
         #region IControllerSenderInstance
         EnableSenderCollection _enabledSenders = new EnableSenderCollection();
         SelectorListDictionary _selectorListDict = new SelectorListDictionary();
@@ -44,10 +57,12 @@ namespace Hinode.Tests.MVC.Controller
         public EnableSenderCollection EnabledSenders { get => _enabledSenders; }
         public SelectorListDictionary SelectorListDict { get => _selectorListDict; }
 
+        public void Destroy() { }
         #endregion
 
         #region IControllerSender
         public Model Target { get; set; }
+        public IViewObject TargetViewObj { get; set; }
         public ModelViewBinderInstanceMap UseBinderInstanceMap { get; set; }
         #endregion
 

@@ -72,9 +72,13 @@ namespace Hinode
         /// </summary>
         public class BindInfo
         {
+            Dictionary<string, ControllerInfo> _controllers = new Dictionary<string, ControllerInfo>();
+
             public string ID { get; }
             public string InstanceKey { get; }
             public string BinderKey { get; }
+
+            public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
 
             //TODO public ViewLayoutet? ViewLayouter? { get; set; }
             //TODO public HashSet<IController> UseControllers { get; set; }
@@ -93,6 +97,13 @@ namespace Hinode
             public BindInfo(System.Type viewType)
                 : this(viewType.FullName, viewType.FullName, viewType.FullName)
             { }
+
+            public BindInfo AddControllerInfo(ControllerInfo controllerInfo)
+            {
+                Assert.IsFalse(_controllers.ContainsKey(controllerInfo.Keyword), $"Controller({controllerInfo.Keyword}) already exist...");
+                _controllers.Add(controllerInfo.Keyword, controllerInfo);
+                return this;
+            }
         }
 
         /// <summary>
@@ -117,6 +128,28 @@ namespace Hinode
 
             protected abstract IViewObject CreateViewObjImpl(string instanceKey);
             protected abstract IModelViewParamBinder GetParamBinderImpl(string binderKey);
+        }
+
+        public class ControllerInfo
+        {
+            List<RecieverSelector> _recieverInfos = new List<RecieverSelector>();
+            public string Keyword { get; set; }
+            public IEnumerable<RecieverSelector> RecieverSelectors { get => _recieverInfos; }
+
+            public ControllerInfo(string keyword, params RecieverSelector[] recieverInfos)
+                : this(keyword, recieverInfos.AsEnumerable())
+            { }
+
+            public ControllerInfo(string keyword, IEnumerable<RecieverSelector> recieverInfos)
+            {
+                Keyword = keyword;
+                _recieverInfos = recieverInfos.ToList();
+            }
+
+            public void AddRecieverInfo(RecieverSelector selector)
+            {
+                _recieverInfos.Add(selector);
+            }
         }
 
         public ModelViewBinder(string queryPath, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
@@ -199,6 +232,39 @@ namespace Hinode
                 return view;
             }).ToArray();
         }
+
+        public IReadOnlyCollection<IControllerSenderInstance> CreateControllerSenderInstances(IViewObject viewObj, Model model, ModelViewBinderInstanceMap binderInstanceMap)
+        {
+            Assert.IsTrue(DoMatch(model));
+            Assert.IsNotNull(binderInstanceMap);
+            Assert.IsNotNull(binderInstanceMap.UseControllerMap);
+
+            if (viewObj.UseBindInfo.Controllers == null
+                || viewObj.UseBindInfo.Controllers.Count <= 0)
+                return null;
+            var controllerMap = binderInstanceMap.UseControllerMap;
+            var senderInstanceHash = new HashSet<IControllerSenderInstance>();
+            foreach(var controllerInfo in viewObj.UseBindInfo.Controllers.Values
+                .Where(_c => controllerMap.ContainsSenderKeyword(_c.Keyword)))
+            {
+                var matchSender = senderInstanceHash
+                    .FirstOrDefault(_sender => _sender.UseSenderGroup.ContainsSenderKeyword(controllerInfo.Keyword));
+                if (matchSender == null)
+                {
+                    matchSender = controllerMap.CreateController(controllerInfo.Keyword, viewObj, model, binderInstanceMap);
+                    Assert.IsNotNull(matchSender);
+                    senderInstanceHash.Add(matchSender);
+                }
+
+                var senderType = matchSender.UseSenderGroup.GetSenderType(controllerInfo.Keyword);
+                if(!matchSender.DoEnableSender(senderType))
+                {
+                    matchSender.EnableSender(senderType);
+                }
+                matchSender.AddSelectors(senderType, controllerInfo.RecieverSelectors);
+            }
+            return senderInstanceHash.Count() <= 0 ? null : senderInstanceHash;
+        }
     }
 
     /// <summary>
@@ -207,6 +273,7 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinderInstance : System.IDisposable
     {
+        Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>> _controllerSenderInstances = new Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>>();
         public ModelViewBinder Binder { get; }
         public Model Model { get; }
         public IViewObject[] ViewObjects { get; }
@@ -216,6 +283,18 @@ namespace Hinode
             Binder = binder;
             Model = model;
             ViewObjects = binder.CreateViewObjects(Model, binderInstanceMap);
+
+            if(binderInstanceMap != null && binderInstanceMap.UseControllerMap != null)
+            {
+                foreach(var view in ViewObjects)
+                {
+                    var senders = binder.CreateControllerSenderInstances(view, Model, binderInstanceMap);
+                    if(senders != null)
+                    {
+                        _controllerSenderInstances.Add(view, senders);
+                    }
+                }
+            }
         }
 
         void ModelOnUpdated(Model m)
@@ -248,13 +327,36 @@ namespace Hinode
             return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
         }
 
+        public IReadOnlyCollection<IControllerSenderInstance> GetControllerSenders(IViewObject viewObject)
+        {
+            Assert.IsTrue(ViewObjects.Contains(viewObject));
+            if(_controllerSenderInstances.ContainsKey(viewObject))
+            {
+                return _controllerSenderInstances[viewObject];
+            }
+            else
+            {
+                Debug.Log("pass");
+                return null;
+            }
+        }
+
         public void Dispose()
         {
             foreach(var view in ViewObjects)
             {
+                if(_controllerSenderInstances.ContainsKey(view))
+                {
+                    foreach(var sender in _controllerSenderInstances[view])
+                    {
+                        sender.Destroy();
+                    }
+                }
+
                 view.Unbind();
                 view.UseModel = null;
                 view.UseBindInfo = null;
+
             }
 
             Model?.OnUpdated.Remove(ModelOnUpdated);

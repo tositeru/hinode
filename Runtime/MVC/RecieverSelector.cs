@@ -51,7 +51,7 @@ namespace Hinode
             => new RecieverEnumerable(this, model, viewBinderInstance);
 
         public IEnumerable<T> GetRecieverEnumerable<T>(Model model, ModelViewBinderInstanceMap viewBinderInstance)
-            where T : IControllerReciever
+            where T : IControllerSender
             => new RecieverEnumerable(this, model, viewBinderInstance).OfType<T>();
 
         class RecieverEnumerable : IEnumerable<IControllerReciever>, IEnumerable
@@ -79,7 +79,7 @@ namespace Hinode
                     case ModelRelationShip.Self:
                         if (_target.ViewIdentity == "")
                         {
-                            if(_model is IControllerReciever)
+                            if (_model is IControllerReciever)
                             {
                                 yield return _model as IControllerReciever;
                             }
@@ -88,8 +88,7 @@ namespace Hinode
                         {
                             var instanceMap = _viewBinderInstanceMap[_model];
                             foreach (var view in instanceMap.QueryViews(_target.ViewIdentity)
-                                .Select(_v => _v as IControllerReciever)
-                                .Where(_v => _v != null))
+                                .OfType<IControllerReciever>())
                             {
                                 yield return view as IControllerReciever;
                             }
@@ -102,13 +101,13 @@ namespace Hinode
                         if (_target.QueryPath == ""
                             && _target.ViewIdentity == "")
                         {
-                            if(_model.Parent is IControllerReciever)
+                            if (_model.Parent is IControllerReciever)
                                 yield return _model.Parent as IControllerReciever;
                             break;
                         }
 
                         IEnumerable<Model> parentModels;
-                        if(_target.QueryPath != ""
+                        if (_target.QueryPath != ""
                             && _viewBinderInstanceMap.RootModel != null)
                         {
                             parentModels = _viewBinderInstanceMap.RootModel.Query(_target.QueryPath)
@@ -122,7 +121,7 @@ namespace Hinode
 
                         if (_target.ViewIdentity == "")
                         {
-                            foreach(var p in parentModels
+                            foreach (var p in parentModels
                                 .OfType<IControllerReciever>())
                             {
                                 yield return p;
@@ -148,8 +147,7 @@ namespace Hinode
                         if (_target.ViewIdentity == "")
                         {
                             foreach (var child in children
-                                .Select(_c => _c as IControllerReciever)
-                                .Where(_c => _c != null))
+                                .OfType<IControllerReciever>())
                             {
                                 yield return child;
                             }
@@ -159,8 +157,7 @@ namespace Hinode
                             var views = children
                                 .Where(_c => _viewBinderInstanceMap.BindInstances.ContainsKey(_c))
                                 .SelectMany(_c => _viewBinderInstanceMap[_c].QueryViews(_target.ViewIdentity))
-                                .Select(_v => _v as IControllerReciever)
-                                .Where(_v => _v != null);
+                                .OfType<IControllerReciever>();
                             foreach (var v in views)
                             {
                                 yield return v;

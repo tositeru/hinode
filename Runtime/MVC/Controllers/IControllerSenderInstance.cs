@@ -8,9 +8,12 @@ namespace Hinode
 {
     public interface IControllerSenderInstance : IControllerSender
     {
+        IViewObject TargetViewObj { get; set; }
         IControllerSenderGroup UseSenderGroup { get; set; }
         EnableSenderCollection EnabledSenders { get; }
         SelectorListDictionary SelectorListDict { get; }
+
+        void Destroy();
     }
 
     public class EnableSenderCollection : IEnumerable<System.Type>, IEnumerable
@@ -51,7 +54,6 @@ namespace Hinode
 
         public bool ContainsKey(System.Type senderType, IControllerSenderGroup senderGroup)
         {
-            Assert.IsTrue(senderGroup.ContainsSender(senderType), $"Don't contains sender... senderType={senderType}");
             return _dict.ContainsKey(senderType);
         }
 
@@ -118,11 +120,44 @@ namespace Hinode
             where TSender : IControllerSender
             => target.AddSelector(typeof(TSender), selector);
 
+        public static void AddSelectors(this IControllerSenderInstance target, System.Type senderType, IEnumerable<RecieverSelector> selectors)
+        {
+            foreach(var s in selectors)
+            {
+                target.AddSelector(senderType, s);
+            }
+        }
+        public static void AddSelectors(this IControllerSenderInstance target, System.Type senderType, params RecieverSelector[] selectors)
+            => target.AddSelectors(senderType, selectors.AsEnumerable());
+        public static void AddSelectors<TSender>(this IControllerSenderInstance target, IEnumerable<RecieverSelector> selectors)
+            where TSender : IControllerSender
+            => target.AddSelectors(typeof(TSender), selectors);
+        public static void AddSelectors<TSender>(this IControllerSenderInstance target, params RecieverSelector[] selectors)
+            where TSender : IControllerSender
+            => target.AddSelectors(typeof(TSender), selectors.AsEnumerable());
+
         public static void RemoveSelector(this IControllerSenderInstance target, System.Type senderType, RecieverSelector selector)
             => target.SelectorListDict.RemoveSelector(senderType, selector, target.UseSenderGroup);
         public static void RemoveSelector<TSender>(this IControllerSenderInstance target, RecieverSelector selector)
             where TSender : IControllerSender
             => target.RemoveSelector(typeof(TSender), selector);
+
+        public static void RemoveSelectors(this IControllerSenderInstance target, System.Type senderType, IEnumerable<RecieverSelector> selectors)
+        {
+            foreach (var s in selectors)
+            {
+                target.RemoveSelector(senderType, s);
+            }
+        }
+        public static void RemoveSelectors(this IControllerSenderInstance target, System.Type senderType, params RecieverSelector[] selectors)
+            => target.RemoveSelectors(senderType, selectors.AsEnumerable());
+        public static void RemoveSelectors<TSender>(this IControllerSenderInstance target, IEnumerable<RecieverSelector> selectors)
+            where TSender : IControllerSender
+            => target.RemoveSelectors(typeof(TSender), selectors);
+        public static void RemoveSelectors<TSender>(this IControllerSenderInstance target, params RecieverSelector[] selectors)
+            where TSender : IControllerSender
+            => target.RemoveSelectors(typeof(TSender), selectors.AsEnumerable());
+
 
         public static void ClearSelector(this IControllerSenderInstance target, System.Type senderType)
             => target.SelectorListDict.ClearSelector(senderType, target.UseSenderGroup);
@@ -183,20 +218,33 @@ namespace Hinode
         /// <param name="sender"></param>
         /// <param name="binderInstanceMap"></param>
         /// <param name="eventData"></param>
-        public static void Send<TSenderType>(this IControllerSenderInstance target, Model sender, ModelViewBinderInstanceMap binderInstanceMap, object eventData)
-            where TSenderType : IControllerSender
+        public static void Send(this IControllerSenderInstance target, System.Type senderType, Model sender, ModelViewBinderInstanceMap binderInstanceMap, object eventData)
         {
-            var senderType = typeof(TSenderType);
+            Assert.IsTrue(senderType.DoHasInterface<IControllerSender>());
+
             if (!target.UseSenderGroup.ContainsSender(senderType)) return;
             if (!target.DoEnableSender(senderType)) return;
             if (!target.ContainsSelector(senderType)) return;
 
-            var pairRecieverType = ControllerTypeManager.GetRecieverType<TSenderType>();
+            var pairRecieverType = ControllerTypeManager.GetRecieverType(senderType);
             foreach (var (recieverType, reciever, useEventData) in target.GetSelector(senderType)
                 .SelectMany(_s => _s.Query(pairRecieverType, sender, binderInstanceMap, eventData)))
             {
                 ControllerTypeManager.DoneRecieverExecuter(recieverType, reciever, sender, useEventData);
             }
         }
+
+        /// <summary>
+        /// 指定したSenderに対応するRecieverにイベントを送る
+        /// </summary>
+        /// <typeparam name="TSenderType"></typeparam>
+        /// <param name="target"></param>
+        /// <param name="senderKeyword"></param>
+        /// <param name="sender"></param>
+        /// <param name="binderInstanceMap"></param>
+        /// <param name="eventData"></param>
+        public static void Send<TSenderType>(this IControllerSenderInstance target, Model sender, ModelViewBinderInstanceMap binderInstanceMap, object eventData)
+            where TSenderType : IControllerSender
+            => target.Send(typeof(TSenderType), sender, binderInstanceMap, eventData);
     }
 }

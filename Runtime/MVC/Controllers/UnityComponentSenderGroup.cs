@@ -6,34 +6,16 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
-    public interface IControllerSenderGroup
-    {
-        IEnumerable<string> SenderKeywords { get; }
-        bool ContainsSenderKeyword(string keyword);
-        System.Type GetSenderType(string keyword);
-        bool ContainsSender(System.Type senderType);
-        IControllerSenderInstance CreateInstance(IViewObject targetViewObj, Model target, ModelViewBinderInstanceMap instanceMap);
-    }
-
-    public static partial class IControllerSenderGroupExtensions
-    {
-        public static bool ContainsSender<TSender>(this IControllerSenderGroup target)
-            where TSender : IControllerSender
-            => target.ContainsSender(typeof(TSender));
-    }
-
     /// <summary>
     /// IControllerSenderGroupのデフォルト実装
     /// </summary>
     /// <typeparam name="InstanceType"></typeparam>
-    public class DefaultControllerSenderGroup<InstanceType>
+    public class UnityComponentSenderGroup<InstanceType>
         : IControllerSenderGroup
-        where InstanceType : IControllerSenderInstance, new()
+        where InstanceType : Component, IControllerSenderInstance
     {
-        static readonly System.Type[] _emptryArgs = new System.Type[] { };
-
         Dictionary<string, System.Type> _enabledSenders = new Dictionary<string, System.Type>();
-        public DefaultControllerSenderGroup(IReadOnlyDictionary<string, System.Type> enabledSenders)
+        public UnityComponentSenderGroup(IReadOnlyDictionary<string, System.Type> enabledSenders)
         {
             Assert.IsTrue(enabledSenders.All(_e => _e.Value.DoHasInterface<IControllerSender>()));
             _enabledSenders.Merge(true, enabledSenders);
@@ -53,15 +35,16 @@ namespace Hinode
         }
         public IControllerSenderInstance CreateInstance(IViewObject targetViewObj, Model target, ModelViewBinderInstanceMap instanceMap)
         {
-            var inst = new InstanceType
-            {
-                Target = target,
-                TargetViewObj = targetViewObj,
-                UseBinderInstanceMap = instanceMap,
-                UseSenderGroup = this
-            };
+            Assert.IsTrue(targetViewObj is Component);
+            var com = targetViewObj as Component;
+            var inst = com.gameObject.AddComponent<InstanceType>();
+            inst.Target = target;
+            inst.TargetViewObj = targetViewObj;
+            inst.UseBinderInstanceMap = instanceMap;
+            inst.UseSenderGroup = this;
             return inst;
         }
         #endregion
     }
+
 }

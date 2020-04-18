@@ -11,9 +11,10 @@ namespace Hinode.Tests.Input
     /// </summary>
     public class TestReplayableInput
     {
-        [UnityTest, Ignore("not implement yet...")]
+        [UnityTest]
         public IEnumerator BasicUsagePasses()
         {
+            yield return null;
             throw new System.NotImplementedException("not implement yet...");
         }
     }

@@ -15,16 +15,17 @@ namespace Hinode
         {
             //Entry Hinode's IControllerRecivers!!
             EntryPair<IOnPointerDownSender, IOnPointerDownReciever>();
-            EntryPair<IOnPointerMoveSender, IOnPointerMoveReciever>();
             EntryPair<IOnPointerUpSender, IOnPointerUpReciever>();
             EntryPair<IOnPointerClickSender, IOnPointerClickReciever>();
+            EntryPair<IOnPointerBeginDragSender, IOnPointerBeginDragReciever>();
+            EntryPair<IOnPointerDragSender, IOnPointerDragReciever>();
+            EntryPair<IOnPointerEndDragSender, IOnPointerEndDragReciever>();
+            EntryPair<IOnPointerDropSender, IOnPointerDropReciever>();
+            EntryPair<IOnPointerEnterSender, IOnPointerEnterReciever>();
+            EntryPair<IOnPointerExitSender, IOnPointerExitReciever>();
 
             EntryRecieverExecuter<IOnPointerDownReciever, OnPointerDownEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerDown(sender, eventData);
-            });
-
-            EntryRecieverExecuter<IOnPointerMoveReciever, OnPointerMoveEventData>((reciever, sender, eventData) => {
-                reciever.OnPointerMove(sender, eventData);
             });
 
             EntryRecieverExecuter<IOnPointerUpReciever, OnPointerUpEventData>((reciever, sender, eventData) => {
@@ -33,6 +34,26 @@ namespace Hinode
 
             EntryRecieverExecuter<IOnPointerClickReciever, OnPointerClickEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerClick(sender, eventData);
+            });
+
+            EntryRecieverExecuter<IOnPointerBeginDragReciever, OnPointerBeginDragEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerBeginDrag(sender, eventData);
+            });
+            EntryRecieverExecuter<IOnPointerDragReciever, OnPointerDragEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerDrag(sender, eventData);
+            });
+            EntryRecieverExecuter<IOnPointerEndDragReciever, OnPointerEndDragEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerEndDrag(sender, eventData);
+            });
+            EntryRecieverExecuter<IOnPointerDropReciever, OnPointerDropEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerDrop(sender, eventData);
+            });
+
+            EntryRecieverExecuter<IOnPointerEnterReciever, OnPointerEnterEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerEnter(sender, eventData);
+            });
+            EntryRecieverExecuter<IOnPointerExitReciever, OnPointerExitEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerExit(sender, eventData);
             });
 
         }
@@ -99,7 +120,7 @@ namespace Hinode
 
         public static void DoneRecieverExecuter(System.Type useRecieverType, IControllerReciever reciever, Model sender, object eventData)
         {
-            Assert.IsTrue(_executerDict.ContainsKey(useRecieverType), $"Don't entry Type({useRecieverType}) executer...");
+            Assert.IsTrue(_executerDict.ContainsKey(useRecieverType), $"Don't entry Type({useRecieverType}) executer... Please Use ControllerTypeManager#EntryRecieverExecuter()!!");
             Assert.IsTrue(reciever.GetType().DoHasInterface(useRecieverType));
             _executerDict[useRecieverType](reciever, sender, eventData);
         }

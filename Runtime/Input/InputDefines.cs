@@ -44,6 +44,23 @@ namespace Hinode
         };
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="button"></param>
+        /// <returns></returns>
+        public static MouseButton ToMouseType(PointerEventData.InputButton button)
+        {
+            switch (button)
+            {
+                case PointerEventData.InputButton.Left: return MouseButton.Left;
+                case PointerEventData.InputButton.Right: return MouseButton.Right;
+                case PointerEventData.InputButton.Middle: return MouseButton.Middle;
+                default:
+                    throw new System.NotImplementedException();
+            }
+        }
+
+        /// <summary>
         /// 指定したBaseInputのマウスボタンの状態をButtonConditionに変換する
         /// </summary>
         /// <param name="baseInput"></param>

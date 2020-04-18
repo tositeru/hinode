@@ -13,6 +13,4 @@ namespace Hinode
     public interface IControllerReciever
     {
     }
-
-    public interface IControllerPairTag { }
 }

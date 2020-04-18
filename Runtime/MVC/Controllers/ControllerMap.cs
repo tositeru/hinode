@@ -29,7 +29,7 @@ namespace Hinode
 
             //Keywordの重複チェック
             var multipleKeywords = SenderGroups.SelectMany(_g => _g.SenderKeywords)
-                .Where(_k => 1 < SenderGroups.Where(_og => _og.DoHasSenderKeyword(_k) ).Count());
+                .Where(_k => 1 < SenderGroups.Where(_og => _og.ContainsSenderKeyword(_k) ).Count());
             if(multipleKeywords.Any())
             {
                 var keywords = multipleKeywords.Aggregate((_sum, _cur) => _sum + $",{ _cur}");
@@ -37,14 +37,20 @@ namespace Hinode
             }
         }
 
-        public IControllerSenderInstance CreateController(string useEventKeyward, Model target, ModelViewBinderInstanceMap binderInstanceMap)
+        public IControllerSenderInstance CreateController(string useEventKeyward, IViewObject viewObj, Model target, ModelViewBinderInstanceMap binderInstanceMap)
         {
-            var group = SenderGroups.FirstOrDefault(_s => _s.DoHasSenderKeyword(useEventKeyward));
-            Assert.IsNotNull(group);
+            var group = SenderGroups.FirstOrDefault(_s => _s.ContainsSenderKeyword(useEventKeyward));
+            Assert.IsNotNull(group, $"Don't exist Event Keyword={useEventKeyward}...");
 
-            var inst = group.CreateInstance(target, binderInstanceMap);
+            var inst = group.CreateInstance(viewObj, target, binderInstanceMap);
             inst.EnableSender(group.GetSenderType(useEventKeyward));
             return inst;
         }
+
+        public bool ContainsSenderKeyword(string senderKeyword)
+        {
+            return SenderGroups.Any(_g => _g.ContainsSenderKeyword(senderKeyword));
+        }
+
     }
 }

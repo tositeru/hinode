@@ -16,6 +16,7 @@ namespace Hinode
     public class ModelViewBinderMap
     {
         public ModelViewBinder.IViewInstanceCreator ViewInstanceCreator { get; }
+        public ControllerMap UseControllerMap { get; set; }
 
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
@@ -92,6 +93,8 @@ namespace Hinode
         public bool EnabledDelayOperation { get; set; } = false;
 
         public ModelViewBinderMap BinderMap { get; }
+        public ControllerMap UseControllerMap { get => BinderMap.UseControllerMap; }
+
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances
         {
             get => _bindInstanceDict;

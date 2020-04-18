@@ -9,15 +9,20 @@ namespace Hinode.Tests.MVC.Controller
     /// <summary>
     /// <seealso cref="ControllerTypeManager"/>
     /// <seealso cref="IControllerSender"/>
-    /// <seealso cref="IControllerReciever"/>
+    /// <seealso cref="IControllerSender"/>
     /// </summary>
     public class TestControllerTypeManager
     {
         class OnPointerRecievers
             : IOnPointerDownReciever
-            , IOnPointerMoveReciever
             , IOnPointerUpReciever
             , IOnPointerClickReciever
+            , IOnPointerBeginDragReciever
+            , IOnPointerDragReciever
+            , IOnPointerEndDragReciever
+            , IOnPointerDropReciever
+            , IOnPointerEnterReciever
+            , IOnPointerExitReciever
         {
             public Model Sender { get; private set; }
             public object EventData { get; private set; }
@@ -33,17 +38,48 @@ namespace Hinode.Tests.MVC.Controller
                 EventData = eventData;
             }
 
-            public void OnPointerMove(Model sender, OnPointerMoveEventData eventData)
-            {
-                Sender = sender;
-                EventData = eventData;
-            }
-
             public void OnPointerUp(Model sender, OnPointerUpEventData eventData)
             {
                 Sender = sender;
                 EventData = eventData;
             }
+
+            public void OnPointerEnter(Model sender, OnPointerEnterEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
+            public void OnPointerExit(Model sender, OnPointerExitEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
+            public void OnPointerBeginDrag(Model sender, OnPointerBeginDragEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
+            public void OnPointerDrag(Model sender, OnPointerDragEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
+            public void OnPointerEndDrag(Model sender, OnPointerEndDragEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
+            public void OnPointerDrop(Model sender, OnPointerDropEventData eventData)
+            {
+                Sender = sender;
+                EventData = eventData;
+            }
+
         }
 
         [Test, Description("Check to setting OnPointerXXXEvent in ControllerTypeManager")]
@@ -52,9 +88,14 @@ namespace Hinode.Tests.MVC.Controller
             var controllerPairs = new (System.Type sender, System.Type reciever)[]
             {
                 (typeof(IOnPointerDownSender), typeof(IOnPointerDownReciever)),
-                (typeof(IOnPointerMoveSender), typeof(IOnPointerMoveReciever)),
                 (typeof(IOnPointerUpSender), typeof(IOnPointerUpReciever)),
                 (typeof(IOnPointerClickSender), typeof(IOnPointerClickReciever)),
+                (typeof(IOnPointerEnterSender), typeof(IOnPointerEnterReciever)),
+                (typeof(IOnPointerExitSender), typeof(IOnPointerExitReciever)),
+                (typeof(IOnPointerBeginDragSender), typeof(IOnPointerBeginDragReciever)),
+                (typeof(IOnPointerDragSender), typeof(IOnPointerDragReciever)),
+                (typeof(IOnPointerEndDragSender), typeof(IOnPointerEndDragReciever)),
+                (typeof(IOnPointerDropSender), typeof(IOnPointerDropReciever)),
             };
 
             foreach(var pair in controllerPairs)
@@ -75,14 +116,6 @@ namespace Hinode.Tests.MVC.Controller
                 Assert.AreSame(downEventData, onPointerRecievers.EventData);
             }
 
-            {//OnPointerMoveReciever
-                var sender = new Model() { Name = "sender" };
-                var eventData = new OnPointerMoveEventData();
-                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerMoveReciever), onPointerRecievers, sender, eventData);
-                Assert.AreSame(sender, onPointerRecievers.Sender);
-                Assert.AreSame(eventData, onPointerRecievers.EventData);
-            }
-
             {//OnPointerUpReciever
                 var sender = new Model() { Name = "sender" };
                 var eventData = new OnPointerUpEventData();
@@ -98,6 +131,55 @@ namespace Hinode.Tests.MVC.Controller
                 Assert.AreSame(sender, onPointerRecievers.Sender);
                 Assert.AreSame(eventData, onPointerRecievers.EventData);
             }
+
+            {//OnPointerEnterReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerEnterEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerEnterReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
+            {//OnPointerExitReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerExitEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerExitReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
+            {//OnPointerBeginDragReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerBeginDragEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerBeginDragReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
+            {//OnPointerDragReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerDragEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerDragReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
+            {//OnPointerEndDragReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerEndDragEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerEndDragReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
+            {//OnPointerDropReciever
+                var sender = new Model() { Name = "sender" };
+                var eventData = new OnPointerDropEventData();
+                ControllerTypeManager.DoneRecieverExecuter(typeof(IOnPointerDropReciever), onPointerRecievers, sender, eventData);
+                Assert.AreSame(sender, onPointerRecievers.Sender);
+                Assert.AreSame(eventData, onPointerRecievers.EventData);
+            }
+
         }
     }
 }
