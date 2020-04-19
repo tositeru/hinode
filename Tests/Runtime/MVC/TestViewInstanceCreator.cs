@@ -42,7 +42,7 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class TestCreator : ModelViewBinder.IViewInstanceCreator
+        class TestCreator : IViewInstanceCreator
         {
             protected override IViewObject CreateViewObjImpl(string instanceKey)
             {

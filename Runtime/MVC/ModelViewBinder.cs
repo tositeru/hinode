@@ -73,12 +73,14 @@ namespace Hinode
         public class BindInfo
         {
             Dictionary<string, ControllerInfo> _controllers = new Dictionary<string, ControllerInfo>();
+            Dictionary<string, object> _viewLayouts = new Dictionary<string, object>();
 
             public string ID { get; }
             public string InstanceKey { get; }
             public string BinderKey { get; }
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
+            public IReadOnlyDictionary<string, object> ViewLayouts { get => _viewLayouts; }
 
             //TODO public ViewLayoutet? ViewLayouter? { get; set; }
             //TODO public HashSet<IController> UseControllers { get; set; }
@@ -104,30 +106,25 @@ namespace Hinode
                 _controllers.Add(controllerInfo.Keyword, controllerInfo);
                 return this;
             }
-        }
 
-        /// <summary>
-        /// IViewObjectとIModelViewParamBinderを作成する抽象クラス
-        /// </summary>
-        public abstract class IViewInstanceCreator
-        {
-            public IViewObject CreateViewObj(BindInfo bindInfo)
+            public BindInfo AddViewLayout(string keyword, object value)
             {
-                var viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
-                Assert.IsNotNull(viewObj, $"Failed to create ViewObject because don't match ViewObject Key({bindInfo.InstanceKey})...");
-                viewObj.UseBindInfo = bindInfo;
-                return viewObj;
+                if(_viewLayouts.ContainsKey(keyword))
+                {
+                    throw new System.ArgumentException($"Already set ViewLayout keyword({keyword})...");
+                }
+                _viewLayouts.Add(keyword, value);
+                return this;
             }
 
-            public IModelViewParamBinder GetParamBinderObj(BindInfo bindInfo)
+            public object GetViewLayoutValue(string keyword)
             {
-                var paramBinder = GetParamBinderImpl(bindInfo.BinderKey);
-                Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({paramBinder})...");
-                return paramBinder;
+                if (!_viewLayouts.ContainsKey(keyword))
+                {
+                    throw new System.ArgumentException($"Not exist ViewLayout keyword({keyword})...");
+                }
+                return _viewLayouts[keyword];
             }
-
-            protected abstract IViewObject CreateViewObjImpl(string instanceKey);
-            protected abstract IModelViewParamBinder GetParamBinderImpl(string binderKey);
         }
 
         public class ControllerInfo
@@ -229,6 +226,13 @@ namespace Hinode
                 var view = ViewInstaceCreator.CreateViewObj(_i);
                 view.UseModel = model;
                 view.Bind(model, _i, binderInstanceMap);
+
+                if(null != binderInstanceMap.UseViewLayouter)
+                {//Set Default ViewLayout
+                    var viewLayouter = binderInstanceMap.UseViewLayouter;
+                    viewLayouter.SetAllMatchLayouts(view, _i.ViewLayouts);
+                }
+
                 return view;
             }).ToArray();
         }
@@ -274,9 +278,12 @@ namespace Hinode
     public class ModelViewBinderInstance : System.IDisposable
     {
         Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>> _controllerSenderInstances = new Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>>();
+        Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
+
         public ModelViewBinder Binder { get; }
         public Model Model { get; }
         public IViewObject[] ViewObjects { get; }
+        public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
@@ -292,6 +299,26 @@ namespace Hinode
                     if(senders != null)
                     {
                         _controllerSenderInstances.Add(view, senders);
+                    }
+                }
+            }
+
+            if(binderInstanceMap.UseViewLayouter.DoEnableToAutoCreateViewObject)
+            {
+                var viewLayouter = binderInstanceMap.UseViewLayouter;
+                foreach (var viewObj in ViewObjects)
+                {
+                    var bindInfo = viewObj.UseBindInfo;
+
+                    var autoViewObjHash = new HashSet<IViewObject>();
+                    foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayouts.Keys))
+                    {
+                        var autoViewObj = creator.Create(viewObj);
+                        autoViewObjHash.Add(autoViewObj);
+                        viewLayouter.SetAllMatchLayouts(autoViewObj, bindInfo.ViewLayouts);
+                    }
+                    if(autoViewObjHash.Any()) {
+                        _autoLayoutViewObjects.Add(viewObj, autoViewObjHash);
                     }
                 }
             }
@@ -336,7 +363,6 @@ namespace Hinode
             }
             else
             {
-                Debug.Log("pass");
                 return null;
             }
         }
@@ -360,50 +386,6 @@ namespace Hinode
             }
 
             Model?.OnUpdated.Remove(ModelOnUpdated);
-        }
-    }
-
-    /// <summary>
-    /// 汎用のModelViewBinder.IViewInstanceCreator
-    ///
-    /// 引数無しのコンストラクを持つIViewBinderObject型に対応しています
-    /// <seealso cref="ModelViewBinder"/>
-    /// <seealso cref="ModelViewBinder.IBindInfo"/>
-    /// </summary>
-    public class DefaultViewInstanceCreator : ModelViewBinder.IViewInstanceCreator
-    {
-        Dictionary<string, (System.Type viewObjType, IModelViewParamBinder paramBinder)> _dict = new Dictionary<string, (System.Type viewObjType, IModelViewParamBinder paramBinder)>();
-
-        System.Type[] _emptryArgs = new System.Type[] { };
-
-        public DefaultViewInstanceCreator(params (System.Type viewType, IModelViewParamBinder paramBinder)[] data)
-            : this(data.AsEnumerable())
-        { }
-
-        public DefaultViewInstanceCreator(IEnumerable<(System.Type viewType, IModelViewParamBinder paramBinder)> data)
-        {
-            foreach(var d in data)
-            {
-                var cstor = d.viewType.GetConstructor(_emptryArgs);
-                Assert.IsNotNull(cstor, $"空引数のコンストラクターがあるクラスだけに対応しています... viewType={d.viewType.FullName}");
-                Assert.IsTrue(d.viewType.DoHasInterface<IViewObject>(), $"IViewObject型を継承した型だけ対応しています... viewType={d.viewType.FullName}");
-                Assert.IsNotNull(d.paramBinder, $"paramBinderは必ず設定してください...");
-                _dict.Add(d.viewType.FullName, (d.viewType, d.paramBinder));
-            }
-        }
-
-        protected override IViewObject CreateViewObjImpl(string instanceKey)
-        {
-            if (!_dict.ContainsKey(instanceKey)) return null;
-            var type = _dict[instanceKey].viewObjType;
-            var cstor = type.GetConstructor(_emptryArgs);
-            return cstor.Invoke(null) as IViewObject;
-        }
-
-        protected override IModelViewParamBinder GetParamBinderImpl(string binderKey)
-        {
-            if (!_dict.ContainsKey(binderKey)) return null;
-            return _dict[binderKey].paramBinder;
         }
     }
 }

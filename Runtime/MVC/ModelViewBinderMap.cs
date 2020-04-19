@@ -15,18 +15,19 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinderMap
     {
-        public ModelViewBinder.IViewInstanceCreator ViewInstanceCreator { get; }
+        public IViewInstanceCreator ViewInstanceCreator { get; }
+        public ViewLayouter UseViewLayouter { get; set; }
         public ControllerMap UseControllerMap { get; set; }
 
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
         public ModelViewBinderMap() { }
 
-        public ModelViewBinderMap(ModelViewBinder.IViewInstanceCreator creator, params ModelViewBinder[] binders)
+        public ModelViewBinderMap(IViewInstanceCreator creator, params ModelViewBinder[] binders)
             : this(creator, binders.AsEnumerable())
         { }
 
-        public ModelViewBinderMap(ModelViewBinder.IViewInstanceCreator creator, IEnumerable<ModelViewBinder> binders)
+        public ModelViewBinderMap(IViewInstanceCreator creator, IEnumerable<ModelViewBinder> binders)
         {
             ViewInstanceCreator = creator;
             Binders = binders.ToList();
@@ -94,6 +95,7 @@ namespace Hinode
 
         public ModelViewBinderMap BinderMap { get; }
         public ControllerMap UseControllerMap { get => BinderMap.UseControllerMap; }
+        public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }
 
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances
         {

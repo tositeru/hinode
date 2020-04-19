@@ -7,6 +7,7 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
+    /// TODO ModelのIdentityによってSenderの有効無効を制御できるようにするクラスを持つようにする
     /// <seealso cref="IControllerSenderGroup"/>
     /// <seealso cref="IControllerSenderInstance"/>
     /// </summary>
