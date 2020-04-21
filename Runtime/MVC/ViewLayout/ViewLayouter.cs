@@ -28,11 +28,14 @@ namespace Hinode
             public IViewObject Create(IViewObject viewObj)
             {
                 var inst = CreateImpl(viewObj);
+                Assert.IsNotNull(inst);
                 foreach(var supportedType in GetSupportedIViewLayouts())
                 {
                     Assert.IsTrue(inst.GetType().DoHasInterface(supportedType),
                         $"{inst.GetType()} don't support IViewLayout({supportedType})... creatorType={this.GetType()}");
                 }
+                inst.UseModel = viewObj.UseModel;
+                inst.UseBinderInstance = viewObj.UseBinderInstance;
                 return inst;
             }
 
@@ -46,8 +49,18 @@ namespace Hinode
         {}
         public ViewLayouter(IEnumerable<(string, IViewLayoutAccessor)> layouts)
         {
-            foreach(var (keyword, layout) in layouts)
+            AddKeywords(layouts);
+        }
+
+        public void AddKeywords(params (string keyword, IViewLayoutAccessor layout)[] layouts)
+            => AddKeywords(layouts.AsEnumerable());
+        public void AddKeywords(IEnumerable<(string keyword, IViewLayoutAccessor layout)> layouts)
+        {
+            foreach (var (keyword, layout) in layouts)
             {
+                Assert.IsFalse(_layoutAccessors.ContainsKey(keyword), $"同じキーワード名が既に存在しています。keyword={keyword}");
+                Assert.IsFalse(_layoutAccessors.Values.Any(_l => _l.GetType().Equals(layout.GetType())), $"同じViewLayoutAccessor型を持つキーワードは追加できません。keyword={keyword}, accessorType={layout.GetType()}");
+
                 _layoutAccessors.Add(keyword, layout);
             }
         }

@@ -8,8 +8,14 @@ using System.Runtime.Serialization;
 
 namespace Hinode.Editors
 {
+    [CreateAssetMenu(fileName = "TextTemplateEngine", menuName = "Hinode/Create TextTemplate")]
     public class TextTemplateEngine : ScriptableObject
     {
+        public static TextTemplateEngine Create()
+        {
+            return ScriptableObject.CreateInstance<TextTemplateEngine>();
+        }
+
         public enum Newline
         {
             Newline,

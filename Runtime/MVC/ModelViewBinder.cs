@@ -32,6 +32,11 @@ namespace Hinode
         }
     }
 
+    public class EmptyModelViewParamBinder : IModelViewParamBinder
+    {
+        public void Update(Model model, IViewObject viewObj) { }
+    }
+
     /// <summary>
     /// ModelとViewを関連づけるクラス
     ///
@@ -217,7 +222,7 @@ namespace Hinode
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public IViewObject[] CreateViewObjects(Model model, ModelViewBinderInstanceMap binderInstanceMap)
+        public IViewObject[] CreateViewObjects(Model model, ModelViewBinderInstance binderInstance, ModelViewBinderInstanceMap binderInstanceMap)
         {
             Assert.IsTrue(DoMatch(model));
 
@@ -225,9 +230,10 @@ namespace Hinode
             {
                 var view = ViewInstaceCreator.CreateViewObj(_i);
                 view.UseModel = model;
+                view.UseBinderInstance = binderInstance;
                 view.Bind(model, _i, binderInstanceMap);
 
-                if(null != binderInstanceMap.UseViewLayouter)
+                if(binderInstanceMap != null && binderInstanceMap.UseViewLayouter != null)
                 {//Set Default ViewLayout
                     var viewLayouter = binderInstanceMap.UseViewLayouter;
                     viewLayouter.SetAllMatchLayouts(view, _i.ViewLayouts);
@@ -281,15 +287,21 @@ namespace Hinode
         Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
 
         public ModelViewBinder Binder { get; }
+        public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; }
-        public IViewObject[] ViewObjects { get; }
+        public IViewObject[] ViewObjects { get; private set; }
         public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
             Binder = binder;
             Model = model;
-            ViewObjects = binder.CreateViewObjects(Model, binderInstanceMap);
+            UseInstanceMap = binderInstanceMap;
+            ViewObjects = binder.CreateViewObjects(Model, this, binderInstanceMap);
+            foreach(var v in ViewObjects)
+            {
+                v.UseBinderInstance = this;
+            }
 
             if(binderInstanceMap != null && binderInstanceMap.UseControllerMap != null)
             {
@@ -303,7 +315,7 @@ namespace Hinode
                 }
             }
 
-            if(binderInstanceMap.UseViewLayouter.DoEnableToAutoCreateViewObject)
+            if(binderInstanceMap != null && (binderInstanceMap.UseViewLayouter?.DoEnableToAutoCreateViewObject ?? false))
             {
                 var viewLayouter = binderInstanceMap.UseViewLayouter;
                 foreach (var viewObj in ViewObjects)
@@ -315,9 +327,12 @@ namespace Hinode
                     {
                         var autoViewObj = creator.Create(viewObj);
                         autoViewObjHash.Add(autoViewObj);
-                        viewLayouter.SetAllMatchLayouts(autoViewObj, bindInfo.ViewLayouts);
                     }
                     if(autoViewObjHash.Any()) {
+                        foreach(var v in autoViewObjHash)
+                        {
+                            v.UseBinderInstance = this;
+                        }
                         _autoLayoutViewObjects.Add(viewObj, autoViewObjHash);
                     }
                 }
@@ -347,6 +362,19 @@ namespace Hinode
                 var paramBinder = Binder.GetParamBinder(viewObj.UseBindInfo);
                 paramBinder.Update(Model, viewObj);
             }
+
+            if(UseInstanceMap != null && UseInstanceMap.UseViewLayouter != null)
+            {
+                var viewLayouter = UseInstanceMap.UseViewLayouter;
+                foreach (var viewObj in ViewObjects
+                    .Concat(ViewObjects
+                        .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
+                        .SelectMany(_v => AutoLayoutViewObjects[_v]))
+                    .Where(_v => _v.UseBindInfo != null && _v.UseBindInfo.ViewLayouts != null))
+                {
+                    viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
+                }
+            }
         }
 
         public IEnumerable<IViewObject> QueryViews(string query)
@@ -369,7 +397,18 @@ namespace Hinode
 
         public void Dispose()
         {
-            foreach(var view in ViewObjects)
+            foreach(var keyAndViews in _autoLayoutViewObjects)
+            {
+                var view = keyAndViews.Key;
+                var autoViews = keyAndViews.Value;
+                foreach(var v in autoViews)
+                {
+                    v.Unbind();
+                }
+            }
+            _autoLayoutViewObjects.Clear();
+
+            foreach (var view in ViewObjects)
             {
                 if(_controllerSenderInstances.ContainsKey(view))
                 {
@@ -381,9 +420,9 @@ namespace Hinode
 
                 view.Unbind();
                 view.UseModel = null;
-                view.UseBindInfo = null;
-
+                view.UseBinderInstance = null;
             }
+            ViewObjects = null;
 
             Model?.OnUpdated.Remove(ModelOnUpdated);
         }

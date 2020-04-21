@@ -22,6 +22,7 @@ namespace Hinode.Tests.MVC
             {
                 public Model UseModel { get; set; }
                 public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+                public ModelViewBinderInstance UseBinderInstance { get; set; }
 
                 public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
                 {

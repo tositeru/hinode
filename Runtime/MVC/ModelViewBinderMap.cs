@@ -185,13 +185,22 @@ namespace Hinode
             }
             else if(!_bindInstanceDict.ContainsKey(model))
             {
-                var bindInst = BinderMap.CreateBindInstance(model, this);
-                if(bindInst != null)
+                try
                 {
-                    bindInst.DettachModelOnUpdated();
-                    model.OnUpdated.Add(ModelOnUpdated);
-                    _bindInstanceDict.Add(model, bindInst);
-                    bindInst.UpdateViewObjects();
+                    var bindInst = BinderMap.CreateBindInstance(model, this);
+                    if(bindInst != null)
+                    {
+                        bindInst.UseInstanceMap = this;
+                        bindInst.DettachModelOnUpdated();
+                        model.OnUpdated.Add(ModelOnUpdated);
+                        _bindInstanceDict.Add(model, bindInst);
+                        bindInst.UpdateViewObjects();
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError(e);
+                    throw new System.Exception($"Failed to Add model{model}...");
                 }
             }
         }
@@ -231,6 +240,7 @@ namespace Hinode
             {
                 if (!_bindInstanceDict.ContainsKey(model)) return false;
                 var bindInst = BinderMap.CreateBindInstance(model, this);
+                bindInst.UseInstanceMap = this;
                 _bindInstanceDict[model] = bindInst;
                 bindInst.UpdateViewObjects();
                 return true;

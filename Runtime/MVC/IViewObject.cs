@@ -10,8 +10,8 @@ namespace Hinode
     public interface IViewObject
     {
         Model UseModel { get; set; }
-
         ModelViewBinder.BindInfo UseBindInfo { get; set; }
+        ModelViewBinderInstance UseBinderInstance { get; set; }
 
         /// <summary>
         /// 
@@ -24,5 +24,18 @@ namespace Hinode
         /// 削除
         /// </summary>
         void Unbind();
+    }
+
+    public static partial class IViewObjectExtensions
+    {
+        /// <summary>
+        /// 使用しているModelと自身の型の名前を返します。
+        /// </summary>
+        /// <param name="viewObject"></param>
+        /// <returns></returns>
+        public static string GetModelAndTypeName(this IViewObject viewObject)
+        {
+            return $"{viewObject.UseModel}:{viewObject.GetType().FullName}";
+        }
     }
 }

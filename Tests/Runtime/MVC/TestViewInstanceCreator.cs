@@ -21,6 +21,7 @@ namespace Hinode.Tests.MVC
 
             public Model UseModel { get; set; }
             public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+            public ModelViewBinderInstance UseBinderInstance { get; set; }
 
             public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
@@ -46,7 +47,7 @@ namespace Hinode.Tests.MVC
         {
             protected override IViewObject CreateViewObjImpl(string instanceKey)
             {
-                switch(instanceKey)
+                switch (instanceKey)
                 {
                     case "A":
                         return new ViewObj(1);
@@ -88,7 +89,8 @@ namespace Hinode.Tests.MVC
             Assert.AreEqual(-1, (viewObjB as ViewObj).Value);
             Assert.AreSame(viewObjBbindInfo, viewObjB.UseBindInfo);
 
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
                 var bindInfo = new ModelViewBinder.BindInfo("B", "__invalid", "b");
                 var nullObj = creator.CreateViewObj(bindInfo);
             });
@@ -109,7 +111,8 @@ namespace Hinode.Tests.MVC
             Assert.IsTrue(paramBinderB is ViewObj.ParamBinder);
             Assert.AreEqual(-1, (paramBinderB as ViewObj.ParamBinder).Value);
 
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
                 var bindInfo = new ModelViewBinder.BindInfo("B", "B", "abc");
                 var nullParamBinder = creator.GetParamBinderObj(bindInfo);
             });

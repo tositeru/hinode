@@ -128,7 +128,7 @@ namespace Hinode
             string stylingIds = "";
             if (StylingID.Any())
                 stylingIds = StylingID.Aggregate(" ", (_sum, _cur) => _sum + " ." + _cur);
-            return $"{GetType().FullName}:{GetPath()}{logicalIds}{stylingIds}";
+            return $"{GetPath()}{logicalIds}{stylingIds}:{GetType().FullName}";
         }
         #region OnUpdated callback
         /// <summary>

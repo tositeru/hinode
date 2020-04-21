@@ -32,11 +32,11 @@ namespace Hinode
             return GetImpl(viewObj);
         }
 
-        public bool IsVaildViewObject(IViewObject viewObj)
+        public virtual bool IsVaildViewObject(IViewObject viewObj)
         {
             return viewObj.GetType().DoHasInterface(ViewLayoutType);
         }
-        public bool IsVaildValue(object value)
+        public virtual bool IsVaildValue(object value)
         {
             return value.GetType().Equals(ValueType);
         }

@@ -183,7 +183,7 @@ namespace Hinode.Editors.TextTemplateEngines
 
                 _param.onClickedGenerateButton = () =>
                 {
-                    _param.generatedText = Target.Generate();
+                    _param.generatedText = this.Target.Generate();
                 };
 
                 Common.OnInspectorGUI(_param);

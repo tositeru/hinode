@@ -34,12 +34,35 @@ namespace Hinode.Tests.MVC.ViewLayout
             }
         }
 
+        interface ITestShapeViewLayout : IViewLayout
+        {
+            int ShapeNoLayout { get; set; }
+        }
+
+        class TestShapeViewLayoutAccessor : IViewLayoutAccessor
+        {
+            public override System.Type ViewLayoutType { get => typeof(ITestShapeViewLayout); }
+
+            public override System.Type ValueType { get => typeof(int); }
+
+            protected override object GetImpl(IViewObject viewObj)
+            {
+                return (viewObj as ITestShapeViewLayout).ShapeNoLayout;
+            }
+
+            protected override void SetImpl(object value, IViewObject viewObj)
+            {
+                (viewObj as ITestShapeViewLayout).ShapeNoLayout = (int)value;
+            }
+        }
+
         class TestAutoViewObj : IViewObject, ITestColorViewLayout
         {
             public Color ColorLayout { get; set; }
 
             public Model UseModel { get; set; }
             public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+            public ModelViewBinderInstance UseBinderInstance { get; set; }
 
             public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             { }
@@ -59,7 +82,7 @@ namespace Hinode.Tests.MVC.ViewLayout
             {
                 return new TestAutoViewObj()
                 {
-                    UseBindInfo = viewObj.UseBindInfo
+                    UseBinderInstance = viewObj.UseBinderInstance
                 };
             }
 
@@ -76,6 +99,7 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             public Model UseModel { get; set; }
             public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+            public ModelViewBinderInstance UseBinderInstance { get; set; }
 
             public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             { }
@@ -95,6 +119,7 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             public Model UseModel { get; set; }
             public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+            public ModelViewBinderInstance UseBinderInstance { get; set; }
 
             public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             { }
@@ -133,6 +158,27 @@ namespace Hinode.Tests.MVC.ViewLayout
             Assert.Throws<System.ArgumentException>(() => {
                 viewLayouter.Set("color", Color.blue, testView2Obj);
             });
+        }
+
+        [Test]
+        public void AddKeywordsPasses()
+        {
+            var viewLayouter = new ViewLayouter();
+
+            var colorLayouterAccessor = new TestColorViewLayoutAccessor();
+            var shapeLayoutAccessor = new TestShapeViewLayoutAccessor();
+            {
+                viewLayouter.AddKeywords(
+                    ("color", colorLayouterAccessor),
+                    ("shape", shapeLayoutAccessor));
+
+                Assert.IsTrue(viewLayouter.ContainsKeyword("color"));
+                Assert.IsTrue(viewLayouter.ContainsKeyword("shape"));
+            }
+            {
+                Assert.Throws<UnityEngine.Assertions.AssertionException>(() => viewLayouter.AddKeywords(("color", shapeLayoutAccessor)), "");
+                Assert.Throws<UnityEngine.Assertions.AssertionException>(() => viewLayouter.AddKeywords(("shape2", shapeLayoutAccessor)), "");
+            }
         }
 
         [Test]
@@ -269,8 +315,8 @@ namespace Hinode.Tests.MVC.ViewLayout
                 Assert.AreEqual(1, autoViewObjs.Count());
                 Assert.IsTrue(autoViewObjs.Any(_v => _v is TestAutoViewObj));
                 var autoViewObj = autoViewObjs.First(_v => _v is TestAutoViewObj);
-                Assert.IsNull(autoViewObj.UseModel);
-                Assert.AreSame(view2Obj.UseBindInfo, autoViewObj.UseBindInfo);
+                Assert.AreSame(view2Obj.UseModel, autoViewObj.UseModel);
+                Assert.AreSame(view2Obj.UseBinderInstance, autoViewObj.UseBinderInstance);
             }
         }
 
@@ -278,10 +324,7 @@ namespace Hinode.Tests.MVC.ViewLayout
         {
             protected override IViewObject CreateImpl(IViewObject viewObj)
             {
-                return new ViewObj()
-                {
-                    UseBindInfo = viewObj.UseBindInfo
-                };
+                return new ViewObj();
             }
 
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
@@ -293,6 +336,7 @@ namespace Hinode.Tests.MVC.ViewLayout
             {
                 public Model UseModel { get; set; }
                 public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+                public ModelViewBinderInstance UseBinderInstance { get; set; }
 
                 public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
                 { }
