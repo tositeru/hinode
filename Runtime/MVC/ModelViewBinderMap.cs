@@ -143,6 +143,12 @@ namespace Hinode
                 _rootModel.OnChangedModelIdentities.Add(model => {
                     Rebind(model);
                 });
+
+                //ViewLayoutの適応
+                if(!EnabledDelayOperation)
+                {
+                    ApplyViewLayouts();
+                }
             }
         }
 
@@ -199,8 +205,12 @@ namespace Hinode
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError(e);
-                    throw new System.Exception($"Failed to Add model{model}...");
+                    if(_bindInstanceDict.ContainsKey(model))
+                    {
+                        _bindInstanceDict.Remove(model);
+                    }
+                    Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Add: !!Catch Exception!! Not add model...{System.Environment.NewLine}-- {e}");
+                    throw new System.Exception($"Failed to Add model({model})...");
                 }
             }
         }
@@ -316,6 +326,14 @@ namespace Hinode
             }
         }
 
+        public void ApplyViewLayouts()
+        {
+            foreach (var bindInstance in BindInstances.Values)
+            {
+                bindInstance.ApplyViewLayout();
+            }
+        }
+
         void ModelOnUpdated(Model model)
         {
             Assert.IsTrue(BindInstances.ContainsKey(model), $"This BindInstaneMap don't have model({model.GetPath()})...");
@@ -403,23 +421,36 @@ namespace Hinode
         /// <summary>
         /// 遅延操作として登録されたものを全て実行します。
         ///
-        /// 一つのModelにおける遅延操作が実行の優先順位としては以下のものになります。
+        /// 一つのModelにおける遅延操作の実行の優先順位としては以下のものになります。
         ///     - 削除
         ///     - 追加
+        ///     - Rebind
         ///     - 更新
         /// </summary>
         public void DoDelayOperations()
         {
+            bool doApplyViewLayout = false;
             foreach(var op in OperationList.Values)
             {
                 try
                 {
                     op.Done(this);
+                    doApplyViewLayout |= 0 != (op.OperationFlags & Operation.OpType.Rebind)
+                        || 0 != (op.OperationFlags & Operation.OpType.Add)
+                        || 0 != (op.OperationFlags & Operation.OpType.Remove);
                 }
-                catch(System.Exception e)
+                catch (System.Exception e)
                 {
-                    Debug.LogError($"Exception!! -- {e.Message}{System.Environment.NewLine}{e.StackTrace}{System.Environment.NewLine}--");
+                    Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception!! model={op.Model}, op={op.OperationFlags}...{System.Environment.NewLine}+++ {e}");
                 }
+            }
+
+            if (!doApplyViewLayout) return;
+            //Apply ViewLayout
+            foreach(var op in OperationList.Values
+                .Where(_o => BindInstances.ContainsKey(_o.Model)))
+            {
+                BindInstances[op.Model].ApplyViewLayout();
             }
             OperationList.Clear();
         }
@@ -430,10 +461,14 @@ namespace Hinode
         /// 一つのModelにおける遅延操作が実行の優先順位としては以下のものになります。
         ///     - 削除
         ///     - 追加
+        ///     - Rebind
+        ///     - 更新
         ///
         /// 戻り値には実行された操作を表すModelViewBinderInstanceMap#Operationクラスのインスタンスが返されます。
         /// 登録されたIModelがない場合は、nullを返します。
         /// が、再び何らかの操作が登録された場合はまたModelViewBinderInstanceMap#Operationクラスのインスタンスが返されます。
+        ///
+        /// この関数内ではViewLayoutの再設定を行いませんので、別途ModelViewBinderInstanceMap#ApplyViewLayoutを呼び出してください。
         /// </summary>
         public IEnumerator<Operation> GetDoDelayOperationsEnumerator()
         {
@@ -442,7 +477,15 @@ namespace Hinode
                 while(0 < OperationList.Count)
                 {
                     var op = OperationList.First();
-                    op.Value.Done(this);
+                    try
+                    {
+                        op.Value.Done(this);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception!! model={op.Value.Model}, op={op.Value.OperationFlags}...{System.Environment.NewLine}+++ {e}");
+                    }
+
                     OperationList.Remove(op.Key);
                     yield return op.Value;
                 }

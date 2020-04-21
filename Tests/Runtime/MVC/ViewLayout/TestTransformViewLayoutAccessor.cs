@@ -179,7 +179,7 @@ namespace Hinode.Tests.MVC.ViewLayout
             var child = new Model() { Name = "child", Parent = parent };
             #endregion
 
-            binderInstanceMap.RootModel = root; // <- Here test point
+            binderInstanceMap.RootModel = root; // <- Here test point!!
 
             {//Basic Usage
                 var parentBindInstance = binderInstanceMap.BindInstances[parent];

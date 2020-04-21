@@ -14,9 +14,11 @@ namespace Hinode
         {
             var obj = new GameObject(name);
             obj.AddComponent<RectTransform>();
-            obj.AddComponent<Canvas>();
+            var canvas = obj.AddComponent<Canvas>();
             obj.AddComponent<CanvasScaler>();
             obj.AddComponent<GraphicRaycaster>();
+
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             return obj.AddComponent<CanvasViewObject>();
         }
 

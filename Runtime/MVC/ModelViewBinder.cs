@@ -232,13 +232,6 @@ namespace Hinode
                 view.UseModel = model;
                 view.UseBinderInstance = binderInstance;
                 view.Bind(model, _i, binderInstanceMap);
-
-                if(binderInstanceMap != null && binderInstanceMap.UseViewLayouter != null)
-                {//Set Default ViewLayout
-                    var viewLayouter = binderInstanceMap.UseViewLayouter;
-                    viewLayouter.SetAllMatchLayouts(view, _i.ViewLayouts);
-                }
-
                 return view;
             }).ToArray();
         }
@@ -362,18 +355,24 @@ namespace Hinode
                 var paramBinder = Binder.GetParamBinder(viewObj.UseBindInfo);
                 paramBinder.Update(Model, viewObj);
             }
+        }
 
-            if(UseInstanceMap != null && UseInstanceMap.UseViewLayouter != null)
+        public void ApplyViewLayout()
+        {
+            if (UseInstanceMap == null || UseInstanceMap.UseViewLayouter == null)
+                return;
+            var viewLayouter = UseInstanceMap.UseViewLayouter;
+            foreach (var viewObj in ViewObjects
+                .Concat(ViewObjects
+                    .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
+                    .SelectMany(_v => AutoLayoutViewObjects[_v]))
+                .Where(_v => _v.UseBindInfo != null && _v.UseBindInfo.ViewLayouts != null))
             {
-                var viewLayouter = UseInstanceMap.UseViewLayouter;
-                foreach (var viewObj in ViewObjects
-                    .Concat(ViewObjects
-                        .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
-                        .SelectMany(_v => AutoLayoutViewObjects[_v]))
-                    .Where(_v => _v.UseBindInfo != null && _v.UseBindInfo.ViewLayouts != null))
-                {
-                    viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
-                }
+                Logger.Log(Logger.Priority.Debug, () => {
+                    var log = viewObj.UseBindInfo.ViewLayouts.Aggregate("layout=", (_s, _c) => _s + _c + ";");
+                    return $"ModelViewBinderInstance#ApplyViewLayout -> {viewObj.GetModelAndTypeName()}: {log}";
+                });
+                viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
             }
         }
 

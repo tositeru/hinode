@@ -316,6 +316,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 Assert.IsTrue(autoViewObjs.Any(_v => _v is TestAutoViewObj));
                 var autoViewObj = autoViewObjs.First(_v => _v is TestAutoViewObj);
                 Assert.AreSame(view2Obj.UseModel, autoViewObj.UseModel);
+                Assert.AreSame(view2Obj.UseBindInfo, autoViewObj.UseBindInfo);
                 Assert.AreSame(view2Obj.UseBinderInstance, autoViewObj.UseBinderInstance);
             }
         }
@@ -377,8 +378,23 @@ namespace Hinode.Tests.MVC.ViewLayout
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
             Assert.AreSame(binderMap.UseViewLayouter, binderInstanceMap.UseViewLayouter);
 
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<System.Exception>(() => {
                 binderInstanceMap.RootModel = model;
+            });
+
+            //ViewLayouter#IAutoViewObjectCreator#Createの確認
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
+                var viewObj = new TestView2Obj()
+                {
+                    UseModel = model,
+                    UseBindInfo = useBindInfo,
+                    UseBinderInstance = null
+                };
+                foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, useBindInfo.ViewLayouts.Keys))
+                {
+                    creator.Create(viewObj); // <- Here may be throw Exception...
+                }
             });
         }
 

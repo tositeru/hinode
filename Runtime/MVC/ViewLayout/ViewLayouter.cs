@@ -32,9 +32,10 @@ namespace Hinode
                 foreach(var supportedType in GetSupportedIViewLayouts())
                 {
                     Assert.IsTrue(inst.GetType().DoHasInterface(supportedType),
-                        $"{inst.GetType()} don't support IViewLayout({supportedType})... creatorType={this.GetType()}");
+                        $"'{inst.GetType()}' don't support IViewLayout({supportedType})... creatorType='{this.GetType()}'");
                 }
                 inst.UseModel = viewObj.UseModel;
+                inst.UseBindInfo = viewObj.UseBindInfo;
                 inst.UseBinderInstance = viewObj.UseBinderInstance;
                 return inst;
             }
@@ -106,6 +107,7 @@ namespace Hinode
                 })
                 .Select(_t => (value: _t.Value, layout: Accessors[_t.Key])))
             {
+                Debug.Log($"pass matchLayout:{layoutAccessor}");
                 layoutAccessor.Set(value, target);
             }
 

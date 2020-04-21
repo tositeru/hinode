@@ -66,8 +66,8 @@ namespace Hinode
             get => new Vector2(R.anchorMin.y, R.anchorMax.y);
             set
             {
-                R.anchorMin = new Vector2(R.anchorMin.x, value.y);
-                R.anchorMax = new Vector2(R.anchorMax.y, value.y);
+                R.anchorMin = new Vector2(R.anchorMin.x, value.x);
+                R.anchorMax = new Vector2(R.anchorMax.x, value.y);
             }
         }
         public Vector2 RectTransformAnchorMinLayout

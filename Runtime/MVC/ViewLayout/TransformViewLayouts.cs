@@ -26,6 +26,7 @@ namespace Hinode
 
         protected override void SetImpl(object value, IViewObject viewObj)
         {
+            Debug.Log("pass SetImpl");
             var layout = (viewObj as ITransformParentViewLayout);
             if (value is Transform)
             {
