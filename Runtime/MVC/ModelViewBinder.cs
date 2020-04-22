@@ -83,6 +83,7 @@ namespace Hinode
             public string ID { get; }
             public string InstanceKey { get; }
             public string BinderKey { get; }
+            public IModelViewParamBinder UseParamBinder { get; set; }
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
             public IReadOnlyDictionary<string, object> ViewLayouts { get => _viewLayouts; }
@@ -104,6 +105,12 @@ namespace Hinode
             public BindInfo(System.Type viewType)
                 : this(viewType.FullName, viewType.FullName, viewType.FullName)
             { }
+
+            public BindInfo SetUseParamBinder(IModelViewParamBinder paramBinder)
+            {
+                UseParamBinder = paramBinder;
+                return this;
+            }
 
             public BindInfo AddControllerInfo(ControllerInfo controllerInfo)
             {

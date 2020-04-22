@@ -105,5 +105,15 @@ namespace Hinode.Tests.MVC
             });
         }
 
+        [Test]
+        public void UseParamBinderPasses()
+        {
+            var creator = new TestCreator();
+
+            var bindInfo = new ModelViewBinder.BindInfo("A", "A", "a")
+                .SetUseParamBinder(new ViewObj.ParamBinder(100));
+            var paramBinder = creator.GetParamBinderObj(bindInfo);
+            Assert.AreSame(bindInfo.UseParamBinder, paramBinder);
+        }
     }
 }

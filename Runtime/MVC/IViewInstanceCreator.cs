@@ -21,9 +21,16 @@ namespace Hinode
 
         public IModelViewParamBinder GetParamBinderObj(ModelViewBinder.BindInfo bindInfo)
         {
-            var paramBinder = GetParamBinderImpl(bindInfo.BinderKey);
-            Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({paramBinder})...");
-            return paramBinder;
+            if(bindInfo.UseParamBinder != null)
+            {
+                return bindInfo.UseParamBinder;
+            }
+            else
+            {
+                var paramBinder = GetParamBinderImpl(bindInfo.BinderKey);
+                Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({paramBinder})...");
+                return paramBinder;
+            }
         }
 
         protected abstract IViewObject CreateViewObjImpl(string instanceKey);
