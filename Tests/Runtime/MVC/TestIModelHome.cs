@@ -18,17 +18,8 @@ namespace Hinode.Tests.MVC
             public override ModelViewBinderMap BinderMap { get => _binderMap; }
             public override ModelViewBinderInstanceMap BinderInstanceMap { get => _binderInstanceMap; }
 
-            class ViewObj : IViewObject
+            class ViewObj : EmptyViewObject
             {
-                public Model UseModel { get; set; }
-                public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-                public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-                public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-                {
-                }
-                public void Unbind() { }
-
                 public class ParamBinder : IModelViewParamBinder
                 {
                     public void Update(Model model, IViewObject viewObj)

@@ -11,7 +11,6 @@ namespace Hinode
     {
         Transform TransformParentLayout { get; set; }
         Transform SelfTransform { get; }
-        RecieverSelector TransformParentLayoutSelector { get; set; }
     }
 
     public class TransformParentViewLayoutAccessor : IViewLayoutAccessor
@@ -26,7 +25,6 @@ namespace Hinode
 
         protected override void SetImpl(object value, IViewObject viewObj)
         {
-            Debug.Log("pass SetImpl");
             var layout = (viewObj as ITransformParentViewLayout);
             if (value is Transform)
             {

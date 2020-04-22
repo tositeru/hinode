@@ -11,25 +11,12 @@ namespace Hinode.Tests.MVC
     /// </summary>
     public class TestViewInstanceCreator
     {
-        class ViewObj : IViewObject
+        class ViewObj : EmptyViewObject
         {
             public int Value { get; }
             public ViewObj(int value)
             {
                 Value = value;
-            }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-                throw new System.NotImplementedException();
-            }
-
-            public void Unbind()
-            {
             }
 
             public class ParamBinder : IModelViewParamBinder

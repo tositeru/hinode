@@ -102,20 +102,13 @@ namespace Hinode.Tests.MVC.Controller
         }
     }
 
-    class TestView : IViewObject
+    class TestView : EmptyViewObject
     {
-        public Model UseModel { get; set; }
-        public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-        public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-        public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+        public override void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
         {
+            base.Bind(targetModel, bindInfo, binderInstanceMap);
             UseModel = targetModel;
             UseBindInfo = bindInfo;
-        }
-
-        public void Unbind()
-        {
         }
 
         public class ParamBinder : IModelViewParamBinder

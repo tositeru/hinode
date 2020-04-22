@@ -46,30 +46,12 @@ namespace Hinode.Tests.MVC.ViewLayout
             Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keywords.Keys));
         }
 
-        class ViewObj : MonoBehaviour, IViewObject
+        class ViewObj : MonoBehaviourViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-
-            public void Unbind()
-            { }
         }
 
-        class NoneMonoBehaviourViewObj : IViewObject
+        class NoneMonoBehaviourViewObj : EmptyViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-
-            public void Unbind()
-            { }
         }
 
         [UnityTest]
@@ -78,6 +60,7 @@ namespace Hinode.Tests.MVC.ViewLayout
             yield return null;
             var creator = new RectTransformViewLayoutAccessor.AutoCreator();
 
+            //Check Inherit IViewLayouts
             AssertionUtils.AssertEnumerableByUnordered(new System.Type[]{
                 typeof(IRectTransformAnchorMinViewLayout),
                 typeof(IRectTransformAnchorMaxViewLayout),
@@ -85,7 +68,23 @@ namespace Hinode.Tests.MVC.ViewLayout
                 typeof(IRectTransformAnchorYViewLayout),
                 typeof(IRectTransformPivotViewLayout),
                 typeof(IRectTransformSizeViewLayout),
+                typeof(IRectTransformOffsetMinViewLayout),
+                typeof(IRectTransformOffsetMaxViewLayout),
             }, creator.GetSupportedIViewLayouts(), "Please inherit IRectTransformXXXViewLayout interface...");
+
+            {//Check Keyword and Accessor pair
+                var supportedLayouts = creator.GetSupportedIViewLayouts().ToList();
+                var viewLayouter = new ViewLayouter();
+                RectTransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+                foreach(var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
+                {
+                    Assert.IsTrue(supportedLayouts.Contains(accessor.ViewLayoutType), $"Not exist LayoutAccessor Type({accessor.ViewLayoutType}) of keyword({keyword})...");
+                    supportedLayouts.Remove(accessor.ViewLayoutType);
+                }
+
+                string remainingLayoutTypes = supportedLayouts.Aggregate("", (_s, _c) => $"{_s}{_c};");
+                Assert.AreEqual(0, supportedLayouts.Count(), $"Not exist LayoutAccessor Types({remainingLayoutTypes})...");
+            }
 
             {
                 var obj = new GameObject("layout",

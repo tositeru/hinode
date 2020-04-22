@@ -6,8 +6,7 @@ using UnityEngine;
 namespace Hinode
 {
     [RequireComponent(typeof(Transform))]
-    public class TransformViewLayoutAccessor : MonoBehaviour
-        , IViewObject
+    public class TransformViewLayoutAccessor : MonoBehaviourViewObject
         , ITransformParentViewLayout
         , ITransformPosViewLayout
         , ITransformRotateViewLayout
@@ -61,7 +60,6 @@ namespace Hinode
             }
         }
         public Transform SelfTransform { get => transform; }
-        public RecieverSelector TransformParentLayoutSelector { get; set; }
 
         public Vector3 TransformPosLayout
         {
@@ -91,15 +89,6 @@ namespace Hinode
         #endregion
 
         #region IViewObject
-        public Model UseModel { get; set; }
-        public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-        public ModelViewBinderInstance UseBinderInstance { get; set; }
-        public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-        { }
-        public void Unbind()
-        {
-            Destroy(this);
-        }
         #endregion
     }
 }

@@ -56,17 +56,9 @@ namespace Hinode.Tests.MVC.ViewLayout
             }
         }
 
-        class TestAutoViewObj : IViewObject, ITestColorViewLayout
+        class TestAutoViewObj : EmptyViewObject, ITestColorViewLayout
         {
             public Color ColorLayout { get; set; }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-            public void Unbind() { }
 
             public class ParamBinder : IModelViewParamBinder
             {
@@ -92,18 +84,10 @@ namespace Hinode.Tests.MVC.ViewLayout
             }
         }
 
-        class TestViewObj : IViewObject
+        class TestViewObj : EmptyViewObject
             , ITestColorViewLayout
         {
             public Color ColorLayout { get; set; } = Color.white;
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-            public void Unbind() {}
 
             public class ParamBinder : IModelViewParamBinder
             {
@@ -113,17 +97,9 @@ namespace Hinode.Tests.MVC.ViewLayout
             }
         }
 
-        class TestView2Obj : IViewObject
+        class TestView2Obj : EmptyViewObject
         {
             public Color ColorLayout { get; set; } = Color.white;
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-            public void Unbind() { }
 
             public class ParamBinder : IModelViewParamBinder
             {
@@ -333,16 +309,8 @@ namespace Hinode.Tests.MVC.ViewLayout
                 return new[] { typeof(ITestColorViewLayout) };
             }
 
-            public class ViewObj : IViewObject
+            public class ViewObj : EmptyViewObject
             {
-                public Model UseModel { get; set; }
-                public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-                public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-                public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-                { }
-                public void Unbind() { }
-
                 public class ParamBinder : IModelViewParamBinder
                 {
                     public void Update(Model model, IViewObject viewObj)

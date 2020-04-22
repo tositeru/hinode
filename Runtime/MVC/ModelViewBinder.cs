@@ -232,6 +232,7 @@ namespace Hinode
                 view.UseModel = model;
                 view.UseBinderInstance = binderInstance;
                 view.Bind(model, _i, binderInstanceMap);
+                Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateViewObjects: Create View Obj {view.GetModelAndTypeName()}!!");
                 return view;
             }).ToArray();
         }
@@ -257,6 +258,7 @@ namespace Hinode
                     matchSender = controllerMap.CreateController(controllerInfo.Keyword, viewObj, model, binderInstanceMap);
                     Assert.IsNotNull(matchSender);
                     senderInstanceHash.Add(matchSender);
+                    Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateControllerSenderInstance: Create Controller Sender Instance!! Type=>({matchSender.GetType()})!!");
                 }
 
                 var senderType = matchSender.UseSenderGroup.GetSenderType(controllerInfo.Keyword);
@@ -362,17 +364,26 @@ namespace Hinode
             if (UseInstanceMap == null || UseInstanceMap.UseViewLayouter == null)
                 return;
             var viewLayouter = UseInstanceMap.UseViewLayouter;
-            foreach (var viewObj in ViewObjects
+            var allViewObjs = ViewObjects
                 .Concat(ViewObjects
                     .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
-                    .SelectMany(_v => AutoLayoutViewObjects[_v]))
+                    .SelectMany(_v => AutoLayoutViewObjects[_v]));
+            foreach (var viewObj in allViewObjs
                 .Where(_v => _v.UseBindInfo != null && _v.UseBindInfo.ViewLayouts != null))
             {
-                Logger.Log(Logger.Priority.Debug, () => {
-                    var log = viewObj.UseBindInfo.ViewLayouts.Aggregate("layout=", (_s, _c) => _s + _c + ";");
+                viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
+                Logger.Log(Logger.Priority.Low, () => {
+                    var log = viewObj.UseBindInfo.ViewLayouts
+                        .Select(_v => $"{_v}={viewLayouter.IsVaildViewObject(_v.Key, viewObj)}:{viewLayouter.IsVaildValue(_v.Key, _v.Value)}")
+                        .Aggregate("layout=", (_s, _c) => _s + _c + ";");
                     return $"ModelViewBinderInstance#ApplyViewLayout -> {viewObj.GetModelAndTypeName()}: {log}";
                 });
-                viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
+            }
+
+            //他のViewObjectの影響を受けるかもしれないので、ここで行っている。
+            foreach (var viewObj in allViewObjs)
+            {
+                viewObj.OnViewLayouted();
             }
         }
 

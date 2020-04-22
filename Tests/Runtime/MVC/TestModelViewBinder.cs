@@ -20,18 +20,9 @@ namespace Hinode.Tests.MVC
             public float Value2 { get; set; }
         }
 
-        class IntViewObjClass : IViewObject
+        class IntViewObjClass : EmptyViewObject
         {
             public int IntValue { get; set; }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -47,19 +38,9 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class FloatViewObjClass : IViewObject
+        class FloatViewObjClass : EmptyViewObject
         {
             public float FloatValue { get; set; }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -251,5 +232,35 @@ namespace Hinode.Tests.MVC
 
         }
 
+        class OnViewLayoutViewObj : EmptyViewObject
+        {
+            public int OnViewLayoutValue { get; set; }
+            public override void OnViewLayouted()
+            {
+                base.OnViewLayouted();
+                OnViewLayoutValue = 100;
+            }
+        }
+
+        [Test, Description("ModelViewBindInstance#ApplyViewLayout()の時にIViewObject#OnViewLayoutが呼び出されるかテスト")]
+        public void OnViewLayoutPasses()
+        {
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(OnViewLayoutViewObj), new EmptyModelViewParamBinder())
+            );
+            var binder = new ModelViewBinder("*", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(OnViewLayoutViewObj))
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, binder);
+            binderMap.UseViewLayouter = new ViewLayouter();
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.Add(model);
+
+            binderInstanceMap[model].ApplyViewLayout();
+            var viewObj = binderInstanceMap[model].ViewObjects.First(_v => _v is OnViewLayoutViewObj)
+                as OnViewLayoutViewObj;
+            Assert.AreEqual(100, viewObj.OnViewLayoutValue);
+        }
     }
 }

@@ -23,7 +23,15 @@ namespace Hinode
         }
 
         public Canvas Canvas { get => GetComponent<Canvas>(); }
-        public float DepthLayout { get => Canvas.sortingOrder; set => Canvas.sortingOrder = (int)value; }
+        public float DepthLayout
+        {
+            get => Canvas.sortingOrder;
+            set
+            {
+                Canvas.sortingOrder = (int)value;
+                Debug.Log("pass");
+            }
+        }
 
         #region IViewObject
         public Model UseModel { get; set; }
@@ -37,6 +45,7 @@ namespace Hinode
         public void Unbind()
         {
         }
+        public void OnViewLayouted() { }
         #endregion
 
     }

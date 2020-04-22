@@ -145,4 +145,50 @@ namespace Hinode
         }
     }
     #endregion
+
+    #region OffsetMin
+    public interface IRectTransformOffsetMinViewLayout : IViewLayout
+    {
+        Vector2 RectTransformOffsetMinLayout { get; set; }
+    }
+
+    public class RectTransformOffsetMinViewLayoutAccessor : IViewLayoutAccessor
+    {
+        public override System.Type ViewLayoutType { get => typeof(IRectTransformOffsetMinViewLayout); }
+        public override System.Type ValueType { get => typeof(Vector2); }
+
+        protected override object GetImpl(IViewObject viewObj)
+        {
+            return (viewObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout;
+        }
+
+        protected override void SetImpl(object value, IViewObject viewObj)
+        {
+            (viewObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout = (Vector2)value;
+        }
+    }
+    #endregion
+
+    #region OffsetMax
+    public interface IRectTransformOffsetMaxViewLayout : IViewLayout
+    {
+        Vector2 RectTransformOffsetMaxLayout { get; set; }
+    }
+
+    public class RectTransformOffsetMaxViewLayoutAccessor : IViewLayoutAccessor
+    {
+        public override System.Type ViewLayoutType { get => typeof(IRectTransformOffsetMaxViewLayout); }
+        public override System.Type ValueType { get => typeof(Vector2); }
+
+        protected override object GetImpl(IViewObject viewObj)
+        {
+            return (viewObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout;
+        }
+
+        protected override void SetImpl(object value, IViewObject viewObj)
+        {
+            (viewObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout = (Vector2)value;
+        }
+    }
+    #endregion
 }

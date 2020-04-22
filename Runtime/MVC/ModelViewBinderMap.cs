@@ -201,6 +201,7 @@ namespace Hinode
                         model.OnUpdated.Add(ModelOnUpdated);
                         _bindInstanceDict.Add(model, bindInst);
                         bindInst.UpdateViewObjects();
+                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({model})!!");
                     }
                 }
                 catch (System.Exception e)
@@ -450,7 +451,14 @@ namespace Hinode
             foreach(var op in OperationList.Values
                 .Where(_o => BindInstances.ContainsKey(_o.Model)))
             {
-                BindInstances[op.Model].ApplyViewLayout();
+                try
+                {
+                    BindInstances[op.Model].ApplyViewLayout();
+                }
+                catch(System.Exception e)
+                {
+                    Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout!! model={op.Model}, op={op.OperationFlags}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
+                }
             }
             OperationList.Clear();
         }

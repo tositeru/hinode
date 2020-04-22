@@ -23,27 +23,27 @@ namespace Hinode
         ///
         /// これと同じか低いものがログ出力されます。
         /// </summary>
-        public static Priority PriorityLevel { get; set; } = Priority.Low;
+        public static Priority PriorityLevel { get; set; } = Priority.High;
 
-        public static void Log(Priority precense, System.Func<string> getLog)
+        public static void Log(Priority priority, System.Func<string> getLog)
         {
-            if (PriorityLevel > precense)
+            if (PriorityLevel < priority)
                 return;
 
             Debug.Log(getLog());
         }
 
-        public static void LogWarning(Priority precense, System.Func<string> getLog)
+        public static void LogWarning(Priority priority, System.Func<string> getLog)
         {
-            if (PriorityLevel > precense)
+            if (PriorityLevel < priority)
                 return;
 
             Debug.LogWarning(getLog());
         }
 
-        public static void LogError(Priority precense, System.Func<string> getLog)
+        public static void LogError(Priority priority, System.Func<string> getLog)
         {
-            if (PriorityLevel > precense)
+            if (PriorityLevel < priority)
                 return;
 
             Debug.LogError(getLog());

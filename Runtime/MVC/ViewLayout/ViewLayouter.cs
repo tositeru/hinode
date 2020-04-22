@@ -107,7 +107,6 @@ namespace Hinode
                 })
                 .Select(_t => (value: _t.Value, layout: Accessors[_t.Key])))
             {
-                Debug.Log($"pass matchLayout:{layoutAccessor}");
                 layoutAccessor.Set(value, target);
             }
 

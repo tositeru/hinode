@@ -6,14 +6,15 @@ using UnityEngine;
 namespace Hinode
 {
     [RequireComponent(typeof(RectTransform))]
-    public class RectTransformViewLayoutAccessor : MonoBehaviour
-        , IViewObject
+    public class RectTransformViewLayoutAccessor : MonoBehaviourViewObject
         , IRectTransformAnchorXViewLayout
         , IRectTransformAnchorYViewLayout
         , IRectTransformPivotViewLayout
         , IRectTransformSizeViewLayout
         , IRectTransformAnchorMinViewLayout
         , IRectTransformAnchorMaxViewLayout
+        , IRectTransformOffsetMinViewLayout
+        , IRectTransformOffsetMaxViewLayout
     {
         public class AutoCreator : ViewLayouter.IAutoViewObjectCreator
         {
@@ -41,6 +42,8 @@ namespace Hinode
                 { "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor()},
                 { "pivot", new RectTransformPivotViewLayoutAccessor()},
                 { "size", new RectTransformSizeViewLayoutAccessor()},
+                { "offsetMin", new RectTransformOffsetMinViewLayoutAccessor() },
+                { "offsetMax", new RectTransformOffsetMaxViewLayoutAccessor() },
             };
             layouter.AddKeywords(
                 keywords.Select(_t => (_t.Key, _t.Value))
@@ -93,18 +96,19 @@ namespace Hinode
                 R.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, value.y);
             }
         }
+        public Vector2 RectTransformOffsetMinLayout
+        {
+            get => R.offsetMin;
+            set => R.offsetMin = value;
+        }
+        public Vector2 RectTransformOffsetMaxLayout
+        {
+            get => R.offsetMax;
+            set => R.offsetMax = value;
+        }
         #endregion
 
         #region IViewObject
-        public Model UseModel { get; set; }
-        public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-        public ModelViewBinderInstance UseBinderInstance { get; set; }
-        public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-        { }
-        public void Unbind()
-        {
-            Destroy(this);
-        }
         #endregion
     }
 }

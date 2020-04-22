@@ -155,7 +155,7 @@ namespace Hinode
         #region Object
         public override string ToString()
         {
-            return $"Selector({RelationShip}:{QueryPath},{ViewIdentity})";
+            return $"Selector({RelationShip}:'{QueryPath}':{ViewIdentity})";
         }
         #endregion
     }

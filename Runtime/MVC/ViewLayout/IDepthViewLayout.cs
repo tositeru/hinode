@@ -23,7 +23,25 @@ namespace Hinode
 
         protected override void SetImpl(object value, IViewObject viewObj)
         {
-            (viewObj as IDepthViewLayout).DepthLayout = (float)value;
+            var layout = (viewObj as IDepthViewLayout);
+            if (value.GetType().IsFloat())
+            {
+                layout.DepthLayout = (float)value;
+            }
+            else if (value.GetType().IsInteger())
+            {
+                layout.DepthLayout = (int)value;
+            }
+            else
+            {
+                layout.DepthLayout = (float)value;
+            }
         }
+
+        public override bool IsVaildValue(object value)
+        {
+            return value.GetType().IsNumeric();
+        }
+
     }
 }

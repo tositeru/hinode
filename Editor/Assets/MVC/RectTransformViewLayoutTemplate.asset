@@ -32,6 +32,8 @@ MonoBehaviour:
     - Size
     - AnchorMin
     - AnchorMax
+    - OffsetMin
+    - OffsetMax
   - key: LayoutType
     values:
     - Vector2

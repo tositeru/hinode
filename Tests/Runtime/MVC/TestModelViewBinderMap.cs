@@ -21,18 +21,8 @@ namespace Hinode.Tests.MVC
         /// <summary>
         /// 何もしないViewオブジェクト
         /// </summary>
-        class EmptyViewObjClass : IViewObject
+        class EmptyViewObjClass : EmptyViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind() { }
-
             public class Binder : IModelViewParamBinder
             {
                 public void Update(Model model, IViewObject viewObj)
@@ -41,19 +31,9 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class IntViewObjClass : IViewObject
+        class IntViewObjClass : EmptyViewObject
         {
             public int IntValue { get; set; }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -66,19 +46,9 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class FloatViewObjClass : IViewObject
+        class FloatViewObjClass : EmptyViewObject
         {
             public float FloatValue { get; set; }
-
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind() { }
 
             public class Binder : IModelViewParamBinder
             {
@@ -721,20 +691,15 @@ namespace Hinode.Tests.MVC
         /// <summary>
         /// 何もしないViewオブジェクト
         /// </summary>
-        class TestOnCreatedViewObjClass : IViewObject
+        class TestOnCreatedViewObjClass : EmptyViewObject
         {
             public ModelViewBinderInstanceMap UsedBinderInstanceMap { get; set; }
 
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+            public override void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
+                base.Bind(targetModel, bindInfo, binderInstanceMap);
                 UsedBinderInstanceMap = binderInstanceMap;
             }
-
-            public void Unbind() { }
 
             public class ParamBinder : IModelViewParamBinder
             {

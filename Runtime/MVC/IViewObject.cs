@@ -24,6 +24,11 @@ namespace Hinode
         /// 削除
         /// </summary>
         void Unbind();
+
+        /// <summary>
+        /// IViewLayoutの適応後に呼び出されるイベント
+        /// </summary>
+        void OnViewLayouted();
     }
 
     public static partial class IViewObjectExtensions
@@ -35,7 +40,31 @@ namespace Hinode
         /// <returns></returns>
         public static string GetModelAndTypeName(this IViewObject viewObject)
         {
-            return $"{viewObject.UseModel}:{viewObject.GetType().FullName}";
+            return $"(Model:ViewType)=>{viewObject.UseModel}:{viewObject.GetType().FullName}";
         }
+    }
+
+    /// <summary>
+    /// 空のIViewObject
+    ///
+    /// IViewObjectのインターフェイス変更に対応するために作成しましたので、こちらを継承するようにしてください。
+    ///
+    /// UnityのMonoBehaviourをIViewObject化したい場合はMonoBehaviourViewObjectを使用してください。
+    /// <seealso cref="MonoBehaviourViewObject"/>
+    /// </summary>
+    public abstract class EmptyViewObject : IViewObject
+    {
+        public Model UseModel { get; set; }
+        public ModelViewBinder.BindInfo UseBindInfo { get; set; }
+        public ModelViewBinderInstance UseBinderInstance { get; set; }
+
+        public virtual void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+        {
+        }
+        public virtual void Unbind()
+        { }
+
+        public virtual void OnViewLayouted()
+        { }
     }
 }

@@ -46,30 +46,12 @@ namespace Hinode.Tests.MVC.ViewLayout
             Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keywords.Keys));
         }
 
-        class ViewObj : MonoBehaviour, IViewObject
+        class ViewObj : MonoBehaviourViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-
-            public void Unbind()
-            { }
         }
 
-        class NoneMonoBehaviourViewObj : IViewObject
+        class NoneMonoBehaviourViewObj : EmptyViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            { }
-
-            public void Unbind()
-            { }
         }
 
         [UnityTest]
@@ -86,6 +68,20 @@ namespace Hinode.Tests.MVC.ViewLayout
                 typeof(ITransformLocalRotateViewLayout),
                 typeof(ITransformLocalScaleViewLayout),
             }, creator.GetSupportedIViewLayouts(), "Please inherit ITransformXXXViewLayout interface...");
+
+            {//Check Keyword and Accessor pair
+                var supportedLayouts = creator.GetSupportedIViewLayouts().ToList();
+                var viewLayouter = new ViewLayouter();
+                TransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+                foreach (var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
+                {
+                    Assert.IsTrue(supportedLayouts.Contains(accessor.ViewLayoutType), $"Not exist LayoutAccessor Type({accessor.ViewLayoutType}) of keyword({keyword})...");
+                    supportedLayouts.Remove(accessor.ViewLayoutType);
+                }
+
+                string remainingLayoutTypes = supportedLayouts.Aggregate("", (_s, _c) => $"{_s}{_c};");
+                Assert.AreEqual(0, supportedLayouts.Count(), $"Not exist LayoutAccessor Types({remainingLayoutTypes})...");
+            }
 
             {
                 var obj = new GameObject("layout",
@@ -107,19 +103,8 @@ namespace Hinode.Tests.MVC.ViewLayout
             }
         }
 
-        class TestComponent : MonoBehaviour, IViewObject
+        class TestComponent : MonoBehaviourViewObject
         {
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind()
-            {
-            }
         }
 
         class ViewInstanceCreator : IViewInstanceCreator
@@ -219,7 +204,6 @@ namespace Hinode.Tests.MVC.ViewLayout
                 binderMap.UseViewLayouter.Set("parent", selector, childAutoViewObj);
 
                 var enumerable = selector.Query<TestComponent>(child, binderInstanceMap);
-                Debug.Log($"{enumerable.Count()} parent={childViewObj.transform.parent != null}");
                 Assert.IsTrue(selector.Query<TestComponent>(child, binderInstanceMap)
                     .Any(_c => _c.transform == childViewObj.transform.parent));
             }

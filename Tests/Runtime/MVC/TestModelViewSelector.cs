@@ -12,7 +12,7 @@ namespace Hinode.Tests.MVC
     /// </summary>
     public class TestModelViewSelector
     {
-        class SenderViewObj : IViewObject, IControllerSender
+        class SenderViewObj : EmptyViewObject, IControllerSender
         {
             #region IControllerSender
             public Model Target { get; set; }
@@ -22,17 +22,6 @@ namespace Hinode.Tests.MVC
             #endregion
 
             #region IViewObject
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind()
-            {
-            }
             #endregion
 
             public class ParamBinder : IModelViewParamBinder
@@ -43,7 +32,7 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class RecieverViewObj : IViewObject, IControllerReciever
+        class RecieverViewObj : EmptyViewObject, IControllerReciever
         {
             #region IControllerSender
             public ModelViewBinderInstance ModelViewBinderInstance { get; set; }
@@ -51,17 +40,6 @@ namespace Hinode.Tests.MVC
             #endregion
 
             #region IViewObject
-            public Model UseModel { get; set; }
-            public ModelViewBinder.BindInfo UseBindInfo { get; set; }
-            public ModelViewBinderInstance UseBinderInstance { get; set; }
-
-            public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
-            {
-            }
-
-            public void Unbind()
-            {
-            }
             #endregion
 
             public class ParamBinder : IModelViewParamBinder
