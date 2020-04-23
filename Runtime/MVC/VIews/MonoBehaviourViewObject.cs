@@ -7,6 +7,8 @@ namespace Hinode
     /// <summary>
     /// IViewObjectを継承したMonoBehaviour
     ///
+    /// Unbind時にこのComponentを持つGameObjectも破棄するようになっています。
+    /// 
     /// IViewObjectのインターフェイス変更に対応するために作成しましたので、こちらを継承するようにしてください。
     /// <seealso cref="EmptyViewObject"/>
     /// </summary>
@@ -21,7 +23,7 @@ namespace Hinode
         }
         public virtual void Unbind()
         {
-            Destroy(this);
+            Destroy(this.gameObject);
         }
 
         public virtual void OnViewLayouted()

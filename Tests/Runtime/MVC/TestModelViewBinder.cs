@@ -137,12 +137,8 @@ namespace Hinode.Tests.MVC
                 {//Model#DoneUpdatedとの連動テスト
                     obj.DoneUpdate();
 
-                    var errorMessage = "ModelViewBindInstace#AttachModelOnUpdated()を呼び出すまでModel#OnUpdatedと連動しないようにしてください";
-                    Assert.AreNotEqual(obj.Value1, intViewObj.IntValue, errorMessage);
-                    Assert.AreNotEqual(obj.Value2, floatViewObj.FloatValue, errorMessage);
-
-                    errorMessage = "ModelViewBindInstace#AttachModelOnUpdated()を呼び出した後はModel#OnUpdatedと連動するようにしてください";
-                    bindInstance.AttachModelOnUpdated();
+                    var errorMessage = "ModelViewBindInstaceの生成時には指定したModel#OnUpdatedと連動するようにしてください";
+                    obj.Value1 = 9847;
                     obj.DoneUpdate();
                     Assert.AreEqual(obj.Value1, intViewObj.IntValue, errorMessage);
                     Assert.AreEqual(obj.Value2, floatViewObj.FloatValue, errorMessage);
@@ -157,6 +153,13 @@ namespace Hinode.Tests.MVC
                     obj.Value1 = -678;
                     obj.DoneUpdate();
                     Assert.AreNotEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+
+                    errorMessage = "ModelViewBindInstace#AttachModelOnUpdated()を呼び出した後は設定されたModelのModel#OnUpdatedと連動するようにしてください";
+                    bindInstance.AttachModelOnUpdated();
+                    obj.Value1 = 939753;
+                    obj.DoneUpdate();
+                    Assert.AreEqual(obj.Value1, intViewObj.IntValue, errorMessage);
+                    Assert.AreEqual(obj.Value2, floatViewObj.FloatValue, errorMessage);
                 }
 
                 {//ModelViewBindInstance#Disposeテスト

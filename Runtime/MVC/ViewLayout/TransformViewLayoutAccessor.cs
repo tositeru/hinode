@@ -31,23 +31,6 @@ namespace Hinode
             }
         }
 
-        public static ViewLayouter AddKeywordsAndAutoCreator(ViewLayouter layouter)
-        {
-            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "parent", new TransformParentViewLayoutAccessor() },
-                { "pos", new TransformPosViewLayoutAccessor()},
-                { "rotate", new TransformRotateViewLayoutAccessor()},
-                { "localPos", new TransformLocalPosViewLayoutAccessor()},
-                { "localRotate", new TransformLocalRotateViewLayoutAccessor()},
-                { "localScale", new TransformLocalScaleViewLayoutAccessor()},
-            };
-            layouter.AddKeywords(
-                keywords.Select(_t => (_t.Key, _t.Value))
-            );
-            layouter.AddAutoCreateViewObject(new AutoCreator(), keywords.Keys);
-            return layouter;
-        }
-
         Transform R { get => transform as Transform; }
 
         #region TransformViewLayouts
@@ -90,5 +73,25 @@ namespace Hinode
 
         #region IViewObject
         #endregion
+    }
+
+    public static partial class ViewLayoutExtensions
+    {
+        public static ViewLayouter AddTransformKeywordsAndAutoCreator(this ViewLayouter target)
+        {
+            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
+                { "parent", new TransformParentViewLayoutAccessor() },
+                { "pos", new TransformPosViewLayoutAccessor()},
+                { "rotate", new TransformRotateViewLayoutAccessor()},
+                { "localPos", new TransformLocalPosViewLayoutAccessor()},
+                { "localRotate", new TransformLocalRotateViewLayoutAccessor()},
+                { "localScale", new TransformLocalScaleViewLayoutAccessor()},
+            };
+            target.AddKeywords(
+                keywords.Select(_t => (_t.Key, _t.Value))
+            );
+            target.AddAutoCreateViewObject(new TransformViewLayoutAccessor.AutoCreator(), keywords.Keys);
+            return target;
+        }
     }
 }

@@ -12,6 +12,12 @@ namespace Hinode.Tests.MVC
 	/// </summary>
     public class TestModelViewBinderMap
     {
+        [SetUp]
+        public void Setup()
+        {
+            Logger.PriorityLevel = Logger.Priority.Debug;
+        }
+
         class ModelClass : Model
         {
             public int IntValue { get; set; }
@@ -145,8 +151,11 @@ namespace Hinode.Tests.MVC
 
                 {//BindInstanceMap#Addのテスト
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
-                    bindInstanceMap.Add(false, apple, orange);
-                    Assert.AreEqual(2, bindInstanceMap.BindInstances.Count());
+                    bindInstanceMap.Add(false, apple, grape);
+                    //grapeはQueryPathと一致しないので追加されない
+                    AssertionUtils.AssertEnumerableByUnordered(new Model[] {
+                            apple, orange
+                        }, bindInstanceMap.BindInstances.Select(_b => _b.Key), "");
 
                     //追加された時は合わせてViewのパラメータもModelのものに更新する
                     var appleViewObj = bindInstanceMap[apple].ViewObjects.First(_v => _v is IntViewObjClass) as IntViewObjClass;
@@ -166,7 +175,9 @@ namespace Hinode.Tests.MVC
 
                     //既に追加されていたら追加しない
                     bindInstanceMap.Add(false, apple, orange);
-                    Assert.AreEqual(2, bindInstanceMap.BindInstances.Count(), "同じModelが追加できないようにしてください");
+                    AssertionUtils.AssertEnumerableByUnordered(new Model[] {
+                            apple, orange
+                        }, bindInstanceMap.BindInstances.Select(_b => _b.Key), "同じModelが追加できないようにしてください");
                 }
 
                 {//マッチしないModelを追加した時のテスト
@@ -215,7 +226,7 @@ namespace Hinode.Tests.MVC
                 }
 
                 {//BindInstanceMap#Removeのテスト
-                    bindInstanceMap.Remove(appleBindInstance.Model, orangeBindInstance.Model);
+                    bindInstanceMap.Remove(apple, grape);
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
 
@@ -728,7 +739,7 @@ namespace Hinode.Tests.MVC
                 var root = new Model() { Name = "root" };
 
                 var viewObjs = allBinder.CreateViewObjects(root, null, binderInstanceMap);
-                Assert.AreEqual(1, viewObjs.Length);
+                Assert.AreEqual(1, viewObjs.Count);
 
                 var viewObj = viewObjs[0];
                 Assert.AreSame(root, viewObj.UseModel, errorMessageUseModel);
@@ -741,7 +752,7 @@ namespace Hinode.Tests.MVC
                 //ModelViewBinderInstanceMapを指定しなかった時のテスト
                 var root = new Model() { Name = "root" };
                 var viewObjs = allBinder.CreateViewObjects(root, null, null);
-                Assert.AreEqual(1, viewObjs.Length);
+                Assert.AreEqual(1, viewObjs.Count);
 
                 var viewObj = viewObjs[0];
                 Assert.AreSame(root, viewObj.UseModel, errorMessageUseModel);
@@ -757,9 +768,9 @@ namespace Hinode.Tests.MVC
 
                 var bindInstance = binderMap.CreateBindInstance(root, binderInstanceMap);
 
-                Assert.AreEqual(1, bindInstance.ViewObjects.Length);
+                Assert.AreEqual(1, bindInstance.ViewObjects.Count());
 
-                var viewObj = bindInstance.ViewObjects[0];
+                var viewObj = bindInstance.ViewObjects.First();
                 Assert.AreSame(root, viewObj.UseModel, errorMessageUseModel);
                 Assert.AreSame(bindInstance, viewObj.UseBinderInstance, errorMessageUseBinderInstance);
 
@@ -774,9 +785,9 @@ namespace Hinode.Tests.MVC
 
                 binderInstanceMap.Add(root);
                 var bindInstance = binderInstanceMap.BindInstances[root];
-                Assert.AreEqual(1, bindInstance.ViewObjects.Length);
+                Assert.AreEqual(1, bindInstance.ViewObjects.Count());
 
-                var viewObj = bindInstance.ViewObjects[0];
+                var viewObj = bindInstance.ViewObjects.First();
                 Assert.AreSame(root, viewObj.UseModel, errorMessageUseModel);
 
                 var onCreatedViewObj = viewObj as TestOnCreatedViewObjClass;

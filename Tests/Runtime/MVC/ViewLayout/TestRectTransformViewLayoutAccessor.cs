@@ -27,8 +27,8 @@ namespace Hinode.Tests.MVC.ViewLayout
         [Test]
         public void CheckViewLayouterPasses()
         {
-            var viewLayouter = new ViewLayouter();
-            RectTransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+            var viewLayouter = new ViewLayouter()
+                .AddRectTransformKeywordsAndAutoCreator();
             var keywords = new Dictionary<string, IViewLayoutAccessor>() {
                 { "anchorX", new RectTransformAnchorXViewLayoutAccessor() },
                 { "anchorY", new RectTransformAnchorYViewLayoutAccessor()},
@@ -74,8 +74,8 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             {//Check Keyword and Accessor pair
                 var supportedLayouts = creator.GetSupportedIViewLayouts().ToList();
-                var viewLayouter = new ViewLayouter();
-                RectTransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+                var viewLayouter = new ViewLayouter()
+                    .AddRectTransformKeywordsAndAutoCreator();
                 foreach(var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
                 {
                     Assert.IsTrue(supportedLayouts.Contains(accessor.ViewLayoutType), $"Not exist LayoutAccessor Type({accessor.ViewLayoutType}) of keyword({keyword})...");

@@ -27,8 +27,8 @@ namespace Hinode.Tests.MVC.ViewLayout
         [Test]
         public void CheckViewLayouterPasses()
         {
-            var viewLayouter = new ViewLayouter();
-            TransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+            var viewLayouter = new ViewLayouter()
+                .AddTransformKeywordsAndAutoCreator();
             var keywords = new Dictionary<string, IViewLayoutAccessor>() {
                 { "parent", new TransformParentViewLayoutAccessor() },
                 { "pos", new TransformPosViewLayoutAccessor()},
@@ -71,8 +71,8 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             {//Check Keyword and Accessor pair
                 var supportedLayouts = creator.GetSupportedIViewLayouts().ToList();
-                var viewLayouter = new ViewLayouter();
-                TransformViewLayoutAccessor.AddKeywordsAndAutoCreator(viewLayouter);
+                var viewLayouter = new ViewLayouter()
+                    .AddTransformKeywordsAndAutoCreator();
                 foreach (var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
                 {
                     Assert.IsTrue(supportedLayouts.Contains(accessor.ViewLayoutType), $"Not exist LayoutAccessor Type({accessor.ViewLayoutType}) of keyword({keyword})...");
@@ -154,9 +154,8 @@ namespace Hinode.Tests.MVC.ViewLayout
                         .AddViewLayout("parent", new ModelViewSelector(ModelViewSelector.ModelRelationShip.Parent, "", viewID))
                 )
             );
-            binderMap.UseViewLayouter = new ViewLayouter();
-
-            TransformViewLayoutAccessor.AddKeywordsAndAutoCreator(binderMap.UseViewLayouter);
+            binderMap.UseViewLayouter = new ViewLayouter()
+                .AddTransformKeywordsAndAutoCreator();
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
 
             var root = new Model() { Name = "root" };
@@ -168,16 +167,16 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             {//Basic Usage
                 var parentBindInstance = binderInstanceMap.BindInstances[parent];
-                var parentViewObj = parentBindInstance.ViewObjects[0] as TestComponent;
+                var parentViewObj = parentBindInstance.ViewObjects.ElementAt(0) as TestComponent;
 
                 var childBindInstance = binderInstanceMap.BindInstances[child];
-                var childViewObj = childBindInstance.ViewObjects[0] as TestComponent;
+                var childViewObj = childBindInstance.ViewObjects.ElementAt(0) as TestComponent;
                 Assert.AreSame(parentViewObj.transform, childViewObj.transform.parent);
             }
 
             {//自身を親に設定した時
                 var childBindInstance = binderInstanceMap.BindInstances[child];
-                var childViewObj = childBindInstance.ViewObjects[0] as TestComponent;
+                var childViewObj = childBindInstance.ViewObjects.ElementAt(0) as TestComponent;
                 var childAutoViewObj = childBindInstance.AutoLayoutViewObjects[childViewObj].First() as TransformViewLayoutAccessor;
 
                 var selfSelector = new ModelViewSelector(ModelViewSelector.ModelRelationShip.Self, "", viewID);
@@ -188,13 +187,13 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             {//複数ある時
                 var rootBindInstance = binderInstanceMap.BindInstances[root];
-                var rootViewObj = rootBindInstance.ViewObjects[0] as TestComponent;
+                var rootViewObj = rootBindInstance.ViewObjects.ElementAt(0) as TestComponent;
 
                 var parentBindInstance = binderInstanceMap.BindInstances[root];
-                var parentViewObj = parentBindInstance.ViewObjects[0] as TestComponent;
+                var parentViewObj = parentBindInstance.ViewObjects.ElementAt(0) as TestComponent;
 
                 var childBindInstance = binderInstanceMap.BindInstances[child];
-                var childViewObj = childBindInstance.ViewObjects[0] as TestComponent;
+                var childViewObj = childBindInstance.ViewObjects.ElementAt(0) as TestComponent;
                 var childAutoViewObj = childBindInstance.AutoLayoutViewObjects[childViewObj].First() as TransformViewLayoutAccessor;
 
                 //Set Default value
@@ -210,10 +209,10 @@ namespace Hinode.Tests.MVC.ViewLayout
 
             {//一致しなかった時
                 var rootBindInstance = binderInstanceMap.BindInstances[root];
-                var rootViewObj = rootBindInstance.ViewObjects[0] as TestComponent;
+                var rootViewObj = rootBindInstance.ViewObjects.ElementAt(0) as TestComponent;
 
                 var childBindInstance = binderInstanceMap.BindInstances[child];
-                var childViewObj = childBindInstance.ViewObjects[0] as TestComponent;
+                var childViewObj = childBindInstance.ViewObjects.ElementAt(0) as TestComponent;
                 var childAutoViewObj = childBindInstance.AutoLayoutViewObjects[childViewObj].First() as TransformViewLayoutAccessor;
 
                 //Set Default value

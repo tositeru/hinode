@@ -229,7 +229,7 @@ namespace Hinode
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public IViewObject[] CreateViewObjects(Model model, ModelViewBinderInstance binderInstance, ModelViewBinderInstanceMap binderInstanceMap)
+        public List<IViewObject> CreateViewObjects(Model model, ModelViewBinderInstance binderInstance, ModelViewBinderInstanceMap binderInstanceMap)
         {
             Assert.IsTrue(DoMatch(model));
 
@@ -241,7 +241,7 @@ namespace Hinode
                 view.Bind(model, _i, binderInstanceMap);
                 Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateViewObjects: Create View Obj {view.GetModelAndTypeName()}!!");
                 return view;
-            }).ToArray();
+            }).ToList();
         }
 
         public IReadOnlyCollection<IControllerSenderInstance> CreateControllerSenderInstances(IViewObject viewObj, Model model, ModelViewBinderInstanceMap binderInstanceMap)
@@ -285,13 +285,14 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinderInstance : System.IDisposable
     {
+        List<IViewObject> _viewObjects = new List<IViewObject>();
         Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>> _controllerSenderInstances = new Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>>();
         Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
 
         public ModelViewBinder Binder { get; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; }
-        public IViewObject[] ViewObjects { get; private set; }
+        public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
@@ -299,7 +300,7 @@ namespace Hinode
             Binder = binder;
             Model = model;
             UseInstanceMap = binderInstanceMap;
-            ViewObjects = binder.CreateViewObjects(Model, this, binderInstanceMap);
+            _viewObjects = binder.CreateViewObjects(Model, this, binderInstanceMap);
             foreach(var v in ViewObjects)
             {
                 v.UseBinderInstance = this;
@@ -339,11 +340,20 @@ namespace Hinode
                     }
                 }
             }
+
+            AttachModelOnUpdated();
         }
 
         void ModelOnUpdated(Model m)
         {
-            UpdateViewObjects();
+            if(UseInstanceMap != null)
+            {
+                UseInstanceMap.Update(m);
+            }
+            else
+            {
+                UpdateViewObjects();
+            }
         }
 
         public void AttachModelOnUpdated()
@@ -439,9 +449,9 @@ namespace Hinode
                 view.UseModel = null;
                 view.UseBinderInstance = null;
             }
-            ViewObjects = null;
+            _viewObjects.Clear();
 
-            Model?.OnUpdated.Remove(ModelOnUpdated);
+            DettachModelOnUpdated();
         }
     }
 }

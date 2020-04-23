@@ -61,14 +61,19 @@ namespace Hinode
             return new ModelViewBinderInstanceMap(this);
         }
 
-        public ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap)
+        public ModelViewBinder MatchBinder(Model model)
         {
-            var binder = Binders
+            return Binders
                 .Select(_b => (binder: _b, priority: model.GetQueryPathPriority(_b.QueryPath)))
                 .Where(_t => !_t.priority.IsEmpty)
                 .OrderByDescending(_t => _t.priority)
                 .Select(_t => _t.binder)
                 .FirstOrDefault();
+        }
+
+        public ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap)
+        {
+            var binder = MatchBinder(model);
             if (binder == null) return null;
 
             return binder.CreateBindInstance(model, binderInstanceMap);
@@ -112,15 +117,15 @@ namespace Hinode
 
                 if (_rootModel == null) return;
 
-                Add(true, _rootModel.GetHierarchyEnumerable());
+                Add(true, _rootModel);
                 _rootModel.OnChangedHierarchy.Add((type, target, models) => {
                     switch (type)
                     {
                         case ChangedModelHierarchyType.ChildAdd:
-                            Add(true, models.SelectMany(_m => _m.GetHierarchyEnumerable()));
+                            Add(true, models);
                             break;
                         case ChangedModelHierarchyType.ChildRemove:
-                            Remove(models.SelectMany(_m => _m.GetHierarchyEnumerable()));
+                            Remove(models);
                             break;
                         case ChangedModelHierarchyType.ParentChange:
                             var prevParent = models.ElementAt(0);
@@ -129,11 +134,11 @@ namespace Hinode
                             var isCurParentInRootModel = curParent?.GetTraversedRootEnumerable().Any(_m => _m == RootModel) ?? false;
                             if (isCurParentInRootModel)
                             {
-                                Add(true, target.GetHierarchyEnumerable());
+                                Add(true, target);
                             }
                             else if(isPrevParentInRootModel)
                             {
-                                Remove(target.GetHierarchyEnumerable());
+                                Remove(target);
                             }
                             break;
                         default:
@@ -185,33 +190,36 @@ namespace Hinode
                 else
                     OperationList.Add(model, new Operation(model, addInfo));
             }
-            else if(allowRebind && _bindInstanceDict.ContainsKey(model))
+            else
             {
-                RebindImpl(model, doDelay);
-            }
-            else if(!_bindInstanceDict.ContainsKey(model))
-            {
-                try
+                foreach(var m in model.GetHierarchyEnumerable())
                 {
-                    var bindInst = BinderMap.CreateBindInstance(model, this);
-                    if(bindInst != null)
+                    if(allowRebind && _bindInstanceDict.ContainsKey(m))
                     {
-                        bindInst.UseInstanceMap = this;
-                        bindInst.DettachModelOnUpdated();
-                        model.OnUpdated.Add(ModelOnUpdated);
-                        _bindInstanceDict.Add(model, bindInst);
-                        bindInst.UpdateViewObjects();
-                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({model})!!");
+                        RebindImpl(m, doDelay);
                     }
-                }
-                catch (System.Exception e)
-                {
-                    if(_bindInstanceDict.ContainsKey(model))
+                    else if(!_bindInstanceDict.ContainsKey(m))
                     {
-                        _bindInstanceDict.Remove(model);
+                        try
+                        {
+                            var bindInst = BinderMap.CreateBindInstance(m, this);
+                            if(bindInst != null)
+                            {
+                                bindInst.UpdateViewObjects();
+                                _bindInstanceDict.Add(m, bindInst);
+                                Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.QueryPath}");
+                            }
+                            else
+                            {
+                                Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Don't match queryPathes  model({m})!!");
+                            }
+                        }
+                        catch (System.Exception e)
+                        {
+                            Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Add: !!Catch Exception!! Not add model...{System.Environment.NewLine}-- {e}");
+                            throw new System.Exception($"Failed to Add model({m})...");
+                        }
                     }
-                    Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Add: !!Catch Exception!! Not add model...{System.Environment.NewLine}-- {e}");
-                    throw new System.Exception($"Failed to Add model({model})...");
                 }
             }
         }
@@ -224,10 +232,9 @@ namespace Hinode
         public void Add(bool allowRebind, params Model[] models)
             => Add(allowRebind, models.AsEnumerable());
 
-        public void Add(bool allowRebind, IEnumerable < Model> modelEnumerable)
+        public void Add(bool allowRebind, IEnumerable<Model> modelEnumerable)
         {
-            foreach (var model in modelEnumerable
-                .Where(_m => !_bindInstanceDict.ContainsKey(_m)))
+            foreach (var model in modelEnumerable)
             {
                 Add(model, allowRebind);
             }
@@ -250,11 +257,34 @@ namespace Hinode
             else
             {
                 if (!_bindInstanceDict.ContainsKey(model)) return false;
-                var bindInst = BinderMap.CreateBindInstance(model, this);
-                bindInst.UseInstanceMap = this;
-                _bindInstanceDict[model] = bindInst;
-                bindInst.UpdateViewObjects();
-                return true;
+                try
+                {
+                    var currentBinderInstance = _bindInstanceDict[model];
+                    var matchBinder = BinderMap.MatchBinder(model);
+                    if(matchBinder == currentBinderInstance.Binder)
+                    {
+                        return false;
+                    }
+
+                    var bindInst = matchBinder.CreateBindInstance(model, this);
+                    if(bindInst != null)
+                    {
+                        bindInst.UpdateViewObjects();
+                        _bindInstanceDict[model] = bindInst;
+                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Rebind: Rebind model({model})!! queryPath={bindInst.Binder.QueryPath}");
+                    }
+                    else
+                    {
+                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Rebind: Don't match queryPathes  model({model})!!");
+                    }
+                    _bindInstanceDict[model].Dispose();
+                    return true;
+                }
+                catch(System.Exception e)
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Rebind: !!Catch Exception!! Failed to rebind model...{System.Environment.NewLine}-- {e}");
+                    throw new System.Exception($"Failed to Rebind model({model})...");
+                }
             }
         }
 
@@ -279,12 +309,12 @@ namespace Hinode
             }
             else
             {
-                if (!BindInstances.ContainsKey(model))
+                foreach(var m in model.GetHierarchyEnumerable()
+                    .Where(_m => BindInstances.ContainsKey(_m)))
                 {
-                    return;
+                    _bindInstanceDict[m].Dispose();
+                    _bindInstanceDict.Remove(m);
                 }
-                model.OnUpdated.Remove(ModelOnUpdated);
-                _bindInstanceDict.Remove(model);
             }
         }
 
@@ -335,7 +365,7 @@ namespace Hinode
             }
         }
 
-        void ModelOnUpdated(Model model)
+        public void Update(Model model)
         {
             Assert.IsTrue(BindInstances.ContainsKey(model), $"This BindInstaneMap don't have model({model.GetPath()})...");
 
@@ -446,18 +476,27 @@ namespace Hinode
                 }
             }
 
-            if (!doApplyViewLayout) return;
-            //Apply ViewLayout
-            foreach(var op in OperationList.Values
-                .Where(_o => BindInstances.ContainsKey(_o.Model)))
+            if (doApplyViewLayout)
             {
-                try
+                //Apply ViewLayout
+                var addOrRemoveModels = OperationList.Values
+                    .Where(_o => 0 != (_o.OperationFlags & Operation.OpType.Add) || 0 != (_o.OperationFlags & Operation.OpType.Remove))
+                    .SelectMany(_o => _o.Model.GetHierarchyEnumerable().Select(_m => (op: _o, model: _m)));
+                var rebindOnlyModels = OperationList.Values
+                    .Where(_o => _o.OperationFlags == Operation.OpType.Remove)
+                    .Select(_o => (op: _o, model: _o.Model));
+                foreach (var (op, model) in addOrRemoveModels
+                    .Concat(rebindOnlyModels)
+                    .Where(_t => BindInstances.ContainsKey(_t.model)))
                 {
-                    BindInstances[op.Model].ApplyViewLayout();
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout!! model={op.Model}, op={op.OperationFlags}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
+                    try
+                    {
+                        BindInstances[model].ApplyViewLayout();
+                    }
+                    catch(System.Exception e)
+                    {
+                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout!! model={model}, op={op.OperationFlags}, opRootModel={op.Model}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
+                    }
                 }
             }
             OperationList.Clear();

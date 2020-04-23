@@ -33,25 +33,6 @@ namespace Hinode
             }
         }
 
-        public static ViewLayouter AddKeywordsAndAutoCreator(ViewLayouter layouter)
-        {
-            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "anchorX", new RectTransformAnchorXViewLayoutAccessor() },
-                { "anchorY", new RectTransformAnchorYViewLayoutAccessor()},
-                { "anchorMin", new RectTransformAnchorMinViewLayoutAccessor()},
-                { "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor()},
-                { "pivot", new RectTransformPivotViewLayoutAccessor()},
-                { "size", new RectTransformSizeViewLayoutAccessor()},
-                { "offsetMin", new RectTransformOffsetMinViewLayoutAccessor() },
-                { "offsetMax", new RectTransformOffsetMaxViewLayoutAccessor() },
-            };
-            layouter.AddKeywords(
-                keywords.Select(_t => (_t.Key, _t.Value))
-            );
-            layouter.AddAutoCreateViewObject(new AutoCreator(), keywords.Keys);
-            return layouter;
-        }
-
         RectTransform R { get => transform as RectTransform; }
 
         #region RectTransformViewLayouts
@@ -110,5 +91,27 @@ namespace Hinode
 
         #region IViewObject
         #endregion
+    }
+
+    public static partial class ViewLayoutExtensions
+    {
+        public static ViewLayouter AddRectTransformKeywordsAndAutoCreator(this ViewLayouter target)
+        {
+            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
+                { "anchorX", new RectTransformAnchorXViewLayoutAccessor() },
+                { "anchorY", new RectTransformAnchorYViewLayoutAccessor()},
+                { "anchorMin", new RectTransformAnchorMinViewLayoutAccessor()},
+                { "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor()},
+                { "pivot", new RectTransformPivotViewLayoutAccessor()},
+                { "size", new RectTransformSizeViewLayoutAccessor()},
+                { "offsetMin", new RectTransformOffsetMinViewLayoutAccessor() },
+                { "offsetMax", new RectTransformOffsetMaxViewLayoutAccessor() },
+            };
+            target.AddKeywords(
+                keywords.Select(_t => (_t.Key, _t.Value))
+            );
+            target.AddAutoCreateViewObject(new RectTransformViewLayoutAccessor.AutoCreator(), keywords.Keys);
+            return target;
+        }
     }
 }
