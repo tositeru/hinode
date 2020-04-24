@@ -158,15 +158,23 @@ This Pen is Nice. Go! Go! Go!
         public enum PropType
         {
             TemplateText,
+            IsOnlyEmbbed,
+            DoShareKeywords,
             Keywords,
             IgnorePairs,
             EmbbedTemplates,
+            IsSingleKeywordPairMode,
+            SingleKeywordPairList,
             Newline,
         }
         static readonly (PropType, string)[] props = {
             (PropType.TemplateText, "_templateText"),
+            (PropType.IsOnlyEmbbed, "_isOnlyEmbbed"),
+            (PropType.IsSingleKeywordPairMode, "_isSingleKeywordPairMode"),
+            (PropType.DoShareKeywords, "_doShareKaywords"),
             (PropType.Keywords, "_keywords"),
             (PropType.IgnorePairs, "_ignorePairs"),
+            (PropType.SingleKeywordPairList, "_singleKeywordPairList"),
             (PropType.EmbbedTemplates, "_embbedTemplates"),
             (PropType.Newline, "_newline"),
         };
@@ -268,8 +276,18 @@ This Pen is Nice. Go! Go! Go!
                 //param.rootScrollPos = scrollScope.scrollPosition;
 
                 EditorGUILayout.PropertyField(param.propDict[PropType.TemplateText], true);
+                EditorGUILayout.PropertyField(param.propDict[PropType.IsOnlyEmbbed], true);
+                EditorGUILayout.PropertyField(param.propDict[PropType.DoShareKeywords], true);
                 EditorGUILayout.PropertyField(param.propDict[PropType.Keywords], true);
-                EditorGUILayout.PropertyField(param.propDict[PropType.IgnorePairs], true);
+                EditorGUILayout.PropertyField(param.propDict[PropType.IsSingleKeywordPairMode], true);
+                if(param.propDict[PropType.IsSingleKeywordPairMode].boolValue)
+                {
+                    EditorGUILayout.PropertyField(param.propDict[PropType.SingleKeywordPairList], true);
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(param.propDict[PropType.IgnorePairs], true);
+                }
                 EditorGUILayout.PropertyField(param.propDict[PropType.EmbbedTemplates], true);
                 EditorGUILayout.PropertyField(param.propDict[PropType.Newline], true);
 

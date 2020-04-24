@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEditor;
 using System.IO;
+using UnityEditor.PackageManager;
 
 namespace Hinode.Tests.Editors
 {
@@ -108,6 +109,19 @@ namespace Hinode.Tests.Editors
             // Packagesのディレクトリ配下以外のディレクトリを作成した時は例外を投げる
             Assert.Throws<UnityEngine.Assertions.AssertionException>(
                 () => Hinode.Editors.EditorFileUtils.CreateDirectory("Hoge/Hoge"));
+        }
+
+        [Test]
+        public void GetFullFilepathPasses()
+        {
+            Assert.AreEqual(
+                $"{Application.dataPath}/Test.txt",
+                Hinode.Editors.EditorFileUtils.GetFullFilepath("Assets/Test.txt"));
+
+            var hinodePackageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(PackageDefines.GetHinodeAssetPath());
+            Assert.AreEqual(
+                Path.GetFullPath($"{hinodePackageInfo.resolvedPath}/Test.txt"),
+                Hinode.Editors.EditorFileUtils.GetFullFilepath(PackageDefines.GetHinodeAssetPath("Test.txt")));
 
         }
     }

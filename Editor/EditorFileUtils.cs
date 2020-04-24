@@ -4,6 +4,7 @@ using UnityEngine;
 using System.IO;
 using UnityEditor;
 using UnityEngine.Assertions;
+using System.Text.RegularExpressions;
 
 namespace Hinode.Editors
 {
@@ -97,6 +98,22 @@ namespace Hinode.Editors
                 throw new System.NotImplementedException();
             }
 
+        }
+
+        public static string GetFullFilepath(string assetPath)
+        {
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(assetPath);
+            if(packageInfo == null)
+            {
+                return Path.GetFullPath(assetPath);
+            }
+            else
+            {
+                Debug.Log($"{packageInfo.displayName}:{packageInfo.resolvedPath}");
+                var regex = new Regex($"^{packageInfo.assetPath}/?");
+                var filepath = regex.Replace(assetPath, "");
+                return Path.GetFullPath(Path.Combine(packageInfo.resolvedPath, filepath));
+            }
         }
     }
 }

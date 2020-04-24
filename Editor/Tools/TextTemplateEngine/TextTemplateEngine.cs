@@ -5,6 +5,7 @@ using UnityEditor;
 using System.Linq;
 using UnityEngine.Assertions;
 using System.Runtime.Serialization;
+using System.IO;
 
 namespace Hinode.Editors
 {
@@ -22,18 +23,32 @@ namespace Hinode.Editors
             ReturnAndNewline,
         }
 #pragma warning disable CS0649
+        [SerializeField] bool _isOnlyEmbbed;
+        [SerializeField] bool _doShareKaywords;
+        [SerializeField] bool _isSingleKeywordPairMode;
         [SerializeField, TextArea(15, 9999)] string _templateText;
         [SerializeField] List<Keyword> _keywords = new List<Keyword>();
         [SerializeField] List<IgnorePair> _ignorePairs = new List<IgnorePair>();
         [SerializeField] List<EmbbedTemplate> _embbedTemplates = new List<EmbbedTemplate>();
+        [SerializeField] List<SingleKeywordPair> _singleKeywordPairList = new List<SingleKeywordPair>();
         //[SerializeField] Dictionary<string, TextTemplateEngine> _embbedDict = new Dictionary<string, TextTemplateEngine>();
         [SerializeField] Newline _newline = Newline.Newline;
 #pragma warning restore CS0649
 
+        public bool IsOnlyEmbbed { get => _isOnlyEmbbed; set => _isOnlyEmbbed = value; }
+        /// <summary>
+        /// 埋め込みTextTemplateがある時、自身のキーワード、無視リストなどのパラメータを使用するかどうかのフラグ。
+        /// trueの時は、埋め込みTextTemplateが持つパラメータは使用されないため、
+        /// 埋め込みTextTemplateのテンプレートにあるキーワードで自身のパラメータと一致しないものは展開されない場合が出てきますので注意してください。
+        /// </summary>
+        public bool DoShareKaywords { get => _doShareKaywords; set => _doShareKaywords = value;}
+        public bool IsSingleKeywordPairMode { get => _isSingleKeywordPairMode; set => _isSingleKeywordPairMode = value;}
         public string TemplateText { get => _templateText; set => _templateText = value; }
         public IEnumerable<Keyword> Keywords { get => _keywords; }
         public IEnumerable<IgnorePair> IgnorePairs { get => _ignorePairs; }
         public IEnumerable<EmbbedTemplate> EmbbedTemplates { get => _embbedTemplates; }
+        public IEnumerable<SingleKeywordPair> SingleKeywordPairList { get => _singleKeywordPairList; }
+
         //public IEnumerable<KeyValuePair<string, TextTemplateEngine>> EmbbedTemplates { get => _embbedDict; }
 
         public string NewLineStr
@@ -95,32 +110,61 @@ namespace Hinode.Editors
 
         public void AddEmbbed(string key, TextTemplateEngine embbedTarget)
         {
-            Assert.AreNotEqual(embbedTarget, this, "Don't set self to embbed...");
+            Assert.AreNotEqual(embbedTarget, this, "Don't set self () embbed...");
 
             _embbedTemplates.Add(new EmbbedTemplate(key, embbedTarget));
         }
 
-        public string Generate()
+        public void AddSingleKeywordPair(params string[] pairs)
+            => AddSingleKeywordPair(pairs.AsEnumerable());
+        public void AddSingleKeywordPair(IEnumerable<string> pairs)
         {
-            var keywordEnumerable = new AllKeywordEnumerable(this);
-            if (!keywordEnumerable.Any()) return _templateText;
+            _singleKeywordPairList.Add(new SingleKeywordPair(pairs));
+        }
 
-            if(_ignorePairs.Any(_i => !_i.IsValid))
-            {
-                Debug.LogWarning($"キーワードまたは値が設定されていない無視リストのアイテムが存在しています。変換は行わずに出力します。");
-                return _templateText;
-            }
+        public string Generate()
+            => Generate(this);
 
-            string newline = NewLineStr;
-            string text = "";
-            foreach (var keywordList in keywordEnumerable
-                .Where(_l => !_ignorePairs.Any(_igPair =>_igPair.DoIgnore(_l)))
-                )
+        public string Generate(TextTemplateEngine useTextTemplate)
+        {
+            if(IsOnlyEmbbed)
             {
-                text += (text.Length <= 0 ? "" : newline)
-                    + Generate(_templateText, keywordList);
+                var text = _templateText;
+                return ExpandEmbbedText(text, useTextTemplate);
             }
-            return text;
+            else if(useTextTemplate.IsSingleKeywordPairMode)
+            {
+                var keywordListEnumerable = useTextTemplate.SingleKeywordPairList
+                        .Select(_pairList =>
+                            _pairList.List.Zip(useTextTemplate.Keywords, (_p, _k) => (_k.key, _p))
+                        );
+                string text = "";
+                foreach (var keywordList in keywordListEnumerable)
+                {
+                    text += (text.Length <= 0 ? "" : NewLineStr)
+                        + Generate(useTextTemplate, _templateText, keywordList);
+                }
+                return text;
+            }
+            else
+            {
+                var keywordEnumerable = new AllKeywordEnumerable(useTextTemplate);
+                if (!keywordEnumerable.Any() || useTextTemplate.IgnorePairs.Any(_i => !_i.IsValid))
+                {
+                    Debug.LogWarning($"キーワードまたは値が設定されていない無視リストのアイテムが存在しています。変換は行わずに出力します。");
+                    return _templateText;
+                }
+
+                string text = "";
+                var keywordListEnumerable = keywordEnumerable
+                        .Where(_l => !useTextTemplate.IgnorePairs.Any(_igPair => _igPair.DoIgnore(_l)));
+                foreach (var keywordList in keywordListEnumerable)
+                {
+                    text += (text.Length <= 0 ? "" : NewLineStr)
+                        + Generate(useTextTemplate, _templateText, keywordList);
+                }
+                return text;
+            }
         }
 
         /// <summary>
@@ -129,7 +173,7 @@ namespace Hinode.Editors
         /// <param name="templateText"></param>
         /// <param name="keywordList"></param>
         /// <returns></returns>
-        string Generate(string templateText, IEnumerable<(string, string)> keywordList)
+        string Generate(TextTemplateEngine useTextTemplate, string templateText, IEnumerable<(string, string)> keywordList)
         {
             //重い処理なので最適化する？
             var text = templateText;
@@ -138,16 +182,27 @@ namespace Hinode.Editors
                 text = text.Replace($"${k.Item1}$", k.Item2);
             }
 
-            foreach(var pair in _embbedTemplates)
+            return ExpandEmbbedText(text, useTextTemplate);
+        }
+
+        string ExpandEmbbedText(string text, TextTemplateEngine useTextTemplate)
+        {
+            foreach (var pair in DoShareKaywords
+                ? useTextTemplate.EmbbedTemplates
+                : EmbbedTemplates)
             {
-                if(pair.Key != "" && pair.Template != null)
+                if (pair.Template == this)
                 {
-                    var embbedText = pair.Template.Generate();
+                    Debug.LogWarning($"生成中のTextTemplateと一致する埋め込みテキストは展開できません。この埋め込みテキストは展開しません。key={pair.Key}, value={pair.Template}");
+                }
+                else if (pair.Key != "" && pair.Template != null)
+                {
+                    var embbedText = pair.Template.Generate(DoShareKaywords ? useTextTemplate : pair.Template);
                     text = text.Replace($"%{pair.Key}%", embbedText);
                 }
                 else
                 {
-                    Debug.Log($"キー名または値が設定されていない埋め込みテキストが存在しています。この埋め込みテキストは展開しません。key={pair.Key}, value={pair.Template}");
+                    Debug.LogWarning($"キー名または値が設定されていない埋め込みテキストが存在しています。この埋め込みテキストは展開しません。key={pair.Key}, value={pair.Template}");
                 }
             }
             return text;
@@ -336,6 +391,22 @@ namespace Hinode.Editors
             {
                 this._key = key;
                 this._template = template;
+            }
+        }
+
+        [System.Serializable]
+        public class SingleKeywordPair
+        {
+            [SerializeField] List<string> _pairKeywords = new List<string>();
+
+            public List<string> List { get => _pairKeywords; }
+
+            public SingleKeywordPair(params string[] pairKeyword)
+                : this(pairKeyword.AsEnumerable())
+            {}
+            public SingleKeywordPair(IEnumerable<string> pairKeywords)
+            {
+                _pairKeywords = pairKeywords.ToList();
             }
         }
     }

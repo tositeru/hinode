@@ -80,7 +80,7 @@ namespace Hinode.Tests.Editors.Tools
         }
 
         [Test]
-        public void EmbbedOtherTemplatePasses()
+        public void EmbbedTemplatePasses()
         {
             var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
             embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
@@ -119,12 +119,115 @@ namespace Hinode.Tests.Editors.Tools
             templateEngine.AddEmbbed("", embbedTemplate);
             //埋め込みテンプレートの値が空の時もそれを無視する
             templateEngine.AddEmbbed("Yell", null);
-            Assert.DoesNotThrow(() => {
-                var newline = templateEngine.NewLineStr;
-                Assert.AreEqual("This Pen is Good. %Yell%" + newline
-                    + "This Pen is Nice. %Yell%" + newline
-                    + "This Grass is Nice. %Yell%", templateEngine.Generate());
-            });
+            var newline = templateEngine.NewLineStr;
+            Assert.AreEqual("This Pen is Good. %Yell%" + newline
+                + "This Pen is Nice. %Yell%" + newline
+                + "This Grass is Nice. %Yell%", templateEngine.Generate());
         }
+
+        [Test, Description("他のTextTemplateEngineのキーワードと無視リストを使用する時のテスト")]
+        public void UseOtherTextTemplatePasses()
+        {
+            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
+            embbedTemplate.AddKeyword("Word", "Apple");
+
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+
+            templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
+            templateEngine.AddKeyword("Item", "Pen", "Grass");
+            templateEngine.AddKeyword("Condition", "Good", "Nice");
+            templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
+            templateEngine.AddEmbbed("Yell", embbedTemplate);
+
+            var otherTemplateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            otherTemplateEngine.TemplateText = "";
+            otherTemplateEngine.AddKeyword("Item", "Tom", "Kumi");
+            otherTemplateEngine.AddKeyword("Condition", "Hot", "Cool");
+            otherTemplateEngine.AddIgnorePair(("Item", "Tom"), ("Condition", "Hot"));
+
+            var newline = templateEngine.NewLineStr;
+            Assert.AreEqual("This Kumi is Hot. Apple! Apple! Apple!." + newline
+                + "This Tom is Cool. Apple! Apple! Apple!." + newline
+                + "This Kumi is Cool. Apple! Apple! Apple!.", templateEngine.Generate(otherTemplateEngine));
+        }
+
+        [Test, Description("埋め込みTextTemplateEngineを展開する時、設定されているキーワード等を共有する場合テスト")]
+        public void DoShareKeywordsPasses()
+        {
+            var childEmbbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            childEmbbedTemplate.TemplateText = "?$Key$?";
+            childEmbbedTemplate.AddKeyword("Key", "Apple");
+
+            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            embbedTemplate.TemplateText = "$Item$=>$Condition$! $NotExpanded$!. %Yell%;";
+            embbedTemplate.AddKeyword("Item", "Cat");
+            embbedTemplate.AddKeyword("Condition", "Sleep");
+            embbedTemplate.AddKeyword("NotExpanded", "Apple"); // <- これは使用されない
+            embbedTemplate.AddEmbbed("Yell", childEmbbedTemplate); // <- embbedTemplate.DoShareKaywords=falseの時はこちらは使用される。
+
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
+            templateEngine.AddKeyword("Item", "Pen", "Grass");
+            templateEngine.AddKeyword("Condition", "Good", "Nice");
+            templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
+            templateEngine.AddIgnorePair(("Item", "Pen"), ("Condition", "Nice"));
+            templateEngine.AddEmbbed("Yell", embbedTemplate);
+
+            templateEngine.DoShareKaywords = true;
+            var newline = templateEngine.NewLineStr;
+            var expanedText = $"Pen=>Good! $NotExpanded$!. ?Apple?;{newline}Grass=>Nice! $NotExpanded$!. ?Apple?;";
+            Assert.AreEqual(
+                    $"This Pen is Good. {expanedText}" + newline
+                + $"This Grass is Nice. {expanedText}", templateEngine.Generate());
+        }
+
+        [Test, Description("単一のキーワードのペアを指定するモードのテスト")]
+        public void IsSingleKeywordPairPasses()
+        {
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            templateEngine.TemplateText = "This $Item$ is $Condition$.";
+            templateEngine.AddKeyword("Item");
+            templateEngine.AddKeyword("Condition");
+            templateEngine.AddSingleKeywordPair("Apple", "Fruits");
+            templateEngine.AddSingleKeywordPair("Cat", "Animals");
+
+            //これらは設定していても使用されない
+            templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
+            templateEngine.AddIgnorePair(("Item", "Pen"), ("Condition", "Nice"));
+            //
+
+            templateEngine.IsSingleKeywordPairMode = true;
+
+            var newline = templateEngine.NewLineStr;
+            Assert.AreEqual(
+                    $"This Apple is Fruits." + newline
+                + $"This Cat is Animals.", templateEngine.Generate());
+        }
+
+        [Test, Description("単一のキーワードのペアを指定するモードのテスト")]
+        public void IsOnlyEmbbedPasses()
+        {
+            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            embbedTemplate.TemplateText = "$Word$! $Word$!.";
+            embbedTemplate.AddKeyword("Word", "Apple");
+
+            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            templateEngine.DoShareKaywords = true;
+            templateEngine.IsSingleKeywordPairMode = true;
+            templateEngine.IsOnlyEmbbed = true;
+
+            templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
+            templateEngine.AddKeyword("Item");
+            templateEngine.AddKeyword("Condition");
+            templateEngine.AddKeyword("Word");
+            templateEngine.AddSingleKeywordPair("", "", "Good");
+            templateEngine.AddSingleKeywordPair("", "", "Nice");
+            templateEngine.AddEmbbed("Yell", embbedTemplate);
+            var newline = templateEngine.NewLineStr;
+            Assert.AreEqual($"This $Item$ is $Condition$. Good! Good!." + newline
+                + "Nice! Nice!.", templateEngine.Generate());
+        }
+
     }
 }
