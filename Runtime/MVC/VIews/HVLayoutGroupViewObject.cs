@@ -15,6 +15,7 @@ namespace Hinode
     /// 
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
+    [AvailableModelViewParamBinder(typeof(HVLayoutGroupViewObject.FixedParamBinder))]
     public class HVLayoutGroupViewObject : CanvasViewObject.IAppendableViewObject
     {
         public static HVLayoutGroupViewObject Create(string name = "HVLayoutGroup")

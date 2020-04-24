@@ -119,7 +119,7 @@ namespace Hinode.Tests.MVC.Controller
                     // - EnableSender
                     // - DoEnableSender
                     // - Send
-                    controllerInstance.AddSelector<ITestSender>(new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", ""));
+                    controllerInstance.AddSelector<ITestSender>(new RecieverSelector(ModelRelationShip.Self, "", ""));
                     Assert.IsTrue(controllerInstance.ContainsSelector<ITestSender>());
                     Assert.AreEqual(1, controllerInstance.SelectorCount<ITestSender>());
 
@@ -181,8 +181,8 @@ namespace Hinode.Tests.MVC.Controller
                     // - ClearSelectorDict
                     controllerInstance.ClearSelectorList<ITestSender>();
                     controllerInstance.ClearSelectorList<IEmptySender>();
-                    controllerInstance.AddSelector<ITestSender>(new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", ""));
-                    controllerInstance.AddSelector<IEmptySender>(new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", ""));
+                    controllerInstance.AddSelector<ITestSender>(new RecieverSelector(ModelRelationShip.Self, "", ""));
+                    controllerInstance.AddSelector<IEmptySender>(new RecieverSelector(ModelRelationShip.Self, "", ""));
                     Assert.IsTrue(controllerInstance.ContainsSelector<ITestSender>());
                     Assert.IsTrue(controllerInstance.ContainsSelector<IEmptySender>());
                     Assert.AreEqual(1, controllerInstance.SelectorCount<ITestSender>());
@@ -237,7 +237,7 @@ namespace Hinode.Tests.MVC.Controller
             Assert.IsFalse(controllerInstance.ContainsSelector<ITest2Sender>());
             Assert.AreEqual(0, controllerInstance.SelectorCount<ITest2Sender>());
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
-                controllerInstance.AddSelector(typeof(ITest2Sender), new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "")));
+                controllerInstance.AddSelector(typeof(ITest2Sender), new RecieverSelector(ModelRelationShip.Self, "", "")));
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.DoEnableSender<ITest2Sender>());
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.EnableSender<ITest2Sender>());
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => controllerInstance.DisableSender<ITest2Sender>());

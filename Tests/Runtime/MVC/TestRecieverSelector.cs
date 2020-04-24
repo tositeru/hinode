@@ -93,7 +93,7 @@ namespace Hinode.Tests.MVC
                 //search root model => reciever
                 //selector: Parent, "", ""
                 //result => root
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "");
                 var enumerable = selector.GetRecieverEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "IControllerRecieverを継承している時は取得できるようにしてください。";
@@ -105,7 +105,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Parent, "", ""
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "ParentがないmodelのParentを指定した時は何も取得できないようにしてください。";
@@ -116,7 +116,7 @@ namespace Hinode.Tests.MVC
                 //search root model => model
                 //selector: Parent, "", ""
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "");
                 var enumerable = selector.GetRecieverEnumerable(model1, binderMapInstance);
                 var errorMessage = "IControllerRecieverを継承していない時は取得できないようにしてください。";
                 Assert.IsFalse(enumerable.Any(), errorMessage);
@@ -126,7 +126,7 @@ namespace Hinode.Tests.MVC
                 //search root model => model
                 //selector: Parent, "root", ""
                 //result => root
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "#main", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "#main", "");
                 var enumerable = selector.GetRecieverEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "親指定のrecieverSelectorの時、クエリパスを指定した時はBinderInstanceMapのRootModelをクエリルートにしてください。";
@@ -138,7 +138,7 @@ namespace Hinode.Tests.MVC
                 //search root model => reciever
                 //selector: Parent, "", "reciever"
                 //result => RecieverViewObj in root
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "Viewを指定した時はModelにバインドされていて、かつIControllerRecieverを継承しているViewを取得できるようにしてください。";
@@ -151,7 +151,7 @@ namespace Hinode.Tests.MVC
                 //search root model => model
                 //selector: Parent, "", "reciever"
                 //result => RecieverViewObj in noneReciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "バインドされているModelがIControllerRecieverを継承していない場合でも取得できるようにしてください";
@@ -164,7 +164,7 @@ namespace Hinode.Tests.MVC
                 //search root model => model
                 //selector: Parent, "", "invalidIdentity"
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "invalidIdentity");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "invalidIdentity");
                 var enumerable = selector.GetRecieverEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "ViewIdentityが一致していない時は取得できないようにしてください。";
@@ -175,7 +175,7 @@ namespace Hinode.Tests.MVC
                 //search root model => model
                 //selector: Parent, "root", "reciever"
                 //result => root
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "#main", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "#main", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "親指定のrecieverSelectorの時、クエリパスを指定した時はBinderInstanceMapのRootModelをクエリルートにしてください。";
@@ -223,7 +223,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "", ""
                 //result => reciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Child, "", "");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "IControllerRecieverを継承している時は取得できるようにしてください。";
@@ -235,7 +235,7 @@ namespace Hinode.Tests.MVC
                 //search root model => reciever
                 //selector: Child, "", ""
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Child, "", "");
                 var enumerable = selector.GetRecieverEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "ChildがないmodelのChildを指定した時は何も取得できないようにしてください。";
@@ -246,7 +246,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "*", ""
                 //result => reciever, reciever2
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "*", "");
+                var selector = new RecieverSelector(ModelRelationShip.Child, "*", "");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
                 var errorMessage = "QueryPathを指定した時はそれに一致するModel全て取得できるようにしてください";
                 AssertionUtils.AssertEnumerable(enumerable, new IControllerReciever[] { recieverModel, recieverModel2 }, errorMessage);
@@ -256,7 +256,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "__invalid", ""
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "__invalid", "");
+                var selector = new RecieverSelector(ModelRelationShip.Child, "__invalid", "");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
                 var errorMessage = "QueryPathが一致しない時は何も取得できないようにしてください。";
                 Assert.IsFalse(enumerable.Any(), errorMessage);
@@ -266,7 +266,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "", "reciever"
                 //result => RecieverViewObj in reciever, RecieverViewObj in noneReciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Child, "", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIControllerRecieverを継承しているViewを全て取得できるようにしてください。";
@@ -279,7 +279,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "", "__invalid"
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, "", "__invalid");
+                var selector = new RecieverSelector(ModelRelationShip.Child, "", "__invalid");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "指定したViewIdentityと一致ない時は何も取得できないようにしてください。";
@@ -290,7 +290,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "reciever", "reciever"
                 //result => RecieverViewObj in reciever, 
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, recieverModel.Name, viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Child, recieverModel.Name, viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIControllerRecieverを継承しているViewを全て取得できるようにしてください。";
@@ -302,7 +302,7 @@ namespace Hinode.Tests.MVC
                 //search root model => root
                 //selector: Child, "reciever", "__invalid"
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Child, recieverModel.Name, "__invalid");
+                var selector = new RecieverSelector(ModelRelationShip.Child, recieverModel.Name, "__invalid");
                 var enumerable = selector.GetRecieverEnumerable(root, binderMapInstance);
 
                 var errorMessage = "指定したViewIdentityと一致ない時は何も取得できないようにしてください。";
@@ -345,7 +345,7 @@ namespace Hinode.Tests.MVC
                 //search root model => reciever
                 //selector: Self, "", ""
                 //result => reciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Self, "", "");
                 var enumerable = selector.GetRecieverEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "IControllerRecieverを継承している時は取得できるようにしてください。";
@@ -357,7 +357,7 @@ namespace Hinode.Tests.MVC
                 //search root model => noneReciever
                 //selector: Self, "", ""
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Self, "", "");
                 var enumerable = selector.GetRecieverEnumerable(noneRecieverModel, binderMapInstance);
                 var errorMessage = "IControllerRecieverを継承していない時は取得できないようにしてください。";
                 Assert.IsFalse(enumerable.Any(), errorMessage);
@@ -367,7 +367,7 @@ namespace Hinode.Tests.MVC
                 //search root model => reciever
                 //selector: Self, "", "reciever"
                 //result => RecieverViewObj in reciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Self, "", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "Viewを指定した時はModelにバインドされていて、かつIControllerRecieverを継承しているViewを取得できるようにしてください。";
@@ -380,7 +380,7 @@ namespace Hinode.Tests.MVC
                 //search root model => noneReciever
                 //selector: Self, "", "reciever"
                 //result => RecieverViewObj in noneReciever
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", viewReciever);
+                var selector = new RecieverSelector(ModelRelationShip.Self, "", viewReciever);
                 var enumerable = selector.GetRecieverEnumerable(noneRecieverModel, binderMapInstance);
 
                 var errorMessage = "バインドされているModelがIControllerRecieverを継承していない場合でも取得できるようにしてください";
@@ -393,7 +393,7 @@ namespace Hinode.Tests.MVC
                 //search root model => noneReciever
                 //selector: Self, "", "invalidIdentity"
                 //result => (empty)
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "invalidIdentity");
+                var selector = new RecieverSelector(ModelRelationShip.Self, "", "invalidIdentity");
                 var enumerable = selector.GetRecieverEnumerable(noneRecieverModel, binderMapInstance);
 
                 var errorMessage = "ViewIdentityが一致していない時は取得できないようにしてください。";
@@ -448,7 +448,7 @@ namespace Hinode.Tests.MVC
             #endregion
 
             {//None Fook Selector
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "");
                 Assert.IsFalse(selector.IsFooking);
 
                 float eventData = 1.234f;
@@ -463,7 +463,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//Fook Selector!!
-                var selector = new RecieverSelector(RecieverSelector.ModelRelationShip.Parent, "", "");
+                var selector = new RecieverSelector(ModelRelationShip.Parent, "", "");
                 Assert.IsFalse(selector.IsFooking);
 
                 // set Fook info!!

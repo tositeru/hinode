@@ -6,15 +6,15 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    public enum ModelRelationShip
+    {
+        Self,
+        Parent,
+        Child,
+    }
+
     public class ModelViewSelector
     {
-        public enum ModelRelationShip
-        {
-            Self,
-            Parent,
-            Child,
-        }
-
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
         public string ViewIdentity { get; } = "";

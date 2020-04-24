@@ -32,6 +32,12 @@ namespace Hinode.Tests.MVC
 
         class TestCreator : IViewInstanceCreator
         {
+            protected override System.Type GetViewObjTypeImpl(string instanceKey)
+            {
+                var viewObj = CreateViewObjImpl(instanceKey);
+                return viewObj.GetType();
+            }
+
             protected override IViewObject CreateViewObjImpl(string instanceKey)
             {
                 switch (instanceKey)
@@ -89,19 +95,19 @@ namespace Hinode.Tests.MVC
             var creator = new TestCreator();
 
             var viewObjAbindInfo = new ModelViewBinder.BindInfo("A", "A", "a");
-            var paramBinderA = creator.GetParamBinderObj(viewObjAbindInfo);
+            var paramBinderA = creator.GetParamBinder(viewObjAbindInfo);
             Assert.IsTrue(paramBinderA is ViewObj.ParamBinder);
             Assert.AreEqual(1, (paramBinderA as ViewObj.ParamBinder).Value);
 
             var viewObjBbindInfo = new ModelViewBinder.BindInfo("A", "A", "b");
-            var paramBinderB = creator.GetParamBinderObj(viewObjBbindInfo);
+            var paramBinderB = creator.GetParamBinder(viewObjBbindInfo);
             Assert.IsTrue(paramBinderB is ViewObj.ParamBinder);
             Assert.AreEqual(-1, (paramBinderB as ViewObj.ParamBinder).Value);
 
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
             {
                 var bindInfo = new ModelViewBinder.BindInfo("B", "B", "abc");
-                var nullParamBinder = creator.GetParamBinderObj(bindInfo);
+                var nullParamBinder = creator.GetParamBinder(bindInfo);
             });
         }
 
@@ -112,7 +118,7 @@ namespace Hinode.Tests.MVC
 
             var bindInfo = new ModelViewBinder.BindInfo("A", "A", "a")
                 .SetUseParamBinder(new ViewObj.ParamBinder(100));
-            var paramBinder = creator.GetParamBinderObj(bindInfo);
+            var paramBinder = creator.GetParamBinder(bindInfo);
             Assert.AreSame(bindInfo.UseParamBinder, paramBinder);
         }
     }

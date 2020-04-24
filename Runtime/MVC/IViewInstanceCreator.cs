@@ -11,6 +11,18 @@ namespace Hinode
     /// </summary>
     public abstract class IViewInstanceCreator
     {
+        public System.Type GetViewObjType(ModelViewBinder.BindInfo bindInfo)
+        {
+            var type = GetViewObjTypeImpl(bindInfo.InstanceKey);
+            Assert.IsTrue(type.DoHasInterface<IViewObject>(), $"'{type.FullName}' don't have IViewObejct interface...");
+            return type;
+        }
+
+        public System.Type GetParamBinderType(ModelViewBinder.BindInfo bindInfo)
+        {
+            return GetParamBinder(bindInfo).GetType();
+        }
+
         public IViewObject CreateViewObj(ModelViewBinder.BindInfo bindInfo)
         {
             var viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
@@ -19,7 +31,7 @@ namespace Hinode
             return viewObj;
         }
 
-        public IModelViewParamBinder GetParamBinderObj(ModelViewBinder.BindInfo bindInfo)
+        public IModelViewParamBinder GetParamBinder(ModelViewBinder.BindInfo bindInfo)
         {
             if(bindInfo.UseParamBinder != null)
             {
@@ -33,6 +45,7 @@ namespace Hinode
             }
         }
 
+        protected abstract System.Type GetViewObjTypeImpl(string instanceKey);
         protected abstract IViewObject CreateViewObjImpl(string instanceKey);
         protected abstract IModelViewParamBinder GetParamBinderImpl(string binderKey);
     }
@@ -65,6 +78,12 @@ namespace Hinode
                 Assert.IsFalse(_dict.ContainsKey(d.viewType.FullName), $"Already exist key({d.viewType.FullName})... paramBinder={d.paramBinder}");
                 _dict.Add(d.viewType.FullName, (d.viewType, d.paramBinder));
             }
+        }
+
+        protected override System.Type GetViewObjTypeImpl(string instanceKey)
+        {
+            if (!_dict.ContainsKey(instanceKey)) return null;
+            return _dict[instanceKey].viewObjType;
         }
 
         protected override IViewObject CreateViewObjImpl(string instanceKey)

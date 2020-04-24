@@ -109,6 +109,19 @@ namespace Hinode.Tests.MVC.ViewLayout
 
         class ViewInstanceCreator : IViewInstanceCreator
         {
+            protected override System.Type GetViewObjTypeImpl(string instanceKey)
+            {
+                if (typeof(TestComponent).FullName == instanceKey)
+                {
+                    return typeof(TestComponent);
+                }
+                else
+                {
+                    throw new System.NotImplementedException($"対応しているIViewObjectが見つかりません。instanceKey={instanceKey}");
+                    return null;
+                }
+            }
+
             protected override IViewObject CreateViewObjImpl(string instanceKey)
             {
                 if (typeof(TestComponent).FullName == instanceKey)
@@ -151,7 +164,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 ),
                 new ModelViewBinder("child", null,
                     new ModelViewBinder.BindInfo(viewID, typeof(TestComponent))
-                        .AddViewLayout("parent", new ModelViewSelector(ModelViewSelector.ModelRelationShip.Parent, "", viewID))
+                        .AddViewLayout("parent", new ModelViewSelector(ModelRelationShip.Parent, "", viewID))
                 )
             );
             binderMap.UseViewLayouter = new ViewLayouter()
@@ -179,7 +192,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 var childViewObj = childBindInstance.ViewObjects.ElementAt(0) as TestComponent;
                 var childAutoViewObj = childBindInstance.AutoLayoutViewObjects[childViewObj].First() as TransformViewLayoutAccessor;
 
-                var selfSelector = new ModelViewSelector(ModelViewSelector.ModelRelationShip.Self, "", viewID);
+                var selfSelector = new ModelViewSelector(ModelRelationShip.Self, "", viewID);
                 binderMap.UseViewLayouter.Set("parent", selfSelector, childAutoViewObj);
 
                 Assert.AreSame(null, childViewObj.transform.parent);
@@ -199,7 +212,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 //Set Default value
                 childViewObj.transform.SetParent(null);
 
-                var selector = new ModelViewSelector(ModelViewSelector.ModelRelationShip.Parent, "*", viewID);
+                var selector = new ModelViewSelector(ModelRelationShip.Parent, "*", viewID);
                 binderMap.UseViewLayouter.Set("parent", selector, childAutoViewObj);
 
                 var enumerable = selector.Query<TestComponent>(child, binderInstanceMap);
@@ -218,7 +231,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 //Set Default value
                 childViewObj.transform.SetParent(rootViewObj.transform);
 
-                var selfSelector = new ModelViewSelector(ModelViewSelector.ModelRelationShip.Child, "", viewID);
+                var selfSelector = new ModelViewSelector(ModelRelationShip.Child, "", viewID);
                 binderMap.UseViewLayouter.Set("parent", selfSelector, childAutoViewObj);
 
                 Assert.AreSame(null, childViewObj.transform.parent);

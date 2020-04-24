@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 namespace Hinode
 {
+    [AvailableModel(typeof(ButtonModel))]
+    [AvailableModelViewParamBinder(typeof(ButtonViewObject.ParamBinder), typeof(EmptyModelViewParamBinder))]
     public class ButtonViewObject : MonoBehaviourViewObject
     {
         string _textPath;

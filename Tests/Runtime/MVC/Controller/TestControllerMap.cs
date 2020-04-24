@@ -125,7 +125,7 @@ namespace Hinode.Tests.MVC.Controller
                 new ModelViewBinder.BindInfo(viewID, typeof(TestView))
                     .AddControllerInfo(new ModelViewBinder.ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST,
-                            new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "")
+                            new RecieverSelector(ModelRelationShip.Self, "", "")
                         )
                     )
                 );
@@ -133,12 +133,12 @@ namespace Hinode.Tests.MVC.Controller
                 new ModelViewBinder.BindInfo(viewID, typeof(TestView))
                     .AddControllerInfo(new ModelViewBinder.ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST,
-                            new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "")
+                            new RecieverSelector(ModelRelationShip.Self, "", "")
                         )
                     ).AddControllerInfo(new ModelViewBinder.ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST2,
-                            new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", ""),
-                            new RecieverSelector(RecieverSelector.ModelRelationShip.Self, "", "") {
+                            new RecieverSelector(ModelRelationShip.Self, "", ""),
+                            new RecieverSelector(ModelRelationShip.Self, "", "") {
                                 FookingRecieverType = typeof(ITestFookReciever),
                                 FookEventData = "FookParam1"
                             }

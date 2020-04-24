@@ -6,6 +6,7 @@ using UnityEngine.UI;
 namespace Hinode
 {
     [RequireComponent(typeof(Canvas))]
+    [AvailableModelViewParamBinder(typeof(CanvasViewObject.FixedParamBinder))]
     public class CanvasViewObject : MonoBehaviourViewObject
         , IDepthViewLayout
     {

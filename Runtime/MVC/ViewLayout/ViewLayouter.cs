@@ -53,9 +53,9 @@ namespace Hinode
             AddKeywords(layouts);
         }
 
-        public void AddKeywords(params (string keyword, IViewLayoutAccessor layout)[] layouts)
+        public ViewLayouter AddKeywords(params (string keyword, IViewLayoutAccessor layout)[] layouts)
             => AddKeywords(layouts.AsEnumerable());
-        public void AddKeywords(IEnumerable<(string keyword, IViewLayoutAccessor layout)> layouts)
+        public ViewLayouter AddKeywords(IEnumerable<(string keyword, IViewLayoutAccessor layout)> layouts)
         {
             foreach (var (keyword, layout) in layouts)
             {
@@ -64,6 +64,7 @@ namespace Hinode
 
                 _layoutAccessors.Add(keyword, layout);
             }
+            return this;
         }
 
         public bool ContainsKeyword(string keyword)

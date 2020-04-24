@@ -199,7 +199,7 @@ namespace Hinode
         /// <returns></returns>
         public IModelViewParamBinder GetParamBinder(BindInfo bindInfo)
         {
-            return ViewInstaceCreator.GetParamBinderObj(bindInfo);
+            return ViewInstaceCreator.GetParamBinder(bindInfo);
         }
 
         /// <summary>
@@ -235,6 +235,8 @@ namespace Hinode
 
             return BindInfos.Select(_i =>
             {
+                ModelViewValidator.ValidateBindInfo(model, _i, ViewInstaceCreator);
+
                 var view = ViewInstaceCreator.CreateViewObj(_i);
                 view.UseModel = model;
                 view.UseBinderInstance = binderInstance;

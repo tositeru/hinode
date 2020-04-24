@@ -8,13 +8,6 @@ namespace Hinode
 {
     public class RecieverSelector
     {
-        public enum ModelRelationShip
-        {
-            Self,
-            Parent,
-            Child,
-        }
-
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
         public string ViewIdentity { get; } = "";
