@@ -109,7 +109,6 @@ namespace Hinode.Editors
             }
             else
             {
-                Debug.Log($"{packageInfo.displayName}:{packageInfo.resolvedPath}");
                 var regex = new Regex($"^{packageInfo.assetPath}/?");
                 var filepath = regex.Replace(assetPath, "");
                 return Path.GetFullPath(Path.Combine(packageInfo.resolvedPath, filepath));

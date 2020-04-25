@@ -40,7 +40,7 @@ namespace Hinode
             }
             else
             {
-                return default;
+                throw new KeyNotFoundException($"Please Get any Value after must Set it value...");
             }
         }
         public T Get<T>(string keyword)

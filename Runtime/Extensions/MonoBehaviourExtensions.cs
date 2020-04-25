@@ -9,6 +9,15 @@ namespace Hinode
 {
     public static class MonoBehaviourExtensions
     {
+        public static void SafeStartCoroutine(this MonoBehaviour target, ref Coroutine coroutine, IEnumerator routine)
+        {
+            if(coroutine != null)
+            {
+                target.StopCoroutine(coroutine);
+            }
+            coroutine = target.StartCoroutine(routine);
+        }
+
         public static void AssertObjectReference(this MonoBehaviour mono, HashSet<object> objHash = null)
         {
             AssertObjectReference(mono as object, objHash);
