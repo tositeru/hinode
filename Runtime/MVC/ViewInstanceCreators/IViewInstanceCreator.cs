@@ -14,7 +14,7 @@ namespace Hinode
         public System.Type GetViewObjType(ModelViewBinder.BindInfo bindInfo)
         {
             var type = GetViewObjTypeImpl(bindInfo.InstanceKey);
-            Assert.IsTrue(type.DoHasInterface<IViewObject>(), $"'{type.FullName}' don't have IViewObejct interface...");
+            Assert.IsTrue(type.DoHasInterface<IViewObject>(), $"'{type.FullName}' don't have IViewObejct interface... instanceKey={bindInfo.InstanceKey}");
             return type;
         }
 
@@ -40,7 +40,7 @@ namespace Hinode
             else
             {
                 var paramBinder = GetParamBinderImpl(bindInfo.BinderKey);
-                Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({paramBinder})...");
+                Assert.IsNotNull(paramBinder, $"Failed to create IModelViewParamBinder because don't match Binder Key({bindInfo.BinderKey})...");
                 return paramBinder;
             }
         }

@@ -8,6 +8,7 @@ namespace Hinode
 {
     [AvailableModel(typeof(ButtonModel))]
     [AvailableModelViewParamBinder(typeof(ButtonViewObject.ParamBinder), typeof(EmptyModelViewParamBinder))]
+    [DisallowMultipleComponent()]
     public class ButtonViewObject : MonoBehaviourViewObject
     {
         string _textPath;

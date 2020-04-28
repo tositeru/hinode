@@ -38,6 +38,7 @@ namespace Hinode
             _pos.y += H;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// 指定したSerializedPropertyの高さ分、y座標を進める
         /// </summary>
@@ -47,7 +48,7 @@ namespace Hinode
         {
             IncrementRow(EditorGUI.GetPropertyHeight(prop, includeChildren));
         }
-
+#endif
         /// <summary>
         /// インデントを加える
         /// </summary>

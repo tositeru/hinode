@@ -7,6 +7,7 @@ namespace Hinode
 {
     [RequireComponent(typeof(Canvas))]
     [AvailableModelViewParamBinder(typeof(CanvasViewObject.FixedParamBinder))]
+    [DisallowMultipleComponent()]
     public class CanvasViewObject : MonoBehaviourViewObject
         , IDepthViewLayout
     {

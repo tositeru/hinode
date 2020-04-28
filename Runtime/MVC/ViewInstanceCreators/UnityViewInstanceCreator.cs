@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode
 {
@@ -11,6 +12,7 @@ namespace Hinode
     {
         interface IInstanceCreator
         {
+            bool IsValid { get; }
             System.Type GetViewType();
             IViewObject Create();
         }
@@ -21,10 +23,17 @@ namespace Hinode
 
         public UnityViewInstanceCreator AddPrefab<T>(T prefab, IModelViewParamBinder paramBinder)
             where T : Component, IViewObject
-            => Add(typeof(T).FullName, new PrefabCreator<T>(prefab), typeof(T).FullName, paramBinder);
+            => Add(typeof(T).FullName, new PrefabCreator(typeof(T), prefab), typeof(T).FullName, paramBinder);
+
+        public UnityViewInstanceCreator AddPrefab(System.Type prefabType, Component prefab, IModelViewParamBinder paramBinder)
+            => Add(prefabType.FullName, new PrefabCreator(prefabType, prefab), prefabType.FullName, paramBinder);
+
+        public UnityViewInstanceCreator AddPrefab(string instanceKey, System.Type prefabType, Component prefab, string binderKey, IModelViewParamBinder paramBinder)
+            => Add(instanceKey, new PrefabCreator(prefabType, prefab), binderKey, paramBinder);
+
         public UnityViewInstanceCreator AddPrefab<T>(string instanceKey, T prefab, string binderKey, IModelViewParamBinder paramBinder)
             where T : Component, IViewObject
-            => Add(instanceKey, new PrefabCreator<T>(prefab), binderKey, paramBinder);
+            => Add(instanceKey, new PrefabCreator(typeof(T), prefab), binderKey, paramBinder);
 
         public UnityViewInstanceCreator AddPredicate(System.Type viewType, System.Func<IViewObject> predicate, IModelViewParamBinder paramBinder)
             => Add(viewType.FullName, new PredicateCreator(viewType, predicate), viewType.FullName, paramBinder);
@@ -33,13 +42,17 @@ namespace Hinode
 
         UnityViewInstanceCreator Add(string instanceKey, IInstanceCreator creator, string binderKey, IModelViewParamBinder paramBinder)
         {
-            if (!_viewObjectDict.ContainsKey(instanceKey))
+            if (_viewObjectDict.ContainsKey(instanceKey))
             {
-                _viewObjectDict.Add(instanceKey, creator);
+                Hinode.Logger.LogWarning(Hinode.Logger.Priority.High, () => $"Not add Because already exist instanceKey({instanceKey})...");
+            }
+            if(!(creator?.IsValid ?? false))
+            {
+                Hinode.Logger.LogWarning(Hinode.Logger.Priority.High, () => $"Not add Because Invalid InstanceCreator... instanceKey({instanceKey})...");
             }
             else
             {
-                Hinode.Logger.LogWarning(Hinode.Logger.Priority.Debug, () => $"Not add Because already exist instanceKey({instanceKey})...");
+                _viewObjectDict.Add(instanceKey, creator);
             }
 
             if (!_paramBinderDict.ContainsKey(binderKey))
@@ -48,7 +61,7 @@ namespace Hinode
             }
             else
             {
-                Hinode.Logger.LogWarning(Hinode.Logger.Priority.Debug, () => $"Not add Because already exist binderKey({instanceKey})...");
+                Hinode.Logger.LogWarning(Hinode.Logger.Priority.High, () => $"Not add Because already exist binderKey({instanceKey})...");
             }
             return this;
         }
@@ -95,21 +108,28 @@ namespace Hinode
 
         #endregion
 
-        class PrefabCreator<T> : IInstanceCreator
-            where T : Component, IViewObject
+        class PrefabCreator : IInstanceCreator
         {
-            T Prefab { get; set; }
-            public PrefabCreator(T prefab)
+            System.Type ViewType { get; set; }
+            Component Prefab { get; set; }
+
+            public PrefabCreator(System.Type type, Component prefab)
             {
+                Assert.AreEqual(type, prefab.GetType());
+                Assert.IsTrue(prefab is IViewObject, $"{type} is not IViewObject...");
+                ViewType = type;
                 Prefab = prefab;
             }
 
+            public bool IsValid { get => Prefab != null; }
+
             public System.Type GetViewType()
-                => typeof(T);
+                => ViewType;
 
             public IViewObject Create()
             {
-                return UnityEngine.Object.Instantiate(Prefab);
+                if (Prefab == null) return null;
+                return Object.Instantiate(Prefab) as IViewObject;
             }
         }
 
@@ -122,6 +142,7 @@ namespace Hinode
                 _viewType = viewType;
                 _predicate = pred;
             }
+            public bool IsValid { get => true; }
             public System.Type GetViewType()
                 => _viewType;
 
