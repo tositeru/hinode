@@ -53,13 +53,21 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinder
     {
+        HashSet<System.Type> _enabledModelTypes = new HashSet<System.Type>();
         Dictionary<string, BindInfo> _bindInfoDict = new Dictionary<string, BindInfo>();
 
         /// <summary>
-        /// 対応するModelのクエリパス
+        /// 対応するModelのクエリ
+        ///
+        /// クエリパスは指定できませんので注意してください
         /// </summary>
-        public string QueryPath { get; private set; }
+        public string Query { get; private set; }
 
+        public IReadOnlyCollection<System.Type> EnabledModelTypes { get => _enabledModelTypes; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public IViewInstanceCreator ViewInstaceCreator { get; set; }
 
         /// <summary>
@@ -87,9 +95,6 @@ namespace Hinode
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
             public IReadOnlyDictionary<string, object> ViewLayouts { get => _viewLayouts; }
-
-            //TODO public ViewLayoutet? ViewLayouter? { get; set; }
-            //TODO public HashSet<IController> UseControllers { get; set; }
 
             public BindInfo(string id, string instanceKey, string binderKey)
             {
@@ -161,13 +166,13 @@ namespace Hinode
             }
         }
 
-        public ModelViewBinder(string queryPath, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
-            : this(queryPath, instanceCreator, bindInfos.AsEnumerable())
+        public ModelViewBinder(string query, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
+            : this(query, instanceCreator, bindInfos.AsEnumerable())
         { }
 
-        public ModelViewBinder(string queryPath, IViewInstanceCreator instanceCreator, IEnumerable<BindInfo> bindInfos)
+        public ModelViewBinder(string query, IViewInstanceCreator instanceCreator, IEnumerable<BindInfo> bindInfos)
         {
-            QueryPath = queryPath;
+            Query = query;
             ViewInstaceCreator = instanceCreator;
             foreach (var i in bindInfos)
             {
@@ -192,6 +197,57 @@ namespace Hinode
             throw new System.NotImplementedException();
         }
 
+        public override string ToString()
+        {
+            return $"Binder({Query}:{EnabledModelTypes.Select(_t => _t.FullName).Aggregate("", (_s, _c) => _s+_c+";")})";
+        }
+
+        public ModelViewBinder AddEnabledModelType<TModel>()
+            where TModel : Model
+            => AddEnabledModelType(typeof(TModel));
+        public ModelViewBinder AddEnabledModelType(System.Type modelType)
+        {
+            if (!_enabledModelTypes.Contains(modelType))
+            {
+                _enabledModelTypes.Add(modelType);
+            }
+            return this;
+        }
+
+        public ModelViewBinder RemoveEnabledModelType<TModel>()
+            where TModel : Model
+            => RemoveEnabledModelType(typeof(TModel));
+        public ModelViewBinder RemoveEnabledModelType(System.Type modelType)
+        {
+            if (_enabledModelTypes.Contains(modelType))
+            {
+                _enabledModelTypes.Remove(modelType);
+            }
+            return this;
+        }
+
+        public ModelViewBinder AddInfosFromOtherBinder(ModelViewBinder otherBinder)
+        {
+            foreach(var bindInfo in otherBinder.BindInfos)
+            {
+                if(_bindInfoDict.ContainsKey(bindInfo.ID))
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"Not Add bindInfo because already exist ID({bindInfo.ID})...  otherBinder({otherBinder})");
+                    continue;
+                }
+                else if(_bindInfoDict.Values.Contains(bindInfo))
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"Not Add bindInfo because already exist same reference BindInfo...  otherBinder({otherBinder})");
+                    continue;
+                }
+                else
+                {
+                    _bindInfoDict.Add(bindInfo.ID, bindInfo);
+                }
+            }
+            return this;
+        }
+
         /// <summary>
         /// 指定されたBindInfoオブジェクトと対応するIModelViewParamBinderを取得する
         /// </summary>
@@ -209,7 +265,20 @@ namespace Hinode
         /// <returns></returns>
         public bool DoMatch(Model model)
         {
-            return  model.DoMatchQueryPath(QueryPath);
+            if(EnabledModelTypes.Count <= 0)
+            {
+                return  model.DoMatchQuery(Query);
+            }
+            else if(EnabledModelTypes.Contains(model.GetType()))
+            {
+                return Query == null || Query == ""
+                    ? true
+                    : model.DoMatchQuery(Query);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

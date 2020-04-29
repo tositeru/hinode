@@ -83,7 +83,7 @@ namespace Hinode.Tests.MVC
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
             var rebindBinder = new ModelViewBinder("Rebind", null,
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
-            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
+            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.Query));
             var viewInstanceCreator = new DefaultViewInstanceCreator(
                 (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
                 (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
@@ -138,7 +138,7 @@ namespace Hinode.Tests.MVC
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
             var rebindBinder = new ModelViewBinder("Rebind", null,
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
-            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
+            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.Query));
             var viewInstanceCreator = new DefaultViewInstanceCreator(
                 (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
                 (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
@@ -160,7 +160,7 @@ namespace Hinode.Tests.MVC
                     //追加された時は合わせてViewのパラメータもModelのものに更新する
                     var appleViewObj = bindInstanceMap[apple].ViewObjects.First(_v => _v is IntViewObjClass) as IntViewObjClass;
                     Assert.AreEqual(apple.IntValue, appleViewObj.IntValue);
-                    foreach(var viewObj in bindInstanceMap[apple].ViewObjects)
+                    foreach (var viewObj in bindInstanceMap[apple].ViewObjects)
                     {
                         Assert.AreEqual(bindInstanceMap[apple], viewObj.UseBinderInstance);
                     }
@@ -245,7 +245,7 @@ namespace Hinode.Tests.MVC
             var apple = new ModelClass() { Name = "apple" };
             var grape = new ModelClass() { Name = "grape" };
             root.AddChildren(apple, grape);
-            var orange = new ModelClass() { Name = "orange" };
+            var orange = new ModelClass() { Name = "orange", LogicalID = new ModelIDList("child") };
             grape.AddChildren(orange);
 
             var allBinder = new ModelViewBinder("*", null,
@@ -254,9 +254,9 @@ namespace Hinode.Tests.MVC
                 new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
             var orangeBinder = new ModelViewBinder("orange", null,
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
-            var grapeOrangeBinder = new ModelViewBinder("grape/orange", null,
+            var childOrangeBinder = new ModelViewBinder("orange #child", null,
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass)));
-            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.QueryPath));
+            Assert.IsFalse(root.DoMatchQueryPath(appleBinder.Query));
 
             var viewInstanceCreator = new DefaultViewInstanceCreator(
                 (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
@@ -267,7 +267,7 @@ namespace Hinode.Tests.MVC
                 allBinder,
                 appleBinder,
                 orangeBinder,
-                grapeOrangeBinder);
+                childOrangeBinder);
             var bindInstanceMap = binderMap.CreateBinderInstaceMap();
             bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
 
@@ -279,7 +279,7 @@ namespace Hinode.Tests.MVC
 
             // grape/orangeのものを使用すること
             var orangeBinderInstance = bindInstanceMap.BindInstances[orange];
-            Assert.AreSame(grapeOrangeBinder, orangeBinderInstance.Binder);
+            Assert.AreSame(childOrangeBinder, orangeBinderInstance.Binder);
 
             var grapeBinderInstance = bindInstanceMap.BindInstances[grape];
             Assert.AreSame(allBinder, grapeBinderInstance.Binder);

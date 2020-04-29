@@ -113,6 +113,51 @@ namespace Hinode.Tests.MVC
             }
         }
 
+        [Test]
+        public void AddInfosFromOtherBinderPasses()
+        {
+            {//
+                var binder = new ModelViewBinder("apple", null,
+                    new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                    new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+                );
+                var otherBinder = new ModelViewBinder("apple", null,
+                    new ModelViewBinder.BindInfo("otherInt", typeof(IntViewObjClass)),
+                    new ModelViewBinder.BindInfo("otherFloat", typeof(FloatViewObjClass))
+                );
+
+                binder.AddInfosFromOtherBinder(otherBinder);
+                AssertionUtils.AssertEnumerableByUnordered(
+                    binder.BindInfos.Concat(otherBinder.BindInfos).Distinct()
+                    , binder.BindInfos, "");
+            }
+
+            {//同じBindInfoを持つModelViewBinderの場合
+                var intID = "intId";
+                var intViewBindInfo = new ModelViewBinder.BindInfo(intID, typeof(IntViewObjClass));
+                var floatViewBindInfo = new ModelViewBinder.BindInfo(typeof(FloatViewObjClass));
+                var otherFloatViewBindInfo = new ModelViewBinder.BindInfo("otherFloat", typeof(FloatViewObjClass));
+                var sameIDViewBindInfo = new ModelViewBinder.BindInfo(intID, typeof(IntViewObjClass));
+                var binder = new ModelViewBinder("apple", null,
+                    intViewBindInfo, floatViewBindInfo
+                );
+                var otherBinder = new ModelViewBinder("orange", null,
+                    intViewBindInfo, // <- not add
+                    otherFloatViewBindInfo
+                );
+                var otherBinder2 = new ModelViewBinder("grape", null,
+                    sameIDViewBindInfo // <- not add
+                );
+
+                binder
+                    .AddInfosFromOtherBinder(otherBinder)
+                    .AddInfosFromOtherBinder(otherBinder2);
+                AssertionUtils.AssertEnumerableByUnordered(new ModelViewBinder.BindInfo[] {
+                    intViewBindInfo, floatViewBindInfo, otherFloatViewBindInfo,
+                   }, binder.BindInfos, "");
+            }
+        }
+
         [Test, Description("Model#OnUpdatedと連動しているか確認するテスト")]
         public void ModelOnUpdatedPasses()
         {
@@ -192,6 +237,70 @@ namespace Hinode.Tests.MVC
                 var empty = new ModelClass { Name = "empty" };
                 var bindInstance = binder.CreateBindInstance(empty, null);
             }, "クエリパスが一致しない時は例外を投げて、生成しないようにしてください");
+        }
+
+        [Test, Description("有効な型を指定した時のDoMatchのテスト")]
+        public void DoMatchWithModelTypePasses()
+        {
+            //作成のテスト
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var appleBinder = new ModelViewBinder("apple", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+            );
+            appleBinder.AddEnabledModelType<ModelClass>();
+
+            var matchModel = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var notMatchQueryModel = new ModelClass { Name = "empty" };
+            var notMatchTypeModel = new Model { Name = "apple" };
+            Assert.IsTrue(appleBinder.DoMatch(matchModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchTypeModel));
+
+            appleBinder.AddEnabledModelType<Model>();
+            Assert.IsTrue(appleBinder.DoMatch(matchModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+
+            appleBinder.RemoveEnabledModelType<ModelClass>();
+            Assert.IsFalse(appleBinder.DoMatch(matchModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+        }
+
+        [Test, Description("QueryPathが空のときに有効な型を指定した時のDoMatchのテスト")]
+        public void DoMatchWithModelTypeAndEmptyQueryPathPasses()
+        {
+            //作成のテスト
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(IntViewObjClass), new IntViewObjClass.Binder()),
+                (typeof(FloatViewObjClass), new FloatViewObjClass.Binder())
+            );
+            var appleBinder = new ModelViewBinder("", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
+                new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
+            );
+            appleBinder.AddEnabledModelType<ModelClass>();
+
+            var matchModel = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
+            var notMatchQueryModel = new ModelClass { Name = "empty" };
+            var notMatchTypeModel = new Model { Name = "apple" };
+            Assert.IsTrue(appleBinder.DoMatch(matchModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchTypeModel));
+
+            appleBinder.AddEnabledModelType<Model>();
+            Assert.IsTrue(appleBinder.DoMatch(matchModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+
+            appleBinder.RemoveEnabledModelType<ModelClass>();
+            Assert.IsFalse(appleBinder.DoMatch(matchModel));
+            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
         }
 
         [Test, Description("QueryViewsのテスト")]

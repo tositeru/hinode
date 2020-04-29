@@ -32,7 +32,7 @@ namespace Hinode
             ViewInstanceCreator = creator;
             Binders = binders.ToList();
 
-            foreach(var binder in Binders)
+            foreach (var binder in Binders)
             {
                 binder.ViewInstaceCreator = ViewInstanceCreator;
             }
@@ -64,7 +64,7 @@ namespace Hinode
         public ModelViewBinder MatchBinder(Model model)
         {
             return Binders
-                .Select(_b => (binder: _b, priority: model.GetQueryPathPriority(_b.QueryPath)))
+                .Select(_b => (binder: _b, priority: model.GetQueryPathPriority(_b.Query)))
                 .Where(_t => !_t.priority.IsEmpty)
                 .OrderByDescending(_t => _t.priority)
                 .Select(_t => _t.binder)
@@ -118,7 +118,8 @@ namespace Hinode
                 if (_rootModel == null) return;
 
                 Add(true, _rootModel);
-                _rootModel.OnChangedHierarchy.Add((type, target, models) => {
+                _rootModel.OnChangedHierarchy.Add((type, target, models) =>
+                {
                     switch (type)
                     {
                         case ChangedModelHierarchyType.ChildAdd:
@@ -136,7 +137,7 @@ namespace Hinode
                             {
                                 Add(true, target);
                             }
-                            else if(isPrevParentInRootModel)
+                            else if (isPrevParentInRootModel)
                             {
                                 Remove(target);
                             }
@@ -145,12 +146,13 @@ namespace Hinode
                             throw new System.NotImplementedException();
                     }
                 });
-                _rootModel.OnChangedModelIdentities.Add(model => {
+                _rootModel.OnChangedModelIdentities.Add(model =>
+                {
                     Rebind(model);
                 });
 
                 //ViewLayoutの適応
-                if(!EnabledDelayOperation)
+                if (!EnabledDelayOperation)
                 {
                     ApplyViewLayouts();
                 }
@@ -192,22 +194,22 @@ namespace Hinode
             }
             else
             {
-                foreach(var m in model.GetHierarchyEnumerable())
+                foreach (var m in model.GetHierarchyEnumerable())
                 {
-                    if(allowRebind && _bindInstanceDict.ContainsKey(m))
+                    if (allowRebind && _bindInstanceDict.ContainsKey(m))
                     {
                         RebindImpl(m, doDelay);
                     }
-                    else if(!_bindInstanceDict.ContainsKey(m))
+                    else if (!_bindInstanceDict.ContainsKey(m))
                     {
                         try
                         {
                             var bindInst = BinderMap.CreateBindInstance(m, this);
-                            if(bindInst != null)
+                            if (bindInst != null)
                             {
                                 bindInst.UpdateViewObjects();
                                 _bindInstanceDict.Add(m, bindInst);
-                                Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.QueryPath}");
+                                Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.Query}");
                             }
                             else
                             {
@@ -224,7 +226,7 @@ namespace Hinode
             }
         }
 
-        public void Add(Model model, bool allowRebind=false)
+        public void Add(Model model, bool allowRebind = false)
         {
             AddImpl(model, EnabledDelayOperation, allowRebind);
         }
@@ -261,17 +263,17 @@ namespace Hinode
                 {
                     var currentBinderInstance = _bindInstanceDict[model];
                     var matchBinder = BinderMap.MatchBinder(model);
-                    if(matchBinder == currentBinderInstance.Binder)
+                    if (matchBinder == currentBinderInstance.Binder)
                     {
                         return false;
                     }
 
                     var bindInst = matchBinder.CreateBindInstance(model, this);
-                    if(bindInst != null)
+                    if (bindInst != null)
                     {
                         bindInst.UpdateViewObjects();
                         _bindInstanceDict[model] = bindInst;
-                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Rebind: Rebind model({model})!! queryPath={bindInst.Binder.QueryPath}");
+                        Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Rebind: Rebind model({model})!! queryPath={bindInst.Binder.Query}");
                     }
                     else
                     {
@@ -280,7 +282,7 @@ namespace Hinode
                     _bindInstanceDict[model].Dispose();
                     return true;
                 }
-                catch(System.Exception e)
+                catch (System.Exception e)
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Rebind: !!Catch Exception!! Failed to rebind model...{System.Environment.NewLine}-- {e}");
                     throw new System.Exception($"Failed to Rebind model({model})...");
@@ -309,7 +311,7 @@ namespace Hinode
             }
             else
             {
-                foreach(var m in model.GetHierarchyEnumerable()
+                foreach (var m in model.GetHierarchyEnumerable()
                     .Where(_m => BindInstances.ContainsKey(_m)))
                 {
                     _bindInstanceDict[m].Dispose();
@@ -341,7 +343,7 @@ namespace Hinode
         {
             foreach (var bindInstance in BindInstances.Values)
             {
-                if(EnabledDelayOperation)
+                if (EnabledDelayOperation)
                 {
                     if (OperationList.ContainsKey(bindInstance.Model))
                     {
@@ -438,7 +440,7 @@ namespace Hinode
                 {
                     instanceMap.RebindImpl(Model, false);
                 }
-                else if(0 != (OperationFlags & OpType.Update))
+                else if (0 != (OperationFlags & OpType.Update))
                 {
                     instanceMap.BindInstances[Model].UpdateViewObjects();
                 }
@@ -461,7 +463,7 @@ namespace Hinode
         public void DoDelayOperations()
         {
             bool doApplyViewLayout = false;
-            foreach(var op in OperationList.Values)
+            foreach (var op in OperationList.Values)
             {
                 try
                 {
@@ -493,7 +495,7 @@ namespace Hinode
                     {
                         BindInstances[model].ApplyViewLayout();
                     }
-                    catch(System.Exception e)
+                    catch (System.Exception e)
                     {
                         Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout!! model={model}, op={op.OperationFlags}, opRootModel={op.Model}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
                     }
@@ -519,9 +521,9 @@ namespace Hinode
         /// </summary>
         public IEnumerator<Operation> GetDoDelayOperationsEnumerator()
         {
-            while(true)
+            while (true)
             {
-                while(0 < OperationList.Count)
+                while (0 < OperationList.Count)
                 {
                     var op = OperationList.First();
                     try
