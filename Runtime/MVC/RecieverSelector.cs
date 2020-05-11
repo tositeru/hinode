@@ -166,4 +166,28 @@ namespace Hinode
         }
 
     }
+
+    public static partial class RecieverSelectorExtensions
+    {
+        /// <summary>
+        /// 指定したtargetModel,eventDataをselectorとマッチするIControllerRecieverへ送信する
+        /// </summary>
+        /// <param name="selector"></param>
+        /// <param name="recieverType"></param>
+        /// <param name="targetModel"></param>
+        /// <param name="eventData"></param>
+        /// <param name="binderInstanceMap"></param>
+        public static void Send(this RecieverSelector selector, System.Type recieverType, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
+        {
+            foreach (var (useRecieverType, reciever, useEventData) in selector
+                .Query(recieverType, targetModel, binderInstanceMap, eventData))
+            {
+                ControllerTypeManager.DoneRecieverExecuter(useRecieverType, reciever, targetModel, useEventData);
+            }
+        }
+        public static void Send<TReciever>(this RecieverSelector selector, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
+            where TReciever : IControllerReciever
+            =>  selector.Send(typeof(TReciever), targetModel, eventData, binderInstanceMap);
+
+    }
 }

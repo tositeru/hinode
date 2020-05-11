@@ -6,6 +6,10 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// TODO Singletonに変更
+    /// IoC的なものに変更?
+    /// </summary>
     public class ControllerTypeManager
     {
         static Dictionary<System.Type, System.Action<IControllerReciever, Model, object>> _executerDict = new Dictionary<System.Type, System.Action<IControllerReciever, Model, object>>();

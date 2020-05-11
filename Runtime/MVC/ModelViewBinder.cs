@@ -55,6 +55,7 @@ namespace Hinode
     {
         HashSet<System.Type> _enabledModelTypes = new HashSet<System.Type>();
         Dictionary<string, BindInfo> _bindInfoDict = new Dictionary<string, BindInfo>();
+        Dictionary<string, ControllerInfo> _controllers = new Dictionary<string, ControllerInfo>();
 
         /// <summary>
         /// 対応するModelのクエリ
@@ -63,6 +64,9 @@ namespace Hinode
         /// </summary>
         public string Query { get; private set; }
 
+        /// <summary>
+        /// 対応しているModelの型、ない場合はすべてのModelに対応していることを表します。
+        /// </summary>
         public IReadOnlyCollection<System.Type> EnabledModelTypes { get => _enabledModelTypes; }
 
         /// <summary>
@@ -79,6 +83,11 @@ namespace Hinode
         /// ModelとViewの関連付けるための情報の個数
         /// </summary>
         public int BindInfoCount { get => _bindInfoDict.Count; }
+
+        /// <summary>
+        /// Model自体に設定されたController情報
+        /// </summary>
+        public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
 
         /// <summary>
         /// ModelとViewを関連づけるための情報を持つクラス
@@ -202,6 +211,7 @@ namespace Hinode
             return $"Binder({Query}:{EnabledModelTypes.Select(_t => _t.FullName).Aggregate("", (_s, _c) => _s+_c+";")})";
         }
 
+        #region Enabled Model Type
         public ModelViewBinder AddEnabledModelType<TModel>()
             where TModel : Model
             => AddEnabledModelType(typeof(TModel));
@@ -225,6 +235,22 @@ namespace Hinode
             }
             return this;
         }
+        #endregion
+
+        #region ControllerInfo
+        public ModelViewBinder AddControllerInfo(ControllerInfo controllerInfo)
+        {
+            Assert.IsFalse(_controllers.ContainsKey(controllerInfo.Keyword), $"Controller({controllerInfo.Keyword}) already exist...");
+            _controllers.Add(controllerInfo.Keyword, controllerInfo);
+            return this;
+        }
+        public ModelViewBinder RemoveControllerInfo(string senderName)
+        {
+            Assert.IsTrue(_controllers.ContainsKey(senderName), $"Controller({senderName}) don't exist...");
+            _controllers.Remove(senderName);
+            return this;
+        }
+        #endregion
 
         public ModelViewBinder AddInfosFromOtherBinder(ModelViewBinder otherBinder)
         {
@@ -480,6 +506,12 @@ namespace Hinode
             return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
         }
 
+        public bool HasControllerSenders(IViewObject viewObject)
+        {
+            Assert.IsTrue(ViewObjects.Contains(viewObject));
+            return _controllerSenderInstances.ContainsKey(viewObject);
+        }
+
         public IReadOnlyCollection<IControllerSenderInstance> GetControllerSenders(IViewObject viewObject)
         {
             Assert.IsTrue(ViewObjects.Contains(viewObject));
@@ -523,6 +555,53 @@ namespace Hinode
             _viewObjects.Clear();
 
             DettachModelOnUpdated();
+        }
+    }
+
+    public static class ModelViewBinderInstanceExtensions
+    {
+        /// <summary>
+        /// target内にある全てのControllerInfoを取得する 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)>
+            GetControllerInfos(this ModelViewBinderInstance target)
+        {
+            return target.GetControllersAttachedModel()
+                .Concat(target.GetControllersAttachedViewObjs());
+        }
+
+        /// <summary>
+        /// Modelに設定されたControllerInfoを全て取得する
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)> GetControllersAttachedModel(this ModelViewBinderInstance target)
+        {
+            return target.Binder.Controllers
+                .Select(_c => (
+                    model: target.Model,
+                    viewObj: default(IViewObject),
+                    controllerInfo: _c.Value
+                ));
+        }
+
+        /// <summary>
+        /// 全てのViewObjectに対して設定されているControllerInfoを全て取得する
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)> GetControllersAttachedViewObjs(this ModelViewBinderInstance target)
+        {
+            return target.ViewObjects
+                .SelectMany(_v =>
+                    _v.UseBindInfo.Controllers.Select(_c => (
+                        model: _v.UseModel,
+                        viewObj: _v,
+                        controllerInfo: _c.Value
+                    ))
+                );
         }
     }
 }

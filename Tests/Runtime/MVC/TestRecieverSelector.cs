@@ -484,5 +484,67 @@ namespace Hinode.Tests.MVC
 
         }
 
+        public interface ITestSendPassReciever : IControllerReciever
+        {
+            void Recieve(Model sender, int value);
+        }
+        class TestSendPassRecieverModel : Model, ITestSendPassReciever
+        {
+            public int RecievedValue { get; set; }
+            public Model SenderModel { get; set; }
+
+            public void Recieve(Model sender, int value)
+            {
+                SenderModel = sender;
+                RecievedValue = value;
+            }
+        }
+
+        [Test]
+        public void SendPasses()
+        {
+            #region Construct Enviroment
+            //Model Hierarchy
+            // - root: #main type=FookableModel
+            //   - reciever: #main type=RecieverModel
+            //   - noneReciever: #main type=NoneRecieverModel
+            //     - model: #main type=Model
+            //
+            //View info
+            // #main:
+            //   - SenderViewObj: ID=SenderViewObj, InstanceID=SenderViewObj, BinderID=SenderViewObj
+            //   - RecieverViewObj: ID=reciever, InstanceID=SenderViewObj, BinderID=SenderViewObj
+
+            var root = new FookableModel() { Name = "root", LogicalID = new ModelIDList("main") };
+            var recieverModel = new TestSendPassRecieverModel() { Name = "reciever", Parent = root, LogicalID = new ModelIDList("main") };
+            var noneRecieverModel = new NoneRecieverModel() { Name = "noneReciever", Parent = root, LogicalID = new ModelIDList("main") };
+            var model1 = new Model() { Name = "model", Parent = noneRecieverModel, LogicalID = new ModelIDList("main") };
+
+            string viewReciever = "reciever";
+            var viewCreator = new DefaultViewInstanceCreator(
+                (typeof(SenderViewObj), new SenderViewObj.ParamBinder()),
+                (typeof(RecieverViewObj), new RecieverViewObj.ParamBinder())
+            );
+            var binderMap = new ModelViewBinderMap(viewCreator,
+                new ModelViewBinder("#main", null,
+                    new ModelViewBinder.BindInfo(typeof(SenderViewObj)),
+                    new ModelViewBinder.BindInfo(viewReciever, typeof(RecieverViewObj))
+                ));
+            var binderMapInstance = binderMap.CreateBinderInstaceMap();
+            binderMapInstance.RootModel = root;
+            #endregion
+
+            ControllerTypeManager.EntryRecieverExecuter<ITestSendPassReciever, int>(
+                (reciever, sender, eventData) => {
+                    (reciever as ITestSendPassReciever).Recieve(sender, (int)eventData);
+                }
+            );
+            var selector = new RecieverSelector(ModelRelationShip.Child, "", "");
+
+            selector.Send<ITestSendPassReciever>(root, 100, binderMapInstance);
+
+            Assert.AreSame(root, recieverModel.SenderModel);
+            Assert.AreEqual(100, recieverModel.RecievedValue);
+        }
     }
 }
