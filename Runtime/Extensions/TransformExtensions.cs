@@ -17,6 +17,11 @@ namespace Hinode
             return new HierarchyEnumerable(t);
         }
 
+        public static IEnumerable<Transform> GetParentEnumerable(this Transform t)
+        {
+            return new ParentEnumerable(t);
+        }
+
         public class ChildEnumerable : IEnumerable<Transform>, IEnumerable
         {
             Transform _target;
@@ -89,5 +94,28 @@ namespace Hinode
                 return GetEnumerator();
             }
         }
+
+        class ParentEnumerable : IEnumerable<Transform>, IEnumerable
+        {
+            Transform _target;
+            public ParentEnumerable(Transform target)
+            {
+                Assert.IsNotNull(target);
+                _target = target;
+            }
+
+            public IEnumerator<Transform> GetEnumerator()
+            {
+                var p = _target.parent;
+                while (p != null)
+                {
+                    yield return p;
+                    p = p.parent;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
     }
 }

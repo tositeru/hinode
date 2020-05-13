@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Runtime.Extensions
+namespace Hinode.Tests.Extensions
 {
     public class TestGameObjectExtensions : TestBase
     {

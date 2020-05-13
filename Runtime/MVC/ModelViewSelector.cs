@@ -29,8 +29,8 @@ namespace Hinode
         public IEnumerable<object> Query(System.Type objectType, Model model, ModelViewBinderInstanceMap viewBinderInstance)
         {
             Assert.IsTrue(objectType.IsSubclassOf(typeof(Model))
-                || objectType.DoHasInterface<IViewObject>()
-                || objectType.DoHasInterface<IViewLayout>()
+                || objectType.HasInterface<IViewObject>()
+                || objectType.HasInterface<IViewLayout>()
                 , $"'{objectType}' is not subclass of Model, IViewObject or IViewLayout...");
 
             var objs = GetEnumerable(model, viewBinderInstance);

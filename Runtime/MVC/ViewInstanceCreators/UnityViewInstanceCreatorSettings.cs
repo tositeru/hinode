@@ -36,7 +36,7 @@ namespace Hinode
 
         public UnityViewInstanceCreator SetTo(UnityViewInstanceCreator target)
         {
-            foreach(var item in Infos)
+            foreach (var item in Infos)
             {
                 item.SetTo(this, target);
             }
@@ -103,7 +103,7 @@ namespace Hinode
                 {
                     var viewObjectTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.GetExportedTypes())
-                        .Where(_type => _type.DoHasInterface<IViewObject>());
+                        .Where(_type => _type.HasInterface<IViewObject>());
                     var useViewObjectType = viewObjectTypes.FirstOrDefault(_t => _t.FullName == InstanceTypeFullName);
                     Assert.IsNotNull(useViewObjectType, $"Type({useViewObjectType}) don't found...");
                     return useViewObjectType;
@@ -116,7 +116,7 @@ namespace Hinode
                 {
                     var paramBinderTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.GetExportedTypes())
-                        .Where(_type => _type.DoHasInterface<IModelViewParamBinder>());
+                        .Where(_type => _type.HasInterface<IModelViewParamBinder>());
                     var useParamBinderType = paramBinderTypes.FirstOrDefault(_t => _t.FullName == ParamBinderTypeFullName);
                     Assert.IsNotNull(useParamBinderType, $"Type({ParamBinderTypeFullName}) don't found...");
                     return useParamBinderType;
@@ -130,7 +130,7 @@ namespace Hinode
             public static InstanceInfo CreateAsset(IViewObject assetResource, System.Type paramBinderType)
             {
                 Assert.IsTrue(assetResource as Component, $"{assetResource.GetType()} is not Component Type...");
-                Assert.IsTrue(paramBinderType.DoHasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
+                Assert.IsTrue(paramBinderType.HasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
 
                 return new InstanceInfo()
                 {
@@ -148,10 +148,10 @@ namespace Hinode
 
             public static InstanceInfo CreateResource(string resourcePath, System.Type viewInstanceType, System.Type paramBinderType)
             {
-                Assert.IsTrue(viewInstanceType.DoHasInterface<IViewObject>()
+                Assert.IsTrue(viewInstanceType.HasInterface<IViewObject>()
                     && viewInstanceType.IsSubclassOf(typeof(Component)),
                     $"{viewInstanceType} is not IViewObject and Component...");
-                Assert.IsTrue(paramBinderType.DoHasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
+                Assert.IsTrue(paramBinderType.HasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
 
                 return new InstanceInfo()
                 {
@@ -169,10 +169,10 @@ namespace Hinode
 
             public static InstanceInfo CreateAssetBundle(string bundleName, string assetPath, System.Type viewInstanceType, System.Type paramBinderType)
             {
-                Assert.IsTrue(viewInstanceType.DoHasInterface<IViewObject>()
+                Assert.IsTrue(viewInstanceType.HasInterface<IViewObject>()
                     && viewInstanceType.IsSubclassOf(typeof(Component)),
                     $"{viewInstanceType.FullName} is not IViewObject and Component...");
-                Assert.IsTrue(paramBinderType.DoHasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
+                Assert.IsTrue(paramBinderType.HasInterface<IModelViewParamBinder>(), $"{paramBinderType.GetType()} is not IModelViewParamBinder interface...");
 
                 return new InstanceInfo()
                 {

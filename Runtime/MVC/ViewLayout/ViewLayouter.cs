@@ -29,9 +29,9 @@ namespace Hinode
             {
                 var inst = CreateImpl(viewObj);
                 Assert.IsNotNull(inst);
-                foreach(var supportedType in GetSupportedIViewLayouts())
+                foreach (var supportedType in GetSupportedIViewLayouts())
                 {
-                    Assert.IsTrue(inst.GetType().DoHasInterface(supportedType),
+                    Assert.IsTrue(inst.GetType().HasInterface(supportedType),
                         $"'{inst.GetType()}' don't support IViewLayout({supportedType})... creatorType='{this.GetType()}'");
                 }
                 inst.UseModel = viewObj.UseModel;
@@ -47,7 +47,7 @@ namespace Hinode
 
         public ViewLayouter(params (string keyword, IViewLayoutAccessor layout)[] layouts)
             : this(layouts.AsEnumerable())
-        {}
+        { }
         public ViewLayouter(IEnumerable<(string, IViewLayoutAccessor)> layouts)
         {
             AddKeywords(layouts);
@@ -101,7 +101,8 @@ namespace Hinode
         public void SetAllMatchLayouts(IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
         {
             foreach (var (value, layoutAccessor) in keyAndValues
-                .Where(_t => {
+                .Where(_t =>
+                {
                     if (!ContainsKeyword(_t.Key)) return false;
                     var layout = Accessors[_t.Key];
                     return layout.IsVaildViewObject(target) && layout.IsVaildValue(_t.Value);

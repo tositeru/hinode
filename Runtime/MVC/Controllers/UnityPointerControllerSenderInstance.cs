@@ -18,15 +18,15 @@ namespace Hinode
     /// </summary>
     public class UnityPointerControllerSenderInstance : MonoBehaviour
         , IControllerSenderInstance
-        , IOnPointerDownSender
-        , IOnPointerUpSender
-        , IOnPointerClickSender
-        , IOnPointerBeginDragSender
-        , IOnPointerDragSender
-        , IOnPointerEndDragSender
-        , IOnPointerDropSender
-        , IOnPointerEnterSender
-        , IOnPointerExitSender
+        , __legacy.IOnPointerDownSender
+        , __legacy.IOnPointerUpSender
+        , __legacy.IOnPointerClickSender
+        , __legacy.IOnPointerBeginDragSender
+        , __legacy.IOnPointerDragSender
+        , __legacy.IOnPointerEndDragSender
+        , __legacy.IOnPointerDropSender
+        , __legacy.IOnPointerEnterSender
+        , __legacy.IOnPointerExitSender
         //UnityEngine.EventSystems
         , IPointerDownHandler
         , IPointerUpHandler
@@ -75,7 +75,7 @@ namespace Hinode
         #region UnityEngine.EventSystems
         public void OnPointerClick(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerClickEventData
+            var sendEventData = new __legacy.OnPointerClickEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -87,7 +87,7 @@ namespace Hinode
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerDownEventData
+            var sendEventData = new __legacy.OnPointerDownEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -98,7 +98,7 @@ namespace Hinode
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerUpEventData
+            var sendEventData = new __legacy.OnPointerUpEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -110,7 +110,7 @@ namespace Hinode
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerEnterEventData
+            var sendEventData = new __legacy.OnPointerEnterEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -121,7 +121,7 @@ namespace Hinode
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerExitEventData
+            var sendEventData = new __legacy.OnPointerExitEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -132,7 +132,7 @@ namespace Hinode
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerBeginDragEventData
+            var sendEventData = new __legacy.OnPointerBeginDragEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -143,7 +143,7 @@ namespace Hinode
 
         public void OnDrag(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerDragEventData
+            var sendEventData = new __legacy.OnPointerDragEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -154,7 +154,7 @@ namespace Hinode
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerEndDragEventData
+            var sendEventData = new __legacy.OnPointerEndDragEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,
@@ -165,7 +165,7 @@ namespace Hinode
 
         public void OnDrop(PointerEventData eventData)
         {
-            var sendEventData = new OnPointerDropEventData
+            var sendEventData = new __legacy.OnPointerDropEventData
             {
                 FingerID = eventData.pointerId,
                 PointerPos = eventData.position,

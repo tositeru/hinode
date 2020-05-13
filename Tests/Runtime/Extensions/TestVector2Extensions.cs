@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.TestTools.Utils;
 
-namespace Hinode.Tests.Runtime.Extensions
+namespace Hinode.Tests.Extensions
 {
     public class TestVector2Extensions : TestBase
     {

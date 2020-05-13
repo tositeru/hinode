@@ -18,6 +18,7 @@ namespace Hinode
         public IViewInstanceCreator ViewInstanceCreator { get; }
         public ViewLayouter UseViewLayouter { get; set; }
         public ControllerMap UseControllerMap { get; set; }
+        public EventDispatcherMap UseEventDispatcherMap { get; set; }
 
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
@@ -64,6 +65,7 @@ namespace Hinode
         public ModelViewBinder MatchBinder(Model model)
         {
             return Binders
+                .Where(_b => _b.DoMatch(model))
                 .Select(_b => (binder: _b, priority: model.GetQueryPathPriority(_b.Query)))
                 .Where(_t => !_t.priority.IsEmpty)
                 .OrderByDescending(_t => _t.priority)
@@ -100,6 +102,7 @@ namespace Hinode
 
         public ModelViewBinderMap BinderMap { get; }
         public ControllerMap UseControllerMap { get => BinderMap.UseControllerMap; }
+        public EventDispatcherMap UseEventDispatcherMap { get => BinderMap.UseEventDispatcherMap; }
         public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }
 
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances

@@ -2,15 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Hinode.__legacy
+namespace Hinode
 {
+    public enum PointerType
+    {
+        Mouse,
+        Touch,
+    }
     public class OnPointerEventData
     {
-        public Vector2 PointerPos { get; set; }
-        public InputDefines.MouseButton MouseButtonType { get; set; }
-        public int FingerID { get; set; }
+        public PointerType PointerType { get; }
 
-        public OnPointerEventData() { }
+        public Vector3 PointerPos { get; set; }
+        public InputDefines.MouseButton MouseButtonType { get; set; }
+        public int FingerID { get; set; } = -1;
+
+        public ReplayableInput Input { get => ReplayableInput.Instance; }
+
+        public OnPointerEventData(PointerType pointerType)
+        {
+            PointerType = pointerType;
+        }
     }
 
     public interface IOnPointerEventSender : IControllerSender
@@ -22,143 +34,110 @@ namespace Hinode.__legacy
     }
 
     #region OnPointerDown event
-    public class OnPointerDownEventData : OnPointerEventData
-    {
-
-    }
     public interface IOnPointerDownSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerDownReciever : IOnPointerEventReciever
     {
-        void OnPointerDown(Model sender, OnPointerDownEventData eventData);
+        void OnPointerDown(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerBeginDrag event
-    public class OnPointerBeginDragEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-
-    }
     public interface IOnPointerBeginDragSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerBeginDragReciever : IOnPointerEventReciever
     {
-        void OnPointerBeginDrag(Model sender, OnPointerBeginDragEventData eventData);
+        void OnPointerBeginDrag(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerDrag event
-    public class OnPointerDragEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-
-    }
     public interface IOnPointerDragSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerDragReciever : IOnPointerEventReciever
     {
-        void OnPointerDrag(Model sender, OnPointerDragEventData eventData);
+        void OnPointerDrag(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerBeginDrag event
-    public class OnPointerEndDragEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-
-    }
     public interface IOnPointerEndDragSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerEndDragReciever : IOnPointerEventReciever
     {
-        void OnPointerEndDrag(Model sender, OnPointerEndDragEventData eventData);
+        void OnPointerEndDrag(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerDrop event
-    public class OnPointerDropEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-
-    }
     public interface IOnPointerDropSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerDropReciever : IOnPointerEventReciever
     {
-        void OnPointerDrop(Model sender, OnPointerDropEventData eventData);
+        void OnPointerDrop(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerUp event
-    public class OnPointerUpEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-
-    }
     public interface IOnPointerUpSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerUpReciever : IOnPointerEventReciever
     {
-        void OnPointerUp(Model sender, OnPointerUpEventData eventData);
+        void OnPointerUp(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnClick event
-    public class OnPointerClickEventData : OnPointerEventData
-    {
-        public Vector2 PointerDownPos { get; set; }
-        public OnPointerClickEventData() { }
-    }
-
     public interface IOnPointerClickSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerClickReciever : IOnPointerEventReciever
     {
-        void OnPointerClick(Model sender, OnPointerClickEventData eventData);
+        void OnPointerClick(Model sender, OnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerEnter event
-    public class OnPointerEnterEventData : OnPointerEventData
-    {
-    }
     public interface IOnPointerEnterSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerEnterReciever : IOnPointerEventReciever
     {
-        void OnPointerEnter(Model sender, OnPointerEnterEventData eventData);
+        void OnPointerEnter(Model sender, OnPointerEventData eventData);
     }
     #endregion
-
-    #region OnPointerExit event
-    public class OnPointerExitEventData : OnPointerEventData
+    #region OnPointerStationary event
+    public interface IOnPointerStationarySender : IOnPointerEventSender
     {
     }
+
+    public interface IOnPointerStationaryReciever : IOnPointerEventReciever
+    {
+        void OnPointerStationary(Model sender, OnPointerEventData eventData);
+    }
+    #endregion
+    #region OnPointerExit event
     public interface IOnPointerExitSender : IOnPointerEventSender
     {
     }
 
     public interface IOnPointerExitReciever : IOnPointerEventReciever
     {
-        void OnPointerExit(Model sender, OnPointerExitEventData eventData);
+        void OnPointerExit(Model sender, OnPointerEventData eventData);
     }
     #endregion
-
 }

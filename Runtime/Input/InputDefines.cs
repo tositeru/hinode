@@ -61,6 +61,24 @@ namespace Hinode
         }
 
         /// <summary>
+        /// 指定したInputのマウスボタンの状態をButtonConditionに変換する
+        /// </summary>
+        /// <param name="baseInput"></param>
+        /// <param name="btn"></param>
+        /// <returns></returns>
+        public static ButtonCondition ToButtonCondition(MouseButton btn)
+        {
+            var index = (int)btn;
+            return Input.GetMouseButtonDown(index)
+                ? InputDefines.ButtonCondition.Down
+                : Input.GetMouseButtonUp(index)
+                    ? InputDefines.ButtonCondition.Up
+                    : Input.GetMouseButton(index)
+                        ? InputDefines.ButtonCondition.Push
+                        : InputDefines.ButtonCondition.Free;
+        }
+
+        /// <summary>
         /// 指定したBaseInputのマウスボタンの状態をButtonConditionに変換する
         /// </summary>
         /// <param name="baseInput"></param>

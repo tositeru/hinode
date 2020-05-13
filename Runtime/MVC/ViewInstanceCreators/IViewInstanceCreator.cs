@@ -14,7 +14,7 @@ namespace Hinode
         public System.Type GetViewObjType(ModelViewBinder.BindInfo bindInfo)
         {
             var type = GetViewObjTypeImpl(bindInfo.InstanceKey);
-            Assert.IsTrue(type.DoHasInterface<IViewObject>(), $"'{type.FullName}' don't have IViewObejct interface... instanceKey={bindInfo.InstanceKey}");
+            Assert.IsTrue(type.HasInterface<IViewObject>(), $"'{type.FullName}' don't have IViewObejct interface... instanceKey={bindInfo.InstanceKey}");
             return type;
         }
 

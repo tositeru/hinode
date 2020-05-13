@@ -53,10 +53,11 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
 
             public void ResizeInfos(int count)
             {
-                if (_instInfoParams == null) {
-                    _instInfoParams = new List<InstanceInfoCommon.EditorParam>(propDict[PropType.Infos].arraySize);                
+                if (_instInfoParams == null)
+                {
+                    _instInfoParams = new List<InstanceInfoCommon.EditorParam>(propDict[PropType.Infos].arraySize);
                 }
-                for(var i=0; i<count; ++i)
+                for (var i = 0; i < count; ++i)
                 {
                     var e = propDict[PropType.Infos].GetArrayElementAtIndex(i);
                     _instInfoParams.Add(new InstanceInfoCommon.EditorParam(e));
@@ -87,7 +88,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
             public override void OnInspectorGUI()
             {
                 _param.OnInspectorGUI();
-                if(serializedObject.ApplyModifiedProperties())
+                if (serializedObject.ApplyModifiedProperties())
                 {
                     _param.ResizeInfos(_param.propDict[PropType.Infos].arraySize);
                 }
@@ -142,7 +143,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                 propDict = CreatePropDict(prop);
                 Self = prop.GetSelf() as Hinode.UnityViewInstanceCreatorSettings.InstanceInfo;
                 CurrentParamBinderTypePopup = new ParamBinderTypePopup(Self);
-                if(Self.InstanceTypeFullName == null || Self.InstanceTypeFullName == "")
+                if (Self.InstanceTypeFullName == null || Self.InstanceTypeFullName == "")
                 {
                     Self.InstanceTypeFullName = CurrentInstanceTypePopup.DisplayOptionList[0];
                 }
@@ -166,7 +167,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                         propDict[PropType.AssetReference].objectReferenceValue = null;
                     }
 
-                    if(CurrentParamBinderTypePopup.CurrentInstanceType == null
+                    if (CurrentParamBinderTypePopup.CurrentInstanceType == null
                         || CurrentParamBinderTypePopup.CurrentInstanceType.FullName != Self.InstanceTypeFullName)
                     {
                         if (Self.InstanceTypeFullName != null && Self.InstanceTypeFullName != "")
@@ -197,11 +198,11 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
 
             void DrawAsset()
             {
-                if (Self.InstanceTypeFullName != null &&  Self.InstanceTypeFullName != "")
+                if (Self.InstanceTypeFullName != null && Self.InstanceTypeFullName != "")
                 {
                     var newAssetRef = EditorGUILayout.ObjectField(new GUIContent(propDict[PropType.AssetReference].displayName), propDict[PropType.AssetReference].objectReferenceValue, Self.InstanceType, false);
 
-                    if(newAssetRef != propDict[PropType.AssetReference].objectReferenceValue)
+                    if (newAssetRef != propDict[PropType.AssetReference].objectReferenceValue)
                     {
                         propDict[PropType.AssetReference].objectReferenceValue = newAssetRef;
                     }
@@ -229,7 +230,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                 {
                     var instanceTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.ExportedTypes)
-                        .Where(_t => _t.DoHasInterface<IViewObject>() && _t.IsSubclassOf(typeof(MonoBehaviour)))
+                        .Where(_t => _t.HasInterface<IViewObject>() && _t.IsSubclassOf(typeof(MonoBehaviour)))
                         .Select(_t => _t.FullName);
                     return instanceTypes.ToArray();
                 }
@@ -252,7 +253,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                 {
                     var instanceTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.ExportedTypes)
-                        .Where(_t => _t.DoHasInterface<IModelViewParamBinder>())
+                        .Where(_t => _t.HasInterface<IModelViewParamBinder>())
                         .Select(_t => _t.FullName);
                     if (CurrentInstanceType == null)
                     {
@@ -262,7 +263,7 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                     {
                         var availableParamBinderTypes = Info.InstanceType.GetCustomAttributes(false)
                             .OfType<AvailableModelViewParamBinderAttribute>();
-                        if(availableParamBinderTypes.Any())
+                        if (availableParamBinderTypes.Any())
                         {
                             return availableParamBinderTypes.SelectMany(_a => _a.AvailableParamBinders)
                                 .Select(_t => _t.FullName)
@@ -290,7 +291,8 @@ namespace Hinode.Editors.UnityViewInstanceCreatorSettings
                     return Resources.FindObjectsOfTypeAll(CurrentType)
                         .Select(_r => AssetDatabase.GetAssetPath(_r))
                         .Where(_assetPath => _assetPath.Split(Path.DirectorySeparatorChar).Any(_p => _p == "Resources"))
-                        .Select(_assetPath => {
+                        .Select(_assetPath =>
+                        {
                             var pathSplit = _assetPath.Split(Path.DirectorySeparatorChar);
                             var pathElements = pathSplit.Zip(Enumerable.Range(0, pathSplit.Length), (_p, _i) => (p: _p, index: _i));
                             var resourcesPath = pathElements

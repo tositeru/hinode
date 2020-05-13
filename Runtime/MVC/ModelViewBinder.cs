@@ -153,28 +153,6 @@ namespace Hinode
             }
         }
 
-        public class ControllerInfo
-        {
-            List<RecieverSelector> _recieverInfos = new List<RecieverSelector>();
-            public string Keyword { get; set; }
-            public IEnumerable<RecieverSelector> RecieverSelectors { get => _recieverInfos; }
-
-            public ControllerInfo(string keyword, params RecieverSelector[] recieverInfos)
-                : this(keyword, recieverInfos.AsEnumerable())
-            { }
-
-            public ControllerInfo(string keyword, IEnumerable<RecieverSelector> recieverInfos)
-            {
-                Keyword = keyword;
-                _recieverInfos = recieverInfos.ToList();
-            }
-
-            public void AddRecieverInfo(RecieverSelector selector)
-            {
-                _recieverInfos.Add(selector);
-            }
-        }
-
         public ModelViewBinder(string query, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
             : this(query, instanceCreator, bindInfos.AsEnumerable())
         { }
@@ -212,6 +190,14 @@ namespace Hinode
         }
 
         #region Enabled Model Type
+        public bool ContainEnabledModelType(System.Type modelType)
+            => _enabledModelTypes.Contains(modelType);
+        public bool ContainEnabledModelType<T>()
+            where T : Model
+            => _enabledModelTypes.Contains(typeof(T));
+        public bool ContainEnabledModelType(Model model)
+            => ContainEnabledModelType(model.GetType());
+
         public ModelViewBinder AddEnabledModelType<TModel>()
             where TModel : Model
             => AddEnabledModelType(typeof(TModel));
@@ -295,7 +281,7 @@ namespace Hinode
             {
                 return  model.DoMatchQuery(Query);
             }
-            else if(EnabledModelTypes.Contains(model.GetType()))
+            else if(ContainEnabledModelType(model))
             {
                 return Query == null || Query == ""
                     ? true
@@ -386,6 +372,8 @@ namespace Hinode
         Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>> _controllerSenderInstances = new Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>>();
         Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
 
+        Dictionary<IViewObject, HashSet<IControllerObject>> _controllerObjectListDict = new Dictionary<IViewObject, HashSet<IControllerObject>>();
+
         public ModelViewBinder Binder { get; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; }
@@ -415,7 +403,19 @@ namespace Hinode
                 }
             }
 
-            if(binderInstanceMap != null && (binderInstanceMap.UseViewLayouter?.DoEnableToAutoCreateViewObject ?? false))
+            if (binderInstanceMap != null && binderInstanceMap.UseEventDispatcherMap != null)
+            {
+                var eventDispatcherMap = binderInstanceMap.UseEventDispatcherMap;
+                foreach (var view in ViewObjects
+                    .Where(_v => eventDispatcherMap.IsCreatableControllerObjects(Model, _v, _v.UseBindInfo.Controllers.Values)))
+                {
+                    var controllerObjects = eventDispatcherMap.CreateControllerObjects(Model, view, view.UseBindInfo.Controllers.Values);
+                    var objsTypes = controllerObjects.Select(_o => _o.GetType().FullName).Aggregate((_s, _c) => _s + ";" + _c);
+                    _controllerObjectListDict.Add(view, controllerObjects);
+                }
+            }
+
+            if (binderInstanceMap != null && (binderInstanceMap.UseViewLayouter?.DoEnableToAutoCreateViewObject ?? false))
             {
                 var viewLayouter = binderInstanceMap.UseViewLayouter;
                 foreach (var viewObj in ViewObjects)
@@ -525,6 +525,38 @@ namespace Hinode
             }
         }
 
+        #region IControllerObject
+        public bool HasControllerObject(IViewObject viewObject, System.Type controllerObjectType)
+        {
+            Assert.IsTrue(controllerObjectType.HasInterface<IControllerObject>(), $"{controllerObjectType} is not IControllerObject interface...");
+            Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
+
+            if (!_controllerObjectListDict.ContainsKey(viewObject)) return false;
+            return _controllerObjectListDict[viewObject]
+                .Any(_c => _c.GetType().IsSameOrInheritedType(controllerObjectType));
+        }
+
+        public bool HasControllerObject<T>(IViewObject viewObject)
+            where T : class, IControllerObject
+            => HasControllerObject(viewObject, typeof(T));
+
+        public IControllerObject GetControllerObject(IViewObject viewObject, System.Type controllerObjectType)
+        {
+            Assert.IsTrue(controllerObjectType.HasInterface<IControllerObject>(), $"{controllerObjectType} is not IControllerObject interface...");
+            Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
+
+
+            if (!_controllerObjectListDict.ContainsKey(viewObject)) return null;
+            return _controllerObjectListDict[viewObject]
+                .FirstOrDefault(_c => _c.GetType().IsSameOrInheritedType(controllerObjectType));
+        }
+
+        public T GetControllerObject<T>(IViewObject viewObject)
+            where T : class, IControllerObject
+            => GetControllerObject(viewObject, typeof(T)) as T;
+        #endregion
+
+        #region IDisposabe interface
         public void Dispose()
         {
             foreach(var keyAndViews in _autoLayoutViewObjects)
@@ -556,6 +588,7 @@ namespace Hinode
 
             DettachModelOnUpdated();
         }
+        #endregion
     }
 
     public static class ModelViewBinderInstanceExtensions
@@ -565,7 +598,7 @@ namespace Hinode
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)>
+        public static IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)>
             GetControllerInfos(this ModelViewBinderInstance target)
         {
             return target.GetControllersAttachedModel()
@@ -577,7 +610,7 @@ namespace Hinode
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)> GetControllersAttachedModel(this ModelViewBinderInstance target)
+        public static IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetControllersAttachedModel(this ModelViewBinderInstance target)
         {
             return target.Binder.Controllers
                 .Select(_c => (
@@ -592,7 +625,7 @@ namespace Hinode
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static IEnumerable<(Model model, IViewObject viewObj, ModelViewBinder.ControllerInfo controllerInfo)> GetControllersAttachedViewObjs(this ModelViewBinderInstance target)
+        public static IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetControllersAttachedViewObjs(this ModelViewBinderInstance target)
         {
             return target.ViewObjects
                 .SelectMany(_v =>
@@ -603,5 +636,29 @@ namespace Hinode
                     ))
                 );
         }
+    }
+
+    public static partial class IViewObjectExtensions
+    {
+        public static bool HasControllerObject(this IViewObject viewObject, System.Type controllerObjectType)
+        {
+            if (viewObject.UseBinderInstance == null) return false;
+            return viewObject.UseBinderInstance.HasControllerObject(viewObject, controllerObjectType);
+        }
+
+        public static bool HasControllerObject<T>(this IViewObject viewObject)
+            where T : class, IControllerObject
+            => viewObject.UseBinderInstance.HasControllerObject<T>(viewObject);
+
+        public static IControllerObject GetControllerObject(this IViewObject viewObject, System.Type controllerObjectType)
+        {
+            if (viewObject.UseBinderInstance == null) return null;
+            return viewObject.UseBinderInstance.GetControllerObject(viewObject, controllerObjectType);
+        }
+
+        public static T GetControllerObject<T>(this IViewObject viewObject)
+            where T : class, IControllerObject
+            => viewObject.UseBinderInstance.GetControllerObject<T>(viewObject);
+
     }
 }

@@ -7,168 +7,6 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
-    /// グループ化できるIControllerSenderをまとめたもの
-    /// </summary>
-    public abstract class ISenderGroup
-    {
-        /// <summary>
-        /// 派生クラスがサポートするEventの情報をまとめたEventInfoManagerを作成します。
-        ///
-        /// この関数は自動的にISenderGroup内で呼び出されます。
-        /// </summary>
-        /// <returns></returns>
-        protected abstract EventInfoManager CreateEventInfoManager();
-
-        /// <summary>
-        /// EventDataの状態を更新
-        /// </summary>
-        /// <param name="binderInstanceMap"></param>
-        public abstract void Update(ModelViewBinderInstanceMap binderInstanceMap);
-
-        /// <summary>
-        /// 指定されたkeyword,model,viewObjectに対応したEventDataを返します。
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="model"></param>
-        /// <param name="viewObject"></param>
-        /// <returns></returns>
-        protected abstract object GetEventData(string keyword, Model model, IViewObject viewObject);
-
-        EventInfoManager _eventInfoManager;
-        /// <summary>
-        /// ISenderGroupが対応しているイベントの情報をまとめたもの
-        /// </summary>
-        public EventInfoManager EventInfos
-        {
-            get => _eventInfoManager != null
-                ? _eventInfoManager
-                : _eventInfoManager = CreateEventInfoManager();
-        }
-
-        /// <summary>
-        /// binderInstanceMapが保持しているModel,IViewObjectの内、このISenderGroupが対応しているIControllerSenderのControllerInfoを持つものを検索し、現在のEventDataを送信する関数
-        /// </summary>
-        /// <param name="binderInstanceMap"></param>
-        public void SendTo(ModelViewBinderInstanceMap binderInstanceMap)
-        {
-            var supportedControllerInfos = binderInstanceMap.BindInstances.Values
-                .SelectMany(_b => _b.GetControllerInfos())
-                .Where(_c =>
-                    EventInfos.ContainKeyword(_c.controllerInfo.Keyword)
-                    && EventInfos.DoEnabledEvent(_c.controllerInfo.Keyword)
-                );
-            foreach (var (model, viewObj, controllerInfo) in supportedControllerInfos)
-            {
-                foreach (var selector in controllerInfo.RecieverSelectors)
-                {
-                    var recieverType = EventInfos.GetRecieverType(controllerInfo.Keyword);
-                    var eventData = GetEventData(controllerInfo.Keyword, model, viewObj);
-
-                    if (recieverType == null || eventData == null) continue;
-
-                    selector.Send(recieverType, model, eventData, binderInstanceMap);
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// ISenderGroupと一緒に使用されるクラス
-    ///
-    /// ISenderGroupが持つEventのデータを管理する。=> class EventInfoManager#Info
-    /// </summary>
-    public class EventInfoManager
-    {
-        public class Info
-        {
-            public static Info Create<TSender, TReciever>(System.Enum keyword)
-                where TSender : IControllerSender
-                where TReciever : IControllerReciever
-                => Create<TSender, TReciever>(keyword.ToString());
-            public static Info Create<TSender, TReciever>(string keyword)
-                where TSender : IControllerSender
-                where TReciever : IControllerReciever
-            {
-                return new Info(keyword, typeof(TSender), typeof(TReciever));
-            }
-
-            public string Keyword { get; }
-            public System.Type SenderType { get; }
-            public System.Type RecieverType { get; }
-
-            public bool DoEnabled { get; set; }
-
-            public Info(System.Enum keyword, System.Type senderType, System.Type recieverType)
-                : this(keyword.ToString(), senderType, recieverType)
-            { }
-
-            public Info(string keyword, System.Type senderType, System.Type recieverType)
-            {
-                Keyword = keyword;
-                SenderType = senderType;
-                RecieverType = recieverType;
-            }
-        }
-
-        Dictionary<string, Info> _infos = new Dictionary<string, Info>();
-        public EventInfoManager(params Info[] infos)
-            : this(infos.AsEnumerable())
-        { }
-
-        public EventInfoManager(IEnumerable<Info> infos)
-        {
-            foreach (var info in infos)
-            {
-                Assert.IsFalse(_infos.ContainsKey(info.Keyword));
-                _infos.Add(info.Keyword, info);
-            }
-        }
-
-        public Info this[string keyword]
-        {
-            get
-            {
-                Assert.IsTrue(_infos.ContainsKey(keyword));
-                return _infos[keyword];
-            }
-        }
-
-        public Info this[System.Enum keyword]
-        {
-            get
-            {
-                Assert.IsTrue(_infos.ContainsKey(keyword.ToString()));
-                return _infos[keyword.ToString()];
-            }
-        }
-
-        public bool ContainKeyword(System.Enum keyword)
-            => _infos.ContainsKey(keyword.ToString());
-        public bool ContainKeyword(string keyword)
-            => _infos.ContainsKey(keyword);
-
-        public bool DoEnabledEvent(System.Enum keyword)
-            => this[keyword].DoEnabled;
-        public bool DoEnabledEvent(string keyword)
-            => this[keyword].DoEnabled;
-
-        public void SetEnabledEvent(System.Enum keyword, bool enabled)
-            => this[keyword].DoEnabled = enabled;
-        public void SetEnabledEvent(string keyword, bool enabled)
-            => this[keyword].DoEnabled = enabled;
-
-        public System.Type GetSenderType(System.Enum keyword)
-            => this[keyword].SenderType;
-        public System.Type GetSenderType(string keyword)
-            => this[keyword].SenderType;
-
-        public System.Type GetRecieverType(System.Enum keyword)
-            => this[keyword].RecieverType;
-        public System.Type GetRecieverType(string keyword)
-            => this[keyword].RecieverType;
-    }
-
-    /// <summary>
     /// 廃止予定
     /// </summary>
     public interface IControllerSenderInstance : IControllerSender
@@ -213,7 +51,7 @@ namespace Hinode
             => _enabledSenders.GetEnumerator();
     }
 
-    public class SelectorListDictionary : IEnumerable<KeyValuePair<System.Type, HashSet<RecieverSelector>>>, IEnumerable 
+    public class SelectorListDictionary : IEnumerable<KeyValuePair<System.Type, HashSet<RecieverSelector>>>, IEnumerable
     {
         protected Dictionary<System.Type, HashSet<RecieverSelector>> _dict = new Dictionary<System.Type, HashSet<RecieverSelector>>();
 
@@ -287,7 +125,7 @@ namespace Hinode
 
         public static void AddSelectors(this IControllerSenderInstance target, System.Type senderType, IEnumerable<RecieverSelector> selectors)
         {
-            foreach(var s in selectors)
+            foreach (var s in selectors)
             {
                 target.AddSelector(senderType, s);
             }
@@ -385,7 +223,7 @@ namespace Hinode
         /// <param name="eventData"></param>
         public static void Send(this IControllerSenderInstance target, System.Type senderType, Model sender, ModelViewBinderInstanceMap binderInstanceMap, object eventData)
         {
-            Assert.IsTrue(senderType.DoHasInterface<IControllerSender>());
+            Assert.IsTrue(senderType.HasInterface<IControllerSender>());
 
             if (!target.UseSenderGroup.ContainsSender(senderType)) return;
             if (!target.DoEnableSender(senderType)) return;

@@ -251,24 +251,52 @@ namespace Hinode.Tests.MVC
                 new ModelViewBinder.BindInfo(typeof(IntViewObjClass)),
                 new ModelViewBinder.BindInfo(typeof(FloatViewObjClass))
             );
-            appleBinder.AddEnabledModelType<ModelClass>();
-
             var matchModel = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f };
             var notMatchQueryModel = new ModelClass { Name = "empty" };
             var notMatchTypeModel = new Model { Name = "apple" };
-            Assert.IsTrue(appleBinder.DoMatch(matchModel));
-            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
-            Assert.IsFalse(appleBinder.DoMatch(notMatchTypeModel));
 
-            appleBinder.AddEnabledModelType<Model>();
-            Assert.IsTrue(appleBinder.DoMatch(matchModel));
-            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
-            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+            {// Enabled Model Type => ModelClass
+                appleBinder.AddEnabledModelType<ModelClass>();
 
-            appleBinder.RemoveEnabledModelType<ModelClass>();
-            Assert.IsFalse(appleBinder.DoMatch(matchModel));
-            Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
-            Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+                Assert.IsTrue(appleBinder.ContainEnabledModelType<ModelClass>());
+                Assert.IsFalse(appleBinder.ContainEnabledModelType<Model>());
+
+                Assert.IsTrue(appleBinder.DoMatch(matchModel));
+                Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+                Assert.IsFalse(appleBinder.DoMatch(notMatchTypeModel));
+
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(matchModel));
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(notMatchQueryModel));
+                Assert.IsFalse(appleBinder.ContainEnabledModelType(notMatchTypeModel));
+            }
+
+            {// Enabled Model Type => ModelClass, Model
+                appleBinder.AddEnabledModelType<Model>();
+                Assert.IsTrue(appleBinder.ContainEnabledModelType<ModelClass>());
+                Assert.IsTrue(appleBinder.ContainEnabledModelType<Model>());
+
+                Assert.IsTrue(appleBinder.DoMatch(matchModel));
+                Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+                Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(matchModel));
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(notMatchQueryModel));
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(notMatchTypeModel));
+            }
+
+            {// Enabled Model Type => Model
+                appleBinder.RemoveEnabledModelType<ModelClass>();
+                Assert.IsFalse(appleBinder.ContainEnabledModelType<ModelClass>());
+                Assert.IsTrue(appleBinder.ContainEnabledModelType<Model>());
+
+                Assert.IsFalse(appleBinder.DoMatch(matchModel));
+                Assert.IsFalse(appleBinder.DoMatch(notMatchQueryModel));
+                Assert.IsTrue(appleBinder.DoMatch(notMatchTypeModel));
+
+                Assert.IsFalse(appleBinder.ContainEnabledModelType(matchModel));
+                Assert.IsFalse(appleBinder.ContainEnabledModelType(notMatchQueryModel));
+                Assert.IsTrue(appleBinder.ContainEnabledModelType(notMatchTypeModel));
+            }
         }
 
         [Test, Description("QueryPathが空のときに有効な型を指定した時のDoMatchのテスト")]

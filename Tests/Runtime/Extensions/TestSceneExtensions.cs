@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Runtime.Extensions
+namespace Hinode.Tests.Extensions
 {
     public class TestSceneExtensions : TestBase
     {

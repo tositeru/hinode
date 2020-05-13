@@ -132,6 +132,14 @@ namespace Hinode
                 return Input.GetTouch(index);
         }
 
+        public IEnumerable<Touch> GetTouches()
+        {
+            if (IsReplaying)
+                return _recordedTouches;
+            else
+                return Input.touches;
+        }
+
         #region Recorded Value Methods
         public void SetRecordedTouch(int index, Touch touch)
         {

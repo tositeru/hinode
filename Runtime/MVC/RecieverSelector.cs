@@ -29,13 +29,13 @@ namespace Hinode
             if (IsFooking)
             {
                 return recievers
-                    .Where(_r => _r.GetType().DoHasInterface(FookingRecieverType))
+                    .Where(_r => _r.GetType().HasInterface(FookingRecieverType))
                     .Select(_r => (recieverType: FookingRecieverType, reciever: _r, eventData: FookEventData));
             }
             else
             {
                 return recievers
-                    .Where(_r => _r.GetType().DoHasInterface(recieverType))
+                    .Where(_r => _r.GetType().HasInterface(recieverType))
                     .Select(_r => (recieverType: recieverType, reciever: _r, eventData: eventData));
             }
         }

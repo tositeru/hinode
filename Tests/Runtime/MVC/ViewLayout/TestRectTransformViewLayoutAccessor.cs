@@ -15,13 +15,13 @@ namespace Hinode.Tests.MVC.ViewLayout
         [Test]
         public void CheckClassDefinePasses()
         {
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IViewObject>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformAnchorMinViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformAnchorMaxViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformAnchorXViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformAnchorYViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformPivotViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).DoHasInterface<IRectTransformSizeViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IViewObject>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorMinViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorMaxViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorXViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorYViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformPivotViewLayout>());
+            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformSizeViewLayout>());
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 { "pivot", new RectTransformPivotViewLayoutAccessor()},
                 { "size", new RectTransformSizeViewLayoutAccessor()},
             };
-            foreach(var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
+            foreach (var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
             {
                 Assert.IsTrue(viewLayouter.ContainsKeyword(keyword), $"Don't exist {keyword}...");
                 Assert.AreSame(accessor.GetType(), viewLayouter.Accessors[keyword].GetType(), $"cur={accessor.GetType()}, got={viewLayouter.Accessors[keyword].GetType()}");
@@ -76,7 +76,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 var supportedLayouts = creator.GetSupportedIViewLayouts().ToList();
                 var viewLayouter = new ViewLayouter()
                     .AddRectTransformKeywordsAndAutoCreator();
-                foreach(var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
+                foreach (var (keyword, accessor) in viewLayouter.Accessors.Select(_t => (_t.Key, _t.Value)))
                 {
                     Assert.IsTrue(supportedLayouts.Contains(accessor.ViewLayoutType), $"Not exist LayoutAccessor Type({accessor.ViewLayoutType}) of keyword({keyword})...");
                     supportedLayouts.Remove(accessor.ViewLayoutType);

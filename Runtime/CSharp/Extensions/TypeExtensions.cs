@@ -11,12 +11,32 @@ namespace Hinode
     public static class TypeExtensions
     {
         /// <summary>
+        /// 同じまたは派生元の型かどうか？
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsSameOrInheritedType(this System.Type t, System.Type type)
+            => t.Equals(type)
+            || t.IsSubclassOf(type)
+            || t.HasInterface(type);
+
+        /// <summary>
+        /// 同じまたは派生元の型かどうか？
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsSameOrInheritedType<T>(this System.Type t)
+            => t.IsSameOrInheritedType(typeof(T));
+
+        /// <summary>
         /// 指定されたInterfaceを実装しているかどうか?
         /// </summary>
         /// <param name="t"></param>
         /// <param name="interfaceType"></param>
         /// <returns></returns>
-        public static bool DoHasInterface(this System.Type t, System.Type interfaceType)
+        public static bool HasInterface(this System.Type t, System.Type interfaceType)
         {
             return interfaceType.IsInterface && t.GetInterfaces().Any(_i => _i == interfaceType);
         }
@@ -27,8 +47,8 @@ namespace Hinode
         /// <param name="t"></param>
         /// <param name="interfaceType"></param>
         /// <returns></returns>
-        public static bool DoHasInterface<InterfaceType>(this System.Type t)
-            => t.DoHasInterface(typeof(InterfaceType));
+        public static bool HasInterface<InterfaceType>(this System.Type t)
+            => t.HasInterface(typeof(InterfaceType));
 
         /// <summary>
         /// 整数型かどうか?

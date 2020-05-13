@@ -35,7 +35,7 @@ namespace Hinode
         Dictionary<string, System.Type> _enabledSenders = new Dictionary<string, System.Type>();
         public DefaultControllerSenderGroup(IReadOnlyDictionary<string, System.Type> enabledSenders)
         {
-            Assert.IsTrue(enabledSenders.All(_e => _e.Value.DoHasInterface<IControllerSender>()));
+            Assert.IsTrue(enabledSenders.All(_e => _e.Value.HasInterface<IControllerSender>()));
             _enabledSenders.Merge(true, enabledSenders);
         }
 

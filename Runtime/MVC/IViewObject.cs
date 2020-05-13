@@ -6,6 +6,10 @@ namespace Hinode
 {
     /// <summary>
     /// Viewに当たるオブジェクトを表すinterface
+    ///
+    /// 将来のインターフェイスの変更に対応するため、直接このinterfaceを継承するよりもEmptyViewObjectかMonoBehaviourViewObjectを継承することを推奨します。
+    /// <seealso cref="EmptyViewObject"/>
+    /// <seealso cref="MonoBehaviourViewObject"/>
     /// </summary>
     public interface IViewObject
     {
@@ -52,7 +56,7 @@ namespace Hinode
     /// UnityのMonoBehaviourをIViewObject化したい場合はMonoBehaviourViewObjectを使用してください。
     /// <seealso cref="MonoBehaviourViewObject"/>
     /// </summary>
-    public abstract class EmptyViewObject : IViewObject
+    public class EmptyViewObject : IViewObject
     {
         public Model UseModel { get; set; }
         public ModelViewBinder.BindInfo UseBindInfo { get; set; }

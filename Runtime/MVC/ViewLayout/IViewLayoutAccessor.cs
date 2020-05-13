@@ -34,7 +34,7 @@ namespace Hinode
 
         public virtual bool IsVaildViewObject(IViewObject viewObj)
         {
-            return viewObj.GetType().DoHasInterface(ViewLayoutType);
+            return viewObj.GetType().HasInterface(ViewLayoutType);
         }
         public virtual bool IsVaildValue(object value)
         {

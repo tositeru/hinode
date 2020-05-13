@@ -123,7 +123,7 @@ namespace Hinode.Tests.MVC.Controller
             var viewID = "viewID";
             var allBinder = new ModelViewBinder("*", null,
                 new ModelViewBinder.BindInfo(viewID, typeof(TestView))
-                    .AddControllerInfo(new ModelViewBinder.ControllerInfo(
+                    .AddControllerInfo(new ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST,
                             new RecieverSelector(ModelRelationShip.Self, "", "")
                         )
@@ -131,11 +131,11 @@ namespace Hinode.Tests.MVC.Controller
                 );
             var orangeBinder = new ModelViewBinder("orange", null,
                 new ModelViewBinder.BindInfo(viewID, typeof(TestView))
-                    .AddControllerInfo(new ModelViewBinder.ControllerInfo(
+                    .AddControllerInfo(new ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST,
                             new RecieverSelector(ModelRelationShip.Self, "", "")
                         )
-                    ).AddControllerInfo(new ModelViewBinder.ControllerInfo(
+                    ).AddControllerInfo(new ControllerInfo(
                             TestSenderInstance.KEYWORD_ON_TEST2,
                             new RecieverSelector(ModelRelationShip.Self, "", ""),
                             new RecieverSelector(ModelRelationShip.Self, "", "") {

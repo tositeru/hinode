@@ -29,7 +29,7 @@ namespace Hinode
             {
                 var cstor = d.viewType.GetConstructor(_emptryArgs);
                 Assert.IsNotNull(cstor, $"空引数のコンストラクターがあるクラスだけに対応しています... viewType={d.viewType.FullName}");
-                Assert.IsTrue(d.viewType.DoHasInterface<IViewObject>(), $"IViewObject型を継承した型だけ対応しています... viewType={d.viewType.FullName}");
+                Assert.IsTrue(d.viewType.HasInterface<IViewObject>(), $"IViewObject型を継承した型だけ対応しています... viewType={d.viewType.FullName}");
                 Assert.IsNotNull(d.paramBinder, $"paramBinderは必ず設定してください...");
                 Assert.IsFalse(_dict.ContainsKey(d.viewType.FullName), $"Already exist key({d.viewType.FullName})... paramBinder={d.paramBinder}");
                 _dict.Add(d.viewType.FullName, (d.viewType, d.paramBinder));

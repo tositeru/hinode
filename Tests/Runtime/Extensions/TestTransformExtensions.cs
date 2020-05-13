@@ -5,11 +5,10 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Linq;
 
-namespace Hinode.Tests.Runtime.Extensions
+namespace Hinode.Tests.Extensions
 {
     public class TestTransformExtensions : TestBase
     {
-
         // A Test behaves as an ordinary method
         [Test]
         public void GetChildEnumerablePass()
@@ -49,6 +48,34 @@ namespace Hinode.Tests.Runtime.Extensions
             ).transform;
 
             AssertionUtils.AssertEnumerable(root.transform.GetHierarchyEnumerable(), corrects.Select(_g => _g.transform), "TransformExtensions#GetHierarchyEnumerableの探索順が想定したものになっていません。");
+        }
+
+        [Test]
+        public void GetParentEnumerablePass()
+        {
+            var corrects = new List<GameObject>();
+            var root = GameObjectExtensions.Create(
+                ("root", (Transform)null, new CreateGameObjectParam[] {
+                    ("A", new CreateGameObjectParam[] {
+                        "A Child0",
+                        "A Child1",
+                        "A Child2", }
+                    ),
+                    "B",
+                    ("C", new CreateGameObjectParam[] {
+                        "C Child0", }
+                    ), }
+                ),
+                corrects
+            ).transform;
+
+            var child = root.Find("A/A Child0");
+            var A = root.Find("A");
+            var errorMessage = $"'root/A/A Child0'の親Transformを正しく取得できていません";
+            AssertionUtils.AssertEnumerable(
+                child.GetParentEnumerable()
+                , new Transform[] { A, root }
+                , errorMessage);
         }
     }
 }

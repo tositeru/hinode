@@ -10,30 +10,50 @@ namespace Hinode.Tests.CSharp.Extensions
 {
     public class TestTypeExtensions
     {
-        interface DoHasInterfacePassesInterface
+        interface IsSameOrInheritedTypePassesInterface { }
+        class IsSameOrInheritedTypePassesBaseClass { }
+        class IsSameOrInheritedTypePassesClass
+            : IsSameOrInheritedTypePassesBaseClass
+            , IsSameOrInheritedTypePassesInterface
+        { }
+        class IsSameOrInheritedTypePassesOtherClass { }
+
+        public void IsSameOrInheritedTypePasses()
+        {
+            Assert.IsTrue(typeof(IsSameOrInheritedTypePassesClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesClass>());
+            Assert.IsTrue(typeof(IsSameOrInheritedTypePassesClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesBaseClass>());
+            Assert.IsTrue(typeof(IsSameOrInheritedTypePassesClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesInterface>());
+
+            Assert.IsFalse(typeof(IsSameOrInheritedTypePassesClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesOtherClass>());
+            Assert.IsFalse(typeof(IsSameOrInheritedTypePassesBaseClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesClass>());
+            Assert.IsFalse(typeof(IsSameOrInheritedTypePassesInterface).IsSameOrInheritedType<IsSameOrInheritedTypePassesClass>());
+
+        }
+
+        interface HasInterfacePassesInterface
         {
             void Func();
         }
 
-        interface DoHasInterfacePassesInterface2
+        interface HasInterfacePassesInterface2
         {
             void Func();
         }
 
 
-        class DoHasInterfacePassesClass : DoHasInterfacePassesInterface
+        class HasInterfacePassesClass : HasInterfacePassesInterface
         {
             public void Func() { }
         }
 
         [Test]
-        public void DoHasInterfacePasses()
+        public void HasInterfacePasses()
         {
-            Assert.IsTrue(typeof(DoHasInterfacePassesClass).DoHasInterface(typeof(DoHasInterfacePassesInterface)));
-            Assert.IsTrue(typeof(DoHasInterfacePassesClass).DoHasInterface<DoHasInterfacePassesInterface>());
+            Assert.IsTrue(typeof(HasInterfacePassesClass).HasInterface(typeof(HasInterfacePassesInterface)));
+            Assert.IsTrue(typeof(HasInterfacePassesClass).HasInterface<HasInterfacePassesInterface>());
 
-            Assert.IsFalse(typeof(DoHasInterfacePassesClass).DoHasInterface<DoHasInterfacePassesInterface2>());
-            Assert.IsFalse(typeof(DoHasInterfacePassesClass).DoHasInterface<TestTypeExtensions>());
+            Assert.IsFalse(typeof(HasInterfacePassesClass).HasInterface<HasInterfacePassesInterface2>());
+            Assert.IsFalse(typeof(HasInterfacePassesClass).HasInterface<TestTypeExtensions>());
         }
 
         class GetFieldInHierarchyBaseClass : ScriptableObject

@@ -19,7 +19,7 @@ namespace Hinode
         public AvailableModelViewParamBinderAttribute(params System.Type[] paramBinderType)
         {
             foreach(var type in paramBinderType
-                .Where(_t => _t.DoHasInterface<IModelViewParamBinder>()))
+                .Where(_t => _t.HasInterface<IModelViewParamBinder>()))
             {
                 _availableParamBinderTypes.Add(type);
             }
