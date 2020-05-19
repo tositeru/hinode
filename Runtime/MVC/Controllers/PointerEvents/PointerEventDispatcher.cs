@@ -80,11 +80,15 @@ namespace Hinode
         /// </summary>
         class OnPointerEventDataBase : OnPointerEventData
         {
-            HashSet<SupportedModelInfo> _inAreaObjects = new HashSet<SupportedModelInfo>();
-            HashSet<SupportedModelInfo> _outAreaObjects = new HashSet<SupportedModelInfo>();
+            HashSet<SupportedModelInfo> _enterAreaObjects = new HashSet<SupportedModelInfo>();
+            HashSet<SupportedModelInfo> _stationaryAreaObjects = new HashSet<SupportedModelInfo>();
+            HashSet<SupportedModelInfo> _exitAreaObjects = new HashSet<SupportedModelInfo>();
 
-            public IReadOnlyCollection<SupportedModelInfo> InAreaObjects { get => _inAreaObjects; }
-            public IReadOnlyCollection<SupportedModelInfo> OutAreaObjects { get => _outAreaObjects; }
+            public IReadOnlyCollection<SupportedModelInfo> EnterAreaObjects { get => _enterAreaObjects; }
+            public IReadOnlyCollection<SupportedModelInfo> StationaryAreaObjects { get => _stationaryAreaObjects; }
+            public IReadOnlyCollection<SupportedModelInfo> ExitAreaObjects { get => _exitAreaObjects; }
+            public IEnumerable<SupportedModelInfo> InAreaObjects { get => _enterAreaObjects.Concat(_stationaryAreaObjects); }
+            public IEnumerable<SupportedModelInfo> AllObjects { get => InAreaObjects.Concat(ExitAreaObjects); }
 
             public virtual InputDefines.ButtonCondition ButtonCondition { get; }
 
@@ -108,18 +112,27 @@ namespace Hinode
                     }
                 });
 
-                _outAreaObjects.Clear();
-                foreach (var curInAreaObj in currentInAreaObjs
-                    .Where(_c => !InAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
+                _exitAreaObjects.Clear();
+                //move enter to stationary
+                foreach(var enterObj in EnterAreaObjects
+                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
                 {
-                    _inAreaObjects.Add(curInAreaObj);
+                    _stationaryAreaObjects.Add(enterObj);
                 }
-                foreach(var delInAreaObj in InAreaObjects
+                //enter new obj
+                _enterAreaObjects.Clear();
+                foreach (var curInAreaObj in currentInAreaObjs
+                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
+                {
+                    _enterAreaObjects.Add(curInAreaObj);
+                }
+                //move stationary to exit
+                foreach(var delInAreaObj in StationaryAreaObjects
                     .Where(_o => !currentInAreaObjs.Contains(_o, SupportedModelInfoEquality.DefaultInstance)))
                 {
-                    _outAreaObjects.Add(delInAreaObj);
+                    _exitAreaObjects.Add(delInAreaObj);
                 }
-                _inAreaObjects.RemoveWhere(_i => !currentInAreaObjs.Contains(_i, SupportedModelInfoEquality.DefaultInstance));
+                _stationaryAreaObjects.RemoveWhere(_i => !currentInAreaObjs.Contains(_i, SupportedModelInfoEquality.DefaultInstance));
 
                 if(ButtonCondition == InputDefines.ButtonCondition.Down)
                 {
@@ -127,19 +140,36 @@ namespace Hinode
                     PointerDownViewObject = topModelInfo?.ViewObj ?? null;
                 }
 
-                Logger.Log(Logger.Priority.Debug, () => $"debug -- PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID} InAreaObject count={InAreaObjects.Count}, OutAreaObject count={_outAreaObjects.Count}");
+                Logger.Log(Logger.Priority.Debug, () => $"debug -- PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID} AreaObject count(enter={EnterAreaObjects.Count}, stationary={StationaryAreaObjects.Count}, exit={_exitAreaObjects.Count})");
             }
 
-            public bool DoMatchControllerInfo(ControllerInfo controllerInfo)
+            public bool DoMatchControllerInfo(SupportedModelInfo supportedModelInfo)
             {
-                var pointerEventName = (PointerEventName)System.Enum.Parse(typeof(PointerEventName), controllerInfo.Keyword);
+                var pointerEventName = (PointerEventName)System.Enum.Parse(typeof(PointerEventName), supportedModelInfo.ControllerInfo.Keyword);
                 switch (pointerEventName)
                 {
                     case PointerEventName.onPointerDown:
-                        return ButtonCondition == InputDefines.ButtonCondition.Down;
+                        return ButtonCondition == InputDefines.ButtonCondition.Down
+                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
                     case PointerEventName.onPointerUp:
+                        return ButtonCondition == InputDefines.ButtonCondition.Up
+                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
                     case PointerEventName.onPointerClick:
-                        return ButtonCondition == InputDefines.ButtonCondition.Up;
+                        return ButtonCondition == InputDefines.ButtonCondition.Up
+                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance)
+                            && PointerDownViewObject == supportedModelInfo.ViewObj;
+                    case PointerEventName.onPointerEnter:
+                        return (ButtonCondition == InputDefines.ButtonCondition.Push
+                            || ButtonCondition == InputDefines.ButtonCondition.Down)
+                            && EnterAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
+                    case PointerEventName.onPointerExit:
+                        return (ButtonCondition == InputDefines.ButtonCondition.Push
+                                && ExitAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance))
+                            || (ButtonCondition == InputDefines.ButtonCondition.Up
+                                && AllObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance));
+                    case PointerEventName.onPointerStationary:
+                        return ButtonCondition == InputDefines.ButtonCondition.Push
+                            && StationaryAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
                     default:
                         throw new System.NotImplementedException();
                 }
@@ -147,7 +177,8 @@ namespace Hinode
 
             public SupportedModelInfo GetTopModelInfoInArea()
             {
-                return _inAreaObjects.OrderBy(_i => _i.ControllerObj, new IOnPointerEventControllerObjectComparer(Dispatcher.UseCamera)).FirstOrDefault();
+                return InAreaObjects
+                    .OrderBy(_i => _i.ControllerObj, new IOnPointerEventControllerObjectComparer(Dispatcher.UseCamera)).FirstOrDefault();
             }
         }
 
@@ -269,6 +300,8 @@ namespace Hinode
             _mousePointerEventData.UpdateInAreaObjects(UseCamera, supportedControllerInfos);
             {//Touch
                 var input = ReplayableInput.Instance;
+                //タッチされなくなったものを削除する
+                _touchPointerEventDatas.RemoveAll(_e => !input.GetTouches().Any(_t => _t.fingerId == _e.FingerID));
                 for(var i=0; i<input.TouchCount; ++i)
                 {
                     var t = input.GetTouch(i);
@@ -282,8 +315,6 @@ namespace Hinode
                     e.Update();
                     e.UpdateInAreaObjects(UseCamera, supportedControllerInfos);
                 }
-                //タッチされなくなったものを削除する
-                _touchPointerEventDatas.RemoveAll(_e => !input.GetTouches().Any(_t => _t.fingerId == _e.FingerID));
             }
         }
         
@@ -306,21 +337,18 @@ namespace Hinode
             Assert.IsTrue(viewObject.HasControllerObject<IOnPointerEventControllerObject>());
             var target = new SupportedModelInfo(model, viewObject, controllerInfo, viewObject.GetControllerObject<IOnPointerEventControllerObject>());
 
-            var matchMouseEventData = _mousePointerEventData.InAreaObjects
-                .Where(_obj => _obj.Equals(target))
+            var matchMouseEventData = _mousePointerEventData.AllObjects
                 .Select(_obj => _mousePointerEventData)
-                .Where(_e => _e.DoMatchControllerInfo(controllerInfo))
-                .OfType<OnPointerEventData>()
-                ;
+                .Distinct()
+                .OfType<OnPointerEventDataBase>();
             var matchTouchEventDatas = _touchPointerEventDatas
-                .Where(_e => _e.InAreaObjects.Contains(target, SupportedModelInfoEquality.DefaultInstance)
-                    && _e.DoMatchControllerInfo(controllerInfo))
-                .OfType<OnPointerEventData>()
-                ;
+                .OfType<OnPointerEventDataBase>();
             var matchEventDatas = matchMouseEventData
-                .Concat(matchTouchEventDatas);
+                .Concat(matchTouchEventDatas)
+                .Where(_e => _e.DoMatchControllerInfo(target));
 
-            //Logger.Log(Logger.Priority.Debug, () => {
+            //Logger.Log(Logger.Priority.Debug, () =>
+            //{
             //    var pointerTypes = matchEventDatas.Select(_e => $"{_e.PointerType}:{_e.FingerID}").Aggregate("", (_s, _c) => _s + _c + "; ");
             //    return $"debug -- PointerEventDispacther -- GetEventData controllerKeyword={controllerInfo.Keyword} doMatch?=>{matchEventDatas.Count()}({pointerTypes}), model={model}, view={viewObject}";
             //});
@@ -330,13 +358,11 @@ namespace Hinode
             {
                 case PointerEventName.onPointerDown:
                 case PointerEventName.onPointerUp:
+                case PointerEventName.onPointerClick:
                 case PointerEventName.onPointerEnter:
                 case PointerEventName.onPointerStationary:
                 case PointerEventName.onPointerExit:
                     return firstEventData;
-                case PointerEventName.onPointerClick:
-                    return (firstEventData != null && firstEventData.PointerDownViewObject == viewObject)
-                        ? firstEventData : null;
                 case PointerEventName.onPointerBeginDrag:
                 case PointerEventName.onPointerDrag:
                 case PointerEventName.onPointerEndDrag:
@@ -357,6 +383,7 @@ namespace Hinode
             ControllerTypeManager.EntryPair<IOnPointerEndDragSender, IOnPointerEndDragReciever>();
             ControllerTypeManager.EntryPair<IOnPointerDropSender, IOnPointerDropReciever>();
             ControllerTypeManager.EntryPair<IOnPointerEnterSender, IOnPointerEnterReciever>();
+            ControllerTypeManager.EntryPair<IOnPointerStationarySender, IOnPointerStationaryReciever>();
             ControllerTypeManager.EntryPair<IOnPointerExitSender, IOnPointerExitReciever>();
 
             ControllerTypeManager.EntryRecieverExecuter<IOnPointerDownReciever, OnPointerEventData>((reciever, sender, eventData) => {
@@ -386,6 +413,9 @@ namespace Hinode
 
             ControllerTypeManager.EntryRecieverExecuter<IOnPointerEnterReciever, OnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerEnter(sender, eventData);
+            });
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerStationaryReciever, OnPointerEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerStationary(sender, eventData);
             });
             ControllerTypeManager.EntryRecieverExecuter<IOnPointerExitReciever, OnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerExit(sender, eventData);

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -135,7 +136,10 @@ namespace Hinode
         public IEnumerable<Touch> GetTouches()
         {
             if (IsReplaying)
-                return _recordedTouches;
+                return _recordedTouches
+                    .Zip(Enumerable.Range(0, _recordedTouches.Count), (_t, _i) => (index: _i, touch: _t))
+                    .Where(_t => _t.index < TouchCount)
+                    .Select(_t => _t.touch);
             else
                 return Input.touches;
         }

@@ -86,6 +86,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             , IOnPointerUpReciever
             , IOnPointerClickReciever
             , IOnPointerEnterReciever
+            , IOnPointerStationaryReciever
             , IOnPointerExitReciever
             , IOnPointerBeginDragReciever
             , IOnPointerDragReciever
@@ -114,9 +115,9 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             public void OnPointerDrop(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
             public void OnPointerEndDrag(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
             public void OnPointerEnter(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
+            public void OnPointerStationary(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
             public void OnPointerExit(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
             public void OnPointerUp(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-
         }
 
         class TestOnPointerEventViewObj : MonoBehaviourViewObject
@@ -569,6 +570,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 input.RecordedTouchCount = 0;
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
+            Debug.Log("start Multi Touch Test");
             {//Multiple Touch part
                 input.RecordedMultiTouchEnabled = true;
 
@@ -721,6 +723,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 input.RecordedTouchCount = 0;
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
+            Debug.Log("start Multi Touch Test");
             {//Multiple Touch part
                 input.RecordedMultiTouchEnabled = true;
 
@@ -886,6 +889,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
+            Debug.Log("start Multi Touch Test");
             {//Multiple Touch part
                 input.RecordedMultiTouchEnabled = true;
 
@@ -928,22 +932,502 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         [UnityTest]
         public IEnumerator OnPointerEnterPasses()
         {
+            string canvasViewID = "canvas";
+            #region Construct Enviroment
+            var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
+            mainCamera.tag = "MainCamera";
+
+            var viewCreator = new UnityViewInstanceCreator()
+                .AddUnityViewObjects()
+                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
+            ;
+            var screenOverlayBinder = new ModelViewBinder("*", null
+                , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
+                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
+                    {
+                        RenderMode = RenderMode.ScreenSpaceOverlay
+                    })
+                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayout("offsetMin", Vector2.zero)
+                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerEnter,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                );
+            var binderMap = new ModelViewBinderMap(viewCreator
+                , screenOverlayBinder
+            )
+            {
+                UseEventDispatcherMap = new EventDispatcherMap(
+                    new PointerEventDispatcher()
+                )
+            };
+            var root = new CheckOnPointerEventModel() { Name = "Root" };
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.RootModel = root;
+            #endregion
+
             yield return null;
-            throw new System.NotImplementedException();
+
+            var input = ReplayableInput.Instance;
+            input.IsReplaying = true;
+            input.RecordedMousePresent = true;
+            input.RecordedTouchSupported = true;
+            input.RecordedMultiTouchEnabled = false;
+
+            var screenCenterPos = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
+            input.RecordedMousePos = screenCenterPos;
+
+            Debug.Log("start Mouse test");
+            {//Mouse
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Mouse, root.EventData.PointerType);
+                Assert.AreEqual(-1, root.EventData.FingerID);
+                Assert.AreEqual(input.MousePos, root.EventData.PointerPos);
+                Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
+
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch test");
+            {//Touch
+                var t = new Touch()
+                {
+                    fingerId = 0,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 1;
+                input.SetRecordedTouch(0, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+                Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch Test2");
+            {//Touch part2(Multiple touch)
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, new Touch()
+                {
+                    fingerId = 0,
+                    position = new Vector2(-100, -100), // <- touch out in screen
+                    phase = TouchPhase.Began,
+                });
+                input.SetRecordedTouch(1, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+                Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Multi Touch Test");
+            {//Multiple Touch part
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, t);
+                input.SetRecordedTouch(1, new Touch()
+                {
+                    fingerId = 0,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                });
+
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+                Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
         }
 
         [UnityTest]
         public IEnumerator OnPointerStatinaryPasses()
         {
+            string canvasViewID = "canvas";
+            #region Construct Enviroment
+            var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
+            mainCamera.tag = "MainCamera";
+
+            var viewCreator = new UnityViewInstanceCreator()
+                .AddUnityViewObjects()
+                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
+            ;
+            var screenOverlayBinder = new ModelViewBinder("*", null
+                , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
+                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
+                    {
+                        RenderMode = RenderMode.ScreenSpaceOverlay
+                    })
+                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayout("offsetMin", Vector2.zero)
+                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerStationary,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                );
+            var binderMap = new ModelViewBinderMap(viewCreator
+                , screenOverlayBinder
+            )
+            {
+                UseEventDispatcherMap = new EventDispatcherMap(
+                    new PointerEventDispatcher()
+                )
+            };
+            var root = new CheckOnPointerEventModel() { Name = "Root" };
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.RootModel = root;
+            #endregion
+
             yield return null;
-            throw new System.NotImplementedException();
+
+            var input = ReplayableInput.Instance;
+            input.IsReplaying = true;
+            input.RecordedMousePresent = true;
+            input.RecordedTouchSupported = true;
+            input.RecordedMultiTouchEnabled = false;
+
+            var screenCenterPos = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
+            input.RecordedMousePos = screenCenterPos;
+
+            Debug.Log("start Mouse test");
+            {//Mouse
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Mouse, root.EventData.PointerType);
+                Assert.AreEqual(-1, root.EventData.FingerID);
+                Assert.AreEqual(input.MousePos, root.EventData.PointerPos);
+
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch test");
+            {//Touch
+                var t = new Touch()
+                {
+                    fingerId = 0,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 1;
+                input.SetRecordedTouch(0, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = TouchPhase.Moved;
+                input.SetRecordedTouch(0, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch Test2");
+            {//Touch part2(Multiple touch)
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, new Touch()
+                {
+                    fingerId = 0,
+                    position = new Vector2(-100, -100), // <- touch out in screen
+                    phase = TouchPhase.Began,
+                });
+                input.SetRecordedTouch(1, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = TouchPhase.Stationary;
+                input.SetRecordedTouch(1, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Multi Touch Test");
+            {//Multiple Touch part
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                var t2 = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos + Vector3.one * 10f,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, t);
+                input.SetRecordedTouch(1, t2);
+
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = t2.phase = TouchPhase.Moved;
+                input.SetRecordedTouch(0, t); // <- こちらが使用される
+                input.SetRecordedTouch(1, t2);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
         }
 
         [UnityTest]
         public IEnumerator OnPointerExitPasses()
         {
+            string canvasViewID = "canvas";
+            #region Construct Enviroment
+            var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
+            mainCamera.tag = "MainCamera";
+
+            var viewCreator = new UnityViewInstanceCreator()
+                .AddUnityViewObjects()
+                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
+            ;
+            var screenOverlayBinder = new ModelViewBinder("*", null
+                , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
+                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
+                    {
+                        RenderMode = RenderMode.ScreenSpaceOverlay
+                    })
+                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayout("offsetMin", Vector2.zero)
+                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerExit,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                );
+            var binderMap = new ModelViewBinderMap(viewCreator
+                , screenOverlayBinder
+            )
+            {
+                UseEventDispatcherMap = new EventDispatcherMap(
+                    new PointerEventDispatcher()
+                )
+            };
+            var root = new CheckOnPointerEventModel() { Name = "Root" };
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.RootModel = root;
+            #endregion
+
             yield return null;
-            throw new System.NotImplementedException();
+
+            var input = ReplayableInput.Instance;
+            input.IsReplaying = true;
+            input.RecordedMousePresent = true;
+            input.RecordedTouchSupported = true;
+            input.RecordedMultiTouchEnabled = false;
+
+            var screenCenterPos = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
+            input.RecordedMousePos = screenCenterPos;
+
+            Debug.Log("start Mouse test");
+            {//Mouse
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                input.RecordedMousePos = screenCenterPos + Vector3.one * -100000f;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Mouse, root.EventData.PointerType);
+                Assert.AreEqual(-1, root.EventData.FingerID);
+                Assert.AreEqual(input.MousePos, root.EventData.PointerPos);
+
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch test");
+            {//Touch
+                var t = new Touch()
+                {
+                    fingerId = 0,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 1;
+                input.SetRecordedTouch(0, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = TouchPhase.Ended;
+                input.SetRecordedTouch(0, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Touch Test2");
+            {//Touch part2(Multiple touch)
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, new Touch()
+                {
+                    fingerId = 0,
+                    position = new Vector2(-100, -100), // <- touch out in screen
+                    phase = TouchPhase.Began,
+                });
+                input.SetRecordedTouch(1, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = TouchPhase.Ended;
+                input.SetRecordedTouch(1, t);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
+            Debug.Log("start Multi Touch Test");
+            {//Multiple Touch part
+                input.RecordedMultiTouchEnabled = true;
+
+                var t = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos,
+                    phase = TouchPhase.Began,
+                };
+                var t2 = new Touch()
+                {
+                    fingerId = 1,
+                    position = screenCenterPos + Vector3.one * 10f,
+                    phase = TouchPhase.Began,
+                };
+                input.RecordedTouchSupported = true;
+                input.RecordedTouchCount = 2;
+                input.SetRecordedTouch(0, t);
+                input.SetRecordedTouch(1, t2);
+
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+                t.phase = t2.phase = TouchPhase.Ended;
+                input.SetRecordedTouch(0, t); // <- こちらが使用される
+                input.SetRecordedTouch(1, t2);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual(PointerType.Touch, root.EventData.PointerType);
+                Assert.AreEqual(t.fingerId, root.EventData.FingerID);
+                Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
+
+                input.RecordedTouchCount = 0;
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                root.Reset();
+            }
         }
 
         [UnityTest]
