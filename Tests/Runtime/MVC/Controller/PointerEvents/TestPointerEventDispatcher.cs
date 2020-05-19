@@ -55,7 +55,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             input.IsReplaying = true;
 
             var pointerEventDispatcher = new PointerEventDispatcher();
-            Assert.IsFalse(pointerEventDispatcher.DoEnabled);
+            Assert.IsFalse(pointerEventDispatcher.DoEnabled, "ReplayableInput#MousePresentまたはReplayableInput#TouchSupportedがtrue出ない時はfalseを返すようにしてください");
 
             var testData = new (bool result, bool mousePresent, bool touchSupported)[]
             {
