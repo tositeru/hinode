@@ -187,6 +187,8 @@ namespace Hinode
                 Keyword = keyword;
                 SenderType = senderType;
                 RecieverType = recieverType;
+
+                //TODO Validate Reciever, Sender and Keyword with Attribute
             }
         }
 

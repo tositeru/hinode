@@ -27,11 +27,11 @@ namespace Hinode.Tests.MVC.Controller.Pointer
 
             var checkList = new (PointerEventName, System.Type senderType, System.Type recieverType)[]
             {
-                (PointerEventName.onPointerDown, typeof(IOnPointerDownSender), typeof(IOnPointerDropReciever)),
+                (PointerEventName.onPointerDown, typeof(IOnPointerDownSender), typeof(IOnPointerDownReciever)),
                 (PointerEventName.onPointerUp, typeof(IOnPointerUpSender), typeof(IOnPointerUpReciever)),
                 (PointerEventName.onPointerClick, typeof(IOnPointerClickSender), typeof(IOnPointerClickReciever)),
                 (PointerEventName.onPointerEnter, typeof(IOnPointerEnterSender), typeof(IOnPointerEnterReciever)),
-                (PointerEventName.onPointerStationary, typeof(IOnPointerStationarySender), typeof(IOnPointerStationaryReciever)),
+                (PointerEventName.onPointerInArea, typeof(IOnPointerInAreaSender), typeof(IOnPointerInAreaReciever)),
                 (PointerEventName.onPointerExit, typeof(IOnPointerExitSender), typeof(IOnPointerExitReciever)),
                 (PointerEventName.onPointerBeginDrag, typeof(IOnPointerBeginDragSender), typeof(IOnPointerBeginDragReciever)),
                 (PointerEventName.onPointerDrag, typeof(IOnPointerDragSender), typeof(IOnPointerDragReciever)),
@@ -64,14 +64,14 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 (true, false, true),
                 (false, false, false)
             };
-            foreach(var (result, mousePresent, touchSupported) in testData)
+            foreach (var (result, mousePresent, touchSupported) in testData)
             {
                 var errorMessage = $"Fail When (mousePresent,touchSupported)=({mousePresent}, {touchSupported})...";
                 input.RecordedMousePresent = mousePresent;
                 input.RecordedTouchSupported = touchSupported;
 
                 pointerEventDispatcher.DoEnabled = true;
-                if(result)
+                if (result)
                     Assert.IsTrue(pointerEventDispatcher.DoEnabled, errorMessage);
                 else
                     Assert.IsFalse(pointerEventDispatcher.DoEnabled, errorMessage);
@@ -86,38 +86,52 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             , IOnPointerUpReciever
             , IOnPointerClickReciever
             , IOnPointerEnterReciever
-            , IOnPointerStationaryReciever
+            , IOnPointerInAreaReciever
             , IOnPointerExitReciever
             , IOnPointerBeginDragReciever
             , IOnPointerDragReciever
             , IOnPointerEndDragReciever
             , IOnPointerDropReciever
         {
+            public int RecievedEventNameValue { get; set; } = -1;
             public Model SenderModel { get; set; }
-            public OnPointerEventData EventData { get; set; }
+            public IOnPointerEventData EventData { get; set; }
+
+            public Model DropSenderModel { get; set; }
+            public IOnPointerEventData DropEventData { get; set; }
 
             public void Reset()
             {
+                RecievedEventNameValue = -1;
                 SenderModel = null;
                 EventData = null;
+
+                DropSenderModel = null;
+                DropEventData = null;
             }
 
-            void Set(Model sender, OnPointerEventData eventData)
+            void Set(PointerEventName recievedEventName, Model sender, IOnPointerEventData eventData)
             {
+                RecievedEventNameValue = (int)recievedEventName;
                 SenderModel = sender;
                 EventData = eventData;
             }
 
-            public void OnPointerBeginDrag(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerClick(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerDown(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerDrag(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerDrop(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerEndDrag(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerEnter(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerStationary(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerExit(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
-            public void OnPointerUp(Model sender, OnPointerEventData eventData) => Set(sender, eventData);
+            public void OnPointerBeginDrag(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerBeginDrag, sender, eventData);
+            public void OnPointerClick(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerClick, sender, eventData);
+            public void OnPointerDown(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerDown, sender, eventData);
+            public void OnPointerDrag(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerDrag, sender, eventData);
+            public void OnPointerEndDrag(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerEndDrag, sender, eventData);
+            public void OnPointerEnter(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerEnter, sender, eventData);
+            public void OnPointerInArea(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerInArea, sender, eventData);
+            public void OnPointerExit(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerExit, sender, eventData);
+            public void OnPointerUp(Model sender, IOnPointerEventData eventData) => Set(PointerEventName.onPointerUp, sender, eventData);
+
+            public void OnPointerDrop(Model sender, IOnPointerEventData eventData)
+            {
+                DropSenderModel = sender;
+                DropEventData = eventData;
+            }
         }
 
         class TestOnPointerEventViewObj : MonoBehaviourViewObject
@@ -132,11 +146,13 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             #region Initial Enviroment
 
             var viewInstanceCreator = new UnityViewInstanceCreator()
-                .AddPredicate(typeof(TestOnPointerEventViewObj), () => {
+                .AddPredicate(typeof(TestOnPointerEventViewObj), () =>
+                {
                     var obj = new GameObject("__onPointerEventViewObj");
                     return obj.AddComponent<TestOnPointerEventViewObj>();
                 }, new EmptyModelViewParamBinder())
-                .AddPredicate(typeof(EmptyViewObject), () => {
+                .AddPredicate(typeof(EmptyViewObject), () =>
+                {
                     return new EmptyViewObject();
                 }, new EmptyModelViewParamBinder())
             ;
@@ -192,7 +208,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         {
             public Model SenderModel { get; set; }
 
-            public void OnPointerDown(Model sender, OnPointerEventData eventData)
+            public void OnPointerDown(Model sender, IOnPointerEventData eventData)
             {
                 SenderModel = sender;
             }
@@ -239,13 +255,14 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "") 
+                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
                     ))
                 );
 
             var screenOverlayBinder = new ModelViewBinder(screenOverlayQuery, null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
-                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder() {
+                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
+                    {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
                     .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
@@ -477,7 +494,8 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
                 , screenOverlayBinder
-            ) {
+            )
+            {
                 UseEventDispatcherMap = new EventDispatcherMap(
                     new PointerEventDispatcher()
                 )
@@ -506,6 +524,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
 
                 Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual((int)PointerEventName.onPointerDown, root.RecievedEventNameValue);
                 Assert.AreEqual(PointerType.Mouse, root.EventData.PointerType);
                 Assert.AreEqual(-1, root.EventData.FingerID);
                 Assert.AreEqual(input.MousePos, root.EventData.PointerPos);
@@ -1109,7 +1128,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerStationary,
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerInArea,
                         new RecieverSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
@@ -1431,32 +1450,118 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         }
 
         [UnityTest]
-        public IEnumerator OnPointerBeginDragPasses()
+        public IEnumerator DragPasses()
         {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            string canvasViewID = "canvas";
+            #region Construct Enviroment
+            var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
+            mainCamera.tag = "MainCamera";
 
-        [UnityTest]
-        public IEnumerator OnPointerDragPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            var viewCreator = new UnityViewInstanceCreator()
+                .AddUnityViewObjects()
+                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
+            ;
+            var screenOverlayBinder = new ModelViewBinder("*", null
+                , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
+                    .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
+                    {
+                        RenderMode = RenderMode.ScreenSpaceOverlay
+                    })
+                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayout("offsetMin", Vector2.zero)
+                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerBeginDrag,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDrag,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerEndDrag,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDrop,
+                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                    ))
+                );
+            var binderMap = new ModelViewBinderMap(viewCreator
+                , screenOverlayBinder
+            )
+            {
+                UseEventDispatcherMap = new EventDispatcherMap(
+                    new PointerEventDispatcher()
+                )
+            };
+            var root = new CheckOnPointerEventModel() { Name = "Root" };
 
-        [UnityTest]
-        public IEnumerator OnPointerEndDragPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.RootModel = root;
+            #endregion
 
-        [UnityTest]
-        public IEnumerator OnPointerDropPasses()
-        {
             yield return null;
-            throw new System.NotImplementedException();
-        }
 
+            var input = ReplayableInput.Instance;
+            input.IsReplaying = true;
+            input.RecordedMousePresent = true;
+            input.RecordedTouchSupported = true;
+            input.RecordedMultiTouchEnabled = false;
+
+            var beginPos = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
+            var endPos = new Vector3(Screen.width, Screen.height / 2f, 0f);
+            input.RecordedMousePos = beginPos;
+            input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+            binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+
+            Debug.Log("test BeginDrag");
+            {//BeginDrag
+
+                input.RecordedMousePos = Vector3.Lerp(beginPos, endPos, 0.25f);
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap); // occur BeginDrag
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual((int)PointerEventName.onPointerBeginDrag, root.RecievedEventNameValue);
+                Assert.IsTrue(root.EventData.IsDrag);
+                Assert.IsFalse(root.EventData.IsStationary);
+                Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
+                root.Reset();
+            }
+            {//Drag
+                for (float t=0.5f; t < 1f; t += 0.1f)
+                {
+                    Debug.Log("test Drag");
+                    input.RecordedMousePos = Vector3.Lerp(beginPos, endPos, t);
+                    input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+
+                    binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                    binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap); // occur Drag
+
+                    Assert.AreSame(root, root.SenderModel);
+                    Assert.AreEqual((int)PointerEventName.onPointerDrag, root.RecievedEventNameValue);
+                    Assert.IsTrue(root.EventData.IsDrag);
+                    Assert.IsFalse(root.EventData.IsStationary);
+
+                    root.Reset();
+                }
+            }
+            Debug.Log("test EndDrag and Drop");
+            {//EndDrag and Drop
+                input.RecordedMousePos = endPos;
+                input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Up);
+
+                binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
+                binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap); // occur EndDrag and Drop
+
+                Assert.AreSame(root, root.SenderModel);
+                Assert.AreEqual((int)PointerEventName.onPointerEndDrag, root.RecievedEventNameValue);
+                Assert.IsTrue(root.EventData.IsDrag);
+
+                Assert.AreSame(root, root.DropSenderModel);
+                Assert.IsTrue(root.DropEventData.IsDrag);
+
+                root.Reset();
+            }
+        }
     }
 }

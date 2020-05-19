@@ -10,7 +10,7 @@ namespace Hinode
     {
         onPointerDown,
         onPointerEnter,
-        onPointerStationary,
+        onPointerInArea,
         onPointerExit,
         onPointerUp,
         onPointerClick,
@@ -40,6 +40,10 @@ namespace Hinode
                 ControllerInfo = controllerInfo;
                 ControllerObj = controllerObj;
             }
+
+            public bool HasSameModelView(SupportedModelInfo other)
+                => Model == other.Model
+                && ViewObj == other.ViewObj;
 
             #region IEnumerable<SupportedModelInfo> interface
             public bool Equals(SupportedModelInfo other)
@@ -78,8 +82,17 @@ namespace Hinode
         /// <summary>
         /// 
         /// </summary>
-        class OnPointerEventDataBase : OnPointerEventData
+        abstract class OnPointerEventDataBase : IOnPointerEventData
         {
+            public virtual InputDefines.ButtonCondition ButtonCondition { get; }
+            protected abstract void UpdatePointerPos();
+
+            #region IOnPointerEventData interface
+            public abstract PointerType PointerType { get; }
+            public abstract Vector3 PointerPos { get; }
+            public abstract int FingerID { get; }
+            #endregion
+
             HashSet<SupportedModelInfo> _enterAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _stationaryAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _exitAreaObjects = new HashSet<SupportedModelInfo>();
@@ -90,11 +103,100 @@ namespace Hinode
             public IEnumerable<SupportedModelInfo> InAreaObjects { get => _enterAreaObjects.Concat(_stationaryAreaObjects); }
             public IEnumerable<SupportedModelInfo> AllObjects { get => InAreaObjects.Concat(ExitAreaObjects); }
 
-            public virtual InputDefines.ButtonCondition ButtonCondition { get; }
+            #region IOnPointerEventData interface
+            public Vector3 PointerPrevPos { get; private set; }
 
-            protected OnPointerEventDataBase(PointerType pointerType, PointerEventDispatcher dispatcher)
-                : base(pointerType, dispatcher)
-            { }
+            public IViewObject PointerDownViewObject { get; private set; }
+            public int PressFrame { get; private set; }
+            public float PressSeconds { get; private set; }
+
+            public bool IsStationary { get; private set; }
+            public float StationarySeconds { get; private set; }
+            public int StationaryFrame { get; private set; }
+
+            public bool IsDrag { get; protected set; }
+            public float DragSeconds { get; private set; }
+            public int DragFrame { get; private set; }
+
+            public PointerEventDispatcher Dispatcher { get; }
+            public ReplayableInput Input { get => ReplayableInput.Instance; }
+            #endregion
+
+            protected OnPointerEventDataBase(PointerEventDispatcher dispatcher)
+            {
+                Dispatcher = dispatcher;
+
+                UpdatePointerPos();
+                PointerPrevPos = PointerPos;
+            }
+
+            public void Update()
+            {
+                PointerPrevPos = PointerPos;
+                UpdatePointerPos();
+
+                UpdatePressTime();
+                UpdateStationary();
+                UpdateDrag();
+            }
+
+
+            void UpdatePressTime()
+            {
+                switch (ButtonCondition)
+                {
+                    case InputDefines.ButtonCondition.Down:
+                    case InputDefines.ButtonCondition.Free:
+                        PressSeconds = 0f;
+                        PressFrame = 0;
+                        break;
+                    case InputDefines.ButtonCondition.Up:
+                    case InputDefines.ButtonCondition.Push:
+                        PressSeconds += Time.deltaTime;
+                        PressFrame++;
+                        break;
+                }
+            }
+
+            void UpdateStationary()
+            {
+                if (IsStationary)
+                {
+                    StationaryFrame++;
+                    StationarySeconds = Time.deltaTime;
+                }
+                else
+                {
+                    StationaryFrame = 0;
+                    StationarySeconds = 0f;
+                }
+                IsStationary = (PointerPos == PointerPrevPos);
+            }
+
+            void UpdateDrag()
+            {
+                if (PointerDownViewObject == null)
+                {
+                    IsDrag = false;
+                    DragFrame = 0;
+                    DragSeconds = 0;
+                    return;
+                }
+
+                if (IsDrag)
+                {
+                    DragFrame++;
+                    DragSeconds += Time.deltaTime;
+                }
+                else if(PointerDownViewObject.UseBindInfo != null)
+                {
+                    var bindInfo = PointerDownViewObject.UseBindInfo;
+                    var isDraggable = bindInfo.Controllers.ContainsKey(PointerEventName.onPointerBeginDrag.ToString())
+                        || bindInfo.Controllers.ContainsKey(PointerEventName.onPointerDrag.ToString())
+                        || bindInfo.Controllers.ContainsKey(PointerEventName.onPointerEndDrag.ToString());
+                    IsDrag = !IsStationary && isDraggable;
+                }
+            }
 
             public void UpdateInAreaObjects(Camera useCamera, IEnumerable<SupportedModelInfo> infos)
             {
@@ -134,13 +236,18 @@ namespace Hinode
                 }
                 _stationaryAreaObjects.RemoveWhere(_i => !currentInAreaObjs.Contains(_i, SupportedModelInfoEquality.DefaultInstance));
 
-                if(ButtonCondition == InputDefines.ButtonCondition.Down)
+                switch(ButtonCondition)
                 {
-                    var topModelInfo = GetTopModelInfoInArea();
-                    PointerDownViewObject = topModelInfo?.ViewObj ?? null;
+                    case InputDefines.ButtonCondition.Down:
+                        var topModelInfo = GetTopModelInfoInArea();
+                        PointerDownViewObject = topModelInfo?.ViewObj ?? null;
+                        break;
+                    case InputDefines.ButtonCondition.Free:
+                        PointerDownViewObject = null;
+                        break;
                 }
 
-                Logger.Log(Logger.Priority.Debug, () => $"debug -- PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID} AreaObject count(enter={EnterAreaObjects.Count}, stationary={StationaryAreaObjects.Count}, exit={_exitAreaObjects.Count})");
+                Logger.Log(Logger.Priority.Debug, () => $"debug -- PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID}:{ButtonCondition} AreaObject count(enter={EnterAreaObjects.Count}, stationary={StationaryAreaObjects.Count}, exit={_exitAreaObjects.Count})");
             }
 
             public bool DoMatchControllerInfo(SupportedModelInfo supportedModelInfo)
@@ -167,9 +274,31 @@ namespace Hinode
                                 && ExitAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance))
                             || (ButtonCondition == InputDefines.ButtonCondition.Up
                                 && AllObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance));
-                    case PointerEventName.onPointerStationary:
+                    case PointerEventName.onPointerInArea:
                         return ButtonCondition == InputDefines.ButtonCondition.Push
                             && StationaryAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
+                    case PointerEventName.onPointerBeginDrag:
+                        return IsDrag
+                            && ButtonCondition == InputDefines.ButtonCondition.Push
+                            && DragFrame == 0
+                            && PointerDownViewObject == supportedModelInfo.ViewObj;
+                    case PointerEventName.onPointerDrag:
+                        return IsDrag
+                            && ButtonCondition == InputDefines.ButtonCondition.Push
+                            && DragFrame > 0
+                            && !IsStationary
+                            && PointerDownViewObject == supportedModelInfo.ViewObj;
+                    case PointerEventName.onPointerEndDrag:
+                        return IsDrag
+                            && ButtonCondition == InputDefines.ButtonCondition.Up
+                            && PointerDownViewObject == supportedModelInfo.ViewObj;
+                    case PointerEventName.onPointerDrop:
+                        {
+                            var topModelInfo = GetTopModelInfoInArea();
+                            return IsDrag
+                                && ButtonCondition == InputDefines.ButtonCondition.Up
+                                && supportedModelInfo.HasSameModelView(topModelInfo);
+                        }
                     default:
                         throw new System.NotImplementedException();
                 }
@@ -184,60 +313,56 @@ namespace Hinode
 
         class MousePointerEventData : OnPointerEventDataBase
         {
+            Vector3 _pointerPos;
+            #region override OnPointerEventDataBase
+            public override PointerType PointerType { get => PointerType.Mouse; }
+            public override Vector3 PointerPos { get => _pointerPos; }
+            public override int FingerID { get => -1; }
             public override InputDefines.ButtonCondition ButtonCondition { get => Input.GetMouseButton(InputDefines.MouseButton.Left); }
 
-            public MousePointerEventData(PointerEventDispatcher dispatcher)
-                : base(PointerType.Mouse, dispatcher)
-            { }
-
-            public void Update()
+            protected override void UpdatePointerPos()
             {
-                PointerPos = Input.MousePos;
+                _pointerPos = Input.MousePos;
             }
+            #endregion
+
+            public MousePointerEventData(PointerEventDispatcher dispatcher)
+                : base(dispatcher)
+            { }
         }
 
         class TouchPointerEventData : OnPointerEventDataBase
         {
+            Vector3 _pointerPos;
+
             public bool IsAlive { get => TouchIndex < Input.TouchCount && FingerID == Touch.fingerId; }
             public int TouchIndex { get; }
             public Touch Touch { get => Input.GetTouch(TouchIndex); }
+
+            #region override OnPointerEventDataBase
+            public override PointerType PointerType { get => PointerType.Touch; }
+            public override Vector3 PointerPos { get => _pointerPos; }
+            public override int FingerID { get; }
             public override InputDefines.ButtonCondition ButtonCondition { get => InputDefines.ToButtonCondition(Touch); }
 
+            protected override void UpdatePointerPos()
+            {
+                _pointerPos = Touch.position;
+            }
+            #endregion
+
             public TouchPointerEventData(int index, PointerEventDispatcher dispatcher)
-                : base(PointerType.Touch, dispatcher)
+                : base(dispatcher)
             {
                 TouchIndex = index;
                 FingerID = Touch.fingerId;
             }
-
-            public bool Update()
-            {
-                if (!IsAlive) return false;
-
-                PointerPos = Touch.position;
-                return true;
-            }
-        }
-
-        class ModelPointerInfo
-        {
-            public OnPointerEventData OnPointerDown { get; set; }
-            public OnPointerEventData OnPointerUp { get; set; }
-            public OnPointerEventData OnPointerClick { get; set; }
-            public OnPointerEventData OnPointerEnter { get; set; }
-            public OnPointerEventData OnPointerExit { get; set; }
-            public OnPointerEventData OnPointerBeginDrag { get; set; }
-            public OnPointerEventData OnPointerDrag { get; set; }
-            public OnPointerEventData OnPointerEndDrag { get; set; }
-            public OnPointerEventData OnPointerDrop { get; set; }
         }
 
         MousePointerEventData _mousePointerEventData;
         List<TouchPointerEventData> _touchPointerEventDatas = new List<TouchPointerEventData>();
-
-        Dictionary<(Model, IViewObject), ModelPointerInfo> _eventDatas = new Dictionary<(Model, IViewObject), ModelPointerInfo>();
-
         Camera _useCamera;
+
         public Camera UseCamera
         {
             get => _useCamera;
@@ -320,11 +445,11 @@ namespace Hinode
         
         protected override EventInfoManager CreateEventInfoManager()
             => new EventInfoManager(
-                    EventInfoManager.Info.Create<IOnPointerDownSender, IOnPointerDropReciever>(PointerEventName.onPointerDown),
+                    EventInfoManager.Info.Create<IOnPointerDownSender, IOnPointerDownReciever>(PointerEventName.onPointerDown),
                     EventInfoManager.Info.Create<IOnPointerUpSender, IOnPointerUpReciever>(PointerEventName.onPointerUp),
                     EventInfoManager.Info.Create<IOnPointerClickSender, IOnPointerClickReciever>(PointerEventName.onPointerClick),
                     EventInfoManager.Info.Create<IOnPointerEnterSender, IOnPointerEnterReciever>(PointerEventName.onPointerEnter),
-                    EventInfoManager.Info.Create<IOnPointerStationarySender, IOnPointerStationaryReciever>(PointerEventName.onPointerStationary),
+                    EventInfoManager.Info.Create<IOnPointerInAreaSender, IOnPointerInAreaReciever>(PointerEventName.onPointerInArea),
                     EventInfoManager.Info.Create<IOnPointerExitSender, IOnPointerExitReciever>(PointerEventName.onPointerExit),
                     EventInfoManager.Info.Create<IOnPointerBeginDragSender, IOnPointerBeginDragReciever>(PointerEventName.onPointerBeginDrag),
                     EventInfoManager.Info.Create<IOnPointerDragSender, IOnPointerDragReciever>(PointerEventName.onPointerDrag),
@@ -352,24 +477,24 @@ namespace Hinode
             //    var pointerTypes = matchEventDatas.Select(_e => $"{_e.PointerType}:{_e.FingerID}").Aggregate("", (_s, _c) => _s + _c + "; ");
             //    return $"debug -- PointerEventDispacther -- GetEventData controllerKeyword={controllerInfo.Keyword} doMatch?=>{matchEventDatas.Count()}({pointerTypes}), model={model}, view={viewObject}";
             //});
-            var firstEventData = matchEventDatas.FirstOrDefault();
+            return matchEventDatas.FirstOrDefault();
 
-            switch((PointerEventName)System.Enum.Parse(typeof(PointerEventName), controllerInfo.Keyword))
-            {
-                case PointerEventName.onPointerDown:
-                case PointerEventName.onPointerUp:
-                case PointerEventName.onPointerClick:
-                case PointerEventName.onPointerEnter:
-                case PointerEventName.onPointerStationary:
-                case PointerEventName.onPointerExit:
-                    return firstEventData;
-                case PointerEventName.onPointerBeginDrag:
-                case PointerEventName.onPointerDrag:
-                case PointerEventName.onPointerEndDrag:
-                case PointerEventName.onPointerDrop:
-                default:
-                    throw new System.NotImplementedException();
-            }
+            //switch((PointerEventName)System.Enum.Parse(typeof(PointerEventName), controllerInfo.Keyword))
+            //{
+            //    case PointerEventName.onPointerDown:
+            //    case PointerEventName.onPointerUp:
+            //    case PointerEventName.onPointerClick:
+            //    case PointerEventName.onPointerEnter:
+            //    case PointerEventName.onPointerInArea:
+            //    case PointerEventName.onPointerExit:
+            //    case PointerEventName.onPointerBeginDrag:
+            //    case PointerEventName.onPointerDrag:
+            //    case PointerEventName.onPointerEndDrag:
+            //    case PointerEventName.onPointerDrop:
+            //        return firstEventData;
+            //    default:
+            //        throw new System.NotImplementedException();
+            //}
         }
         #endregion
 
@@ -383,41 +508,41 @@ namespace Hinode
             ControllerTypeManager.EntryPair<IOnPointerEndDragSender, IOnPointerEndDragReciever>();
             ControllerTypeManager.EntryPair<IOnPointerDropSender, IOnPointerDropReciever>();
             ControllerTypeManager.EntryPair<IOnPointerEnterSender, IOnPointerEnterReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerStationarySender, IOnPointerStationaryReciever>();
+            ControllerTypeManager.EntryPair<IOnPointerInAreaSender, IOnPointerInAreaReciever>();
             ControllerTypeManager.EntryPair<IOnPointerExitSender, IOnPointerExitReciever>();
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDownReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDownReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerDown(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerUpReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerUpReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerUp(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerClickReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerClickReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerClick(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerBeginDragReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerBeginDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerBeginDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDragReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEndDragReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEndDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerEndDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDropReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDropReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerDrop(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEnterReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEnterReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerEnter(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerStationaryReciever, OnPointerEventData>((reciever, sender, eventData) => {
-                reciever.OnPointerStationary(sender, eventData);
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerInAreaReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+                reciever.OnPointerInArea(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerExitReciever, OnPointerEventData>((reciever, sender, eventData) => {
+            ControllerTypeManager.EntryRecieverExecuter<IOnPointerExitReciever, IOnPointerEventData>((reciever, sender, eventData) => {
                 reciever.OnPointerExit(sender, eventData);
             });
 
