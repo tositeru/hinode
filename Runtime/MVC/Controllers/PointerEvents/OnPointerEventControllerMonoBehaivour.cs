@@ -63,6 +63,11 @@ namespace Hinode
                 throw new System.NotImplementedException("このクラスによって自動的に追加されるColliderとのレイキャストで判定する予定");
             }
         }
+
+        public void Destroy()
+        {
+            Destroy(this);
+        }
         #endregion
     }
 }

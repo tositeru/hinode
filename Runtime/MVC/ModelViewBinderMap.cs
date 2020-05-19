@@ -17,7 +17,6 @@ namespace Hinode
     {
         public IViewInstanceCreator ViewInstanceCreator { get; }
         public ViewLayouter UseViewLayouter { get; set; }
-        public ControllerMap UseControllerMap { get; set; }
         public EventDispatcherMap UseEventDispatcherMap { get; set; }
         public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
 
@@ -102,7 +101,6 @@ namespace Hinode
         public bool EnabledDelayOperation { get; set; } = false;
 
         public ModelViewBinderMap BinderMap { get; }
-        public ControllerMap UseControllerMap { get => BinderMap.UseControllerMap; }
         public EventDispatcherMap UseEventDispatcherMap { get => BinderMap.UseEventDispatcherMap; }
         public EventDispatchStateMap UseEventDispatchStateMap {get => BinderMap.UseEventDispatchStateMap; }
         public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Hinode;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -29,54 +30,38 @@ namespace Hinode.Tests.MVC.Controller
     {
     }
 
-    public class TestSenderInstance
-        : IControllerSenderInstance
-        , ITestSender
-        , ITest2Sender
+    public class TestEventDispatcher : IEventDispatcher
     {
         public static readonly string KEYWORD_ON_TEST = "onTest";
         public static readonly string KEYWORD_ON_TEST2 = "onTest2";
 
-        public static void SetControllerTypeSettings()
-        {
-            ControllerTypeManager.EntryPair<ITestSender, ITestReciever>();
-            ControllerTypeManager.EntryPair<ITest2Sender, ITest2Reciever>();
+        #region IEventDispatcher interface
+        public override bool DoEnabled { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
-            ControllerTypeManager.EntryRecieverExecuter<ITestReciever, int>((reciever, sender, eventData) => {
-                reciever.Test(sender, eventData);
-            });
-            ControllerTypeManager.EntryRecieverExecuter<ITest2Reciever, int>((reciever, sender, eventData) => {
-                reciever.Test2(sender, eventData);
-            });
+        public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
+        {
+            throw new System.NotImplementedException();
         }
 
-        #region IControllerSenderInstance
-        EnableSenderCollection _enabledSenders = new EnableSenderCollection();
-        SelectorListDictionary _selectorListDict = new SelectorListDictionary();
-        public IControllerSenderGroup UseSenderGroup { get; set; }
-        public EnableSenderCollection EnabledSenders { get => _enabledSenders; }
-        public SelectorListDictionary SelectorListDict { get => _selectorListDict; }
-
-        public void Destroy() { }
-        #endregion
-
-        #region IControllerSender
-        public Model Target { get; set; }
-        public IViewObject TargetViewObj { get; set; }
-        public ModelViewBinderInstanceMap UseBinderInstanceMap { get; set; }
-        #endregion
-
-        #region ITestSender
-        public void Send(int value)
+        public override bool IsCreatableControllerObject(Model model, IViewObject viewObject)
         {
-            this.Send<ITestSender>(Target, UseBinderInstanceMap, value);
+            throw new System.NotImplementedException();
         }
-        #endregion
 
-        #region ITest2Sender
-        public void Send2(int value)
+        protected override EventInfoManager CreateEventInfoManager()
+            => new EventInfoManager(
+                EventInfoManager.CreateInfo<ITestSender, ITestReciever>("onTest"),
+                EventInfoManager.CreateInfo<ITest2Sender, ITest2Reciever>("onTest2")
+            );
+
+        protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
         {
-            this.Send<ITest2Sender>(Target, UseBinderInstanceMap, value);
+            throw new System.NotImplementedException();
+        }
+
+        protected override void UpdateImpl(ModelViewBinderInstanceMap binderInstanceMap)
+        {
+            throw new System.NotImplementedException();
         }
         #endregion
     }

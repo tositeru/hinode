@@ -329,40 +329,6 @@ namespace Hinode
                 return view;
             }).ToList();
         }
-
-        public IReadOnlyCollection<IControllerSenderInstance> CreateControllerSenderInstances(IViewObject viewObj, Model model, ModelViewBinderInstanceMap binderInstanceMap)
-        {
-            Assert.IsTrue(DoMatch(model));
-            Assert.IsNotNull(binderInstanceMap);
-            Assert.IsNotNull(binderInstanceMap.UseControllerMap);
-
-            if (viewObj.UseBindInfo.Controllers == null
-                || viewObj.UseBindInfo.Controllers.Count <= 0)
-                return null;
-            var controllerMap = binderInstanceMap.UseControllerMap;
-            var senderInstanceHash = new HashSet<IControllerSenderInstance>();
-            foreach(var controllerInfo in viewObj.UseBindInfo.Controllers.Values
-                .Where(_c => controllerMap.ContainsSenderKeyword(_c.Keyword)))
-            {
-                var matchSender = senderInstanceHash
-                    .FirstOrDefault(_sender => _sender.UseSenderGroup.ContainsSenderKeyword(controllerInfo.Keyword));
-                if (matchSender == null)
-                {
-                    matchSender = controllerMap.CreateController(controllerInfo.Keyword, viewObj, model, binderInstanceMap);
-                    Assert.IsNotNull(matchSender);
-                    senderInstanceHash.Add(matchSender);
-                    Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateControllerSenderInstance: Create Controller Sender Instance!! Type=>({matchSender.GetType()})!!");
-                }
-
-                var senderType = matchSender.UseSenderGroup.GetSenderType(controllerInfo.Keyword);
-                if(!matchSender.DoEnableSender(senderType))
-                {
-                    matchSender.EnableSender(senderType);
-                }
-                matchSender.AddSelectors(senderType, controllerInfo.RecieverSelectors);
-            }
-            return senderInstanceHash.Count() <= 0 ? null : senderInstanceHash;
-        }
     }
 
     /// <summary>
@@ -372,7 +338,6 @@ namespace Hinode
     public class ModelViewBinderInstance : System.IDisposable
     {
         List<IViewObject> _viewObjects = new List<IViewObject>();
-        Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>> _controllerSenderInstances = new Dictionary<IViewObject, IReadOnlyCollection<IControllerSenderInstance>>();
         Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
 
         Dictionary<IViewObject, HashSet<IControllerObject>> _controllerObjectListDict = new Dictionary<IViewObject, HashSet<IControllerObject>>();
@@ -392,18 +357,6 @@ namespace Hinode
             foreach(var v in ViewObjects)
             {
                 v.UseBinderInstance = this;
-            }
-
-            if(binderInstanceMap != null && binderInstanceMap.UseControllerMap != null)
-            {
-                foreach(var view in ViewObjects)
-                {
-                    var senders = binder.CreateControllerSenderInstances(view, Model, binderInstanceMap);
-                    if(senders != null)
-                    {
-                        _controllerSenderInstances.Add(view, senders);
-                    }
-                }
             }
 
             if (binderInstanceMap != null && binderInstanceMap.UseEventDispatcherMap != null)
@@ -509,25 +462,6 @@ namespace Hinode
             return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
         }
 
-        public bool HasControllerSenders(IViewObject viewObject)
-        {
-            Assert.IsTrue(ViewObjects.Contains(viewObject));
-            return _controllerSenderInstances.ContainsKey(viewObject);
-        }
-
-        public IReadOnlyCollection<IControllerSenderInstance> GetControllerSenders(IViewObject viewObject)
-        {
-            Assert.IsTrue(ViewObjects.Contains(viewObject));
-            if(_controllerSenderInstances.ContainsKey(viewObject))
-            {
-                return _controllerSenderInstances[viewObject];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         #region IControllerObject
         public bool HasControllerObject(IViewObject viewObject, System.Type controllerObjectType)
         {
@@ -575,9 +509,9 @@ namespace Hinode
 
             foreach (var view in ViewObjects)
             {
-                if(_controllerSenderInstances.ContainsKey(view))
+                if(_controllerObjectListDict.ContainsKey(view))
                 {
-                    foreach(var sender in _controllerSenderInstances[view])
+                    foreach(var sender in _controllerObjectListDict[view])
                     {
                         sender.Destroy();
                     }

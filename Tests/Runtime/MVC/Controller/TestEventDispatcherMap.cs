@@ -59,6 +59,11 @@ namespace Hinode.Tests.MVC.Controller
             public TestEventName EventName { get; }
 
             public ControllerObj(TestEventName eventName) { EventName = eventName; }
+
+            #region IControllerObject
+            public void Destroy()
+            { }
+            #endregion
         }
 
         class AppleEventDispatcher : IEventDispatcher

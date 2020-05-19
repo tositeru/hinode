@@ -11,5 +11,6 @@ namespace Hinode
     /// </summary>
     public interface IControllerObject
     {
+        void Destroy();
     }
 }

@@ -17,58 +17,6 @@ namespace Hinode
 
         static ControllerTypeManager()
         {
-            //Entry Hinode's IControllerRecivers!!
-            EntryPair<__legacy.IOnPointerDownSender, __legacy.IOnPointerDownReciever>();
-            EntryPair<__legacy.IOnPointerUpSender, __legacy.IOnPointerUpReciever>();
-            EntryPair<__legacy.IOnPointerClickSender, __legacy.IOnPointerClickReciever>();
-            EntryPair<__legacy.IOnPointerBeginDragSender, __legacy.IOnPointerBeginDragReciever>();
-            EntryPair<__legacy.IOnPointerDragSender, __legacy.IOnPointerDragReciever>();
-            EntryPair<__legacy.IOnPointerEndDragSender, __legacy.IOnPointerEndDragReciever>();
-            EntryPair<__legacy.IOnPointerDropSender, __legacy.IOnPointerDropReciever>();
-            EntryPair<__legacy.IOnPointerEnterSender, __legacy.IOnPointerEnterReciever>();
-            EntryPair<__legacy.IOnPointerExitSender, __legacy.IOnPointerExitReciever>();
-
-            EntryRecieverExecuter<__legacy.IOnPointerDownReciever, __legacy.OnPointerDownEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerDown(sender, eventData);
-            });
-
-            EntryRecieverExecuter<__legacy.IOnPointerUpReciever, __legacy.OnPointerUpEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerUp(sender, eventData);
-            });
-
-            EntryRecieverExecuter<__legacy.IOnPointerClickReciever, __legacy.OnPointerClickEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerClick(sender, eventData);
-            });
-
-            EntryRecieverExecuter<__legacy.IOnPointerBeginDragReciever, __legacy.OnPointerBeginDragEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerBeginDrag(sender, eventData);
-            });
-            EntryRecieverExecuter<__legacy.IOnPointerDragReciever, __legacy.OnPointerDragEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerDrag(sender, eventData);
-            });
-            EntryRecieverExecuter<__legacy.IOnPointerEndDragReciever, __legacy.OnPointerEndDragEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerEndDrag(sender, eventData);
-            });
-            EntryRecieverExecuter<__legacy.IOnPointerDropReciever, __legacy.OnPointerDropEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerDrop(sender, eventData);
-            });
-
-            EntryRecieverExecuter<__legacy.IOnPointerEnterReciever, __legacy.OnPointerEnterEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerEnter(sender, eventData);
-            });
-            EntryRecieverExecuter<__legacy.IOnPointerExitReciever, __legacy.OnPointerExitEventData>((reciever, sender, eventData) =>
-            {
-                reciever.OnPointerExit(sender, eventData);
-            });
-
             MouseEventDispatcher.ConfigControllerType();
             PointerEventDispatcher.ConfigControllerType();
         }
