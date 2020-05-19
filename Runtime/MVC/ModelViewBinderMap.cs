@@ -19,6 +19,7 @@ namespace Hinode
         public ViewLayouter UseViewLayouter { get; set; }
         public ControllerMap UseControllerMap { get; set; }
         public EventDispatcherMap UseEventDispatcherMap { get; set; }
+        public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
 
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
@@ -103,6 +104,7 @@ namespace Hinode
         public ModelViewBinderMap BinderMap { get; }
         public ControllerMap UseControllerMap { get => BinderMap.UseControllerMap; }
         public EventDispatcherMap UseEventDispatcherMap { get => BinderMap.UseEventDispatcherMap; }
+        public EventDispatchStateMap UseEventDispatchStateMap {get => BinderMap.UseEventDispatchStateMap; }
         public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }
 
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances

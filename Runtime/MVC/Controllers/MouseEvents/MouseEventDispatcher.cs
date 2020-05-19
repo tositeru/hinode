@@ -93,10 +93,10 @@ namespace Hinode
             }
         }
 
-        protected override object GetEventData(string keyword, Model model, IViewObject viewObject)
+        protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
         {
-            Assert.IsTrue(EventInfos.ContainKeyword(keyword));
-            switch ((MouseEventName)System.Enum.Parse(typeof(MouseEventName), keyword))
+            Assert.IsTrue(EventInfos.ContainKeyword(controllerInfo.Keyword));
+            switch ((MouseEventName)System.Enum.Parse(typeof(MouseEventName), controllerInfo.Keyword))
             {
                 case MouseEventName.onMouseCursorMove: return _onMoveEventData;
                 case MouseEventName.onMouseLeftButton: return _onButtonEventDatas[(int)InputDefines.MouseButton.Left];

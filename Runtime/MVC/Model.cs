@@ -188,8 +188,8 @@ namespace Hinode
         void AddIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
-            foreach (var id in idList
-                .Where(_i => !list.Contains(_i) && _i != ""))
+            foreach (var id in TrimStart(idList, '#', '.')
+                .Where(_i => !list.Contains(_i)))
             {
                 list.Add(id);
                 doCallEvent = true;
@@ -200,14 +200,19 @@ namespace Hinode
         void RemoveIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
-            foreach (var id in idList
-                .Where(_i => list.Contains(_i) && _i != ""))
+            foreach (var id in TrimStart(idList, '#', '.')
+                .Where(_i => list.Contains(_i)))
             {
                 list.Remove(id);
                 doCallEvent = true;
             }
             if (doCallEvent) InvokeChangedIdentities(this);
         }
+
+        IEnumerable<string> TrimStart(IEnumerable<string> idList, params char[] charList)
+            => idList
+                .Where(_i => _i != null && _i != "")
+                .Select(_i => _i.TrimStart(charList));
 
         void InvokeChangedIdentities(Model model)
         {
@@ -397,10 +402,10 @@ namespace Hinode
                     switch (term[0])
                     {
                         case QUERY_LOGICAL_PREFIX_CHAR:
-                            doMatch &= LogicalID.Any(_id => term.Contains(_id));
+                            doMatch &= LogicalID.Any(_id => (_id.Length + 1) == term.Length && 1 == term.IndexOf(_id));
                             break;
                         case QUERY_STYLE_PREFIX_CHAR:
-                            doMatch &= StylingID.Any(_id => term.Contains(_id));
+                            doMatch &= StylingID.Any(_id => (_id.Length + 1) == term.Length && 1 == term.IndexOf(_id));
                             break;
                         default:
                             doMatch &= Name == term;

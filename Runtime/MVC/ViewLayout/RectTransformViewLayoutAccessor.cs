@@ -98,14 +98,14 @@ namespace Hinode
         public static ViewLayouter AddRectTransformKeywordsAndAutoCreator(this ViewLayouter target)
         {
             var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "anchorX", new RectTransformAnchorXViewLayoutAccessor() },
-                { "anchorY", new RectTransformAnchorYViewLayoutAccessor()},
-                { "anchorMin", new RectTransformAnchorMinViewLayoutAccessor()},
-                { "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor()},
-                { "pivot", new RectTransformPivotViewLayoutAccessor()},
-                { "size", new RectTransformSizeViewLayoutAccessor()},
-                { "offsetMin", new RectTransformOffsetMinViewLayoutAccessor() },
-                { "offsetMax", new RectTransformOffsetMaxViewLayoutAccessor() },
+                { RectTransformViewLayoutName.anchorX.ToString(), new RectTransformAnchorXViewLayoutAccessor() },
+                { RectTransformViewLayoutName.anchorY.ToString(), new RectTransformAnchorYViewLayoutAccessor()},
+                { RectTransformViewLayoutName.anchorMin.ToString(), new RectTransformAnchorMinViewLayoutAccessor()},
+                { RectTransformViewLayoutName.anchorMax.ToString(), new RectTransformAnchorMaxViewLayoutAccessor()},
+                { RectTransformViewLayoutName.pivot.ToString(), new RectTransformPivotViewLayoutAccessor()},
+                { RectTransformViewLayoutName.size.ToString(), new RectTransformSizeViewLayoutAccessor()},
+                { RectTransformViewLayoutName.offsetMin.ToString(), new RectTransformOffsetMinViewLayoutAccessor() },
+                { RectTransformViewLayoutName.offsetMax.ToString(), new RectTransformOffsetMaxViewLayoutAccessor() },
             };
             target.AddKeywords(
                 keywords.Select(_t => (_t.Key, _t.Value))

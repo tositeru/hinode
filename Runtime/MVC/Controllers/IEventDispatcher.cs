@@ -44,6 +44,29 @@ namespace Hinode
         protected abstract EventInfoManager CreateEventInfoManager();
 
         /// <summary>
+        /// イベント対象のControllerInfoを持つModel,IViewObjectを取得する
+        /// 
+        /// </summary>
+        /// <param name="binderInstanceMap"></param>
+        /// <returns></returns>
+        protected virtual IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetSupportedControllerInfos(ModelViewBinderInstanceMap binderInstanceMap)
+        {
+            var dispatchStateMap = binderInstanceMap.UseEventDispatchStateMap;
+            return binderInstanceMap.BindInstances.Values
+                .SelectMany(_b => _b.GetControllerInfos())
+                .Where(_c =>
+                    EventInfos.ContainKeyword(_c.controllerInfo.Keyword)
+                    && EventInfos.DoEnabledEvent(_c.controllerInfo.Keyword)
+                    && (!dispatchStateMap?.DoMatch(
+                            DispatchStateName.disable,
+                            _c.model,
+                            _c.viewObj,
+                            EventInfos.GetRecieverType(_c.controllerInfo.Keyword))
+                        ?? true)
+                );
+        }
+
+        /// <summary>
         /// EventDataの状態を更新
         /// </summary>
         /// <param name="binderInstanceMap"></param>
@@ -55,8 +78,9 @@ namespace Hinode
         /// <param name="keyword"></param>
         /// <param name="model"></param>
         /// <param name="viewObject"></param>
+        /// <param name="controllerInfo"></param>
         /// <returns></returns>
-        protected abstract object GetEventData(string keyword, Model model, IViewObject viewObject);
+        protected abstract object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo);
 
         EventInfoManager _eventInfoManager;
         /// <summary>
@@ -82,21 +106,15 @@ namespace Hinode
         public void SendTo(ModelViewBinderInstanceMap binderInstanceMap)
         {
             if (!DoEnabled) return;
-            var supportedControllerInfos = binderInstanceMap.BindInstances.Values
-                .SelectMany(_b => _b.GetControllerInfos())
-                .Where(_c =>
-                    EventInfos.ContainKeyword(_c.controllerInfo.Keyword)
-                    && EventInfos.DoEnabledEvent(_c.controllerInfo.Keyword)
-                );
+            var supportedControllerInfos = GetSupportedControllerInfos(binderInstanceMap);
             foreach (var (model, viewObj, controllerInfo) in supportedControllerInfos)
             {
+                var recieverType = EventInfos.GetRecieverType(controllerInfo.Keyword);
+                var eventData = GetEventData(model, viewObj, controllerInfo);
+                if (recieverType == null || eventData == null) continue;
+
                 foreach (var selector in controllerInfo.RecieverSelectors)
                 {
-                    var recieverType = EventInfos.GetRecieverType(controllerInfo.Keyword);
-                    var eventData = GetEventData(controllerInfo.Keyword, model, viewObj);
-
-                    if (recieverType == null || eventData == null) continue;
-                    //Debug.Log($"debug -- pass recieverType={recieverType} model={model}, eventdata={eventData}");
                     selector.Send(recieverType, model, eventData, binderInstanceMap);
                 }
             }

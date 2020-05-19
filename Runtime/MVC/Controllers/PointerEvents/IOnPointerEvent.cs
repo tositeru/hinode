@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode
 {
@@ -14,14 +15,17 @@ namespace Hinode
         public PointerType PointerType { get; }
 
         public Vector3 PointerPos { get; set; }
-        public InputDefines.MouseButton MouseButtonType { get; set; }
         public int FingerID { get; set; } = -1;
 
+        public IViewObject PointerDownViewObject { get; set; }
+        public PointerEventDispatcher Dispatcher { get; }
         public ReplayableInput Input { get => ReplayableInput.Instance; }
 
-        public OnPointerEventData(PointerType pointerType)
+        public OnPointerEventData(PointerType pointerType, PointerEventDispatcher dispatcher)
         {
+            Assert.IsNotNull(dispatcher);
             PointerType = pointerType;
+            Dispatcher = dispatcher;
         }
     }
 

@@ -143,6 +143,9 @@ namespace Hinode
                 return this;
             }
 
+            public BindInfo AddViewLayout(System.Enum keyword, object value)
+                => AddViewLayout(keyword.ToString(), value);
+
             public object GetViewLayoutValue(string keyword)
             {
                 if (!_viewLayouts.ContainsKey(keyword))

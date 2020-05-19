@@ -80,12 +80,12 @@ namespace Hinode
         public static ViewLayouter AddTransformKeywordsAndAutoCreator(this ViewLayouter target)
         {
             var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "parent", new TransformParentViewLayoutAccessor() },
-                { "pos", new TransformPosViewLayoutAccessor()},
-                { "rotate", new TransformRotateViewLayoutAccessor()},
-                { "localPos", new TransformLocalPosViewLayoutAccessor()},
-                { "localRotate", new TransformLocalRotateViewLayoutAccessor()},
-                { "localScale", new TransformLocalScaleViewLayoutAccessor()},
+                { TransformViewLayoutName.parent.ToString(), new TransformParentViewLayoutAccessor() },
+                { TransformViewLayoutName.pos.ToString(), new TransformPosViewLayoutAccessor()},
+                { TransformViewLayoutName.rotate.ToString(), new TransformRotateViewLayoutAccessor()},
+                { TransformViewLayoutName.localPos.ToString(), new TransformLocalPosViewLayoutAccessor()},
+                { TransformViewLayoutName.localRotate.ToString(), new TransformLocalRotateViewLayoutAccessor()},
+                { TransformViewLayoutName.localScale.ToString(), new TransformLocalScaleViewLayoutAccessor()},
             };
             target.AddKeywords(
                 keywords.Select(_t => (_t.Key, _t.Value))

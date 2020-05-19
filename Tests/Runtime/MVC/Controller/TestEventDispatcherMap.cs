@@ -83,9 +83,9 @@ namespace Hinode.Tests.MVC.Controller
                     EventInfoManager.CreateInfo<IAppleEventSender, IAppleEventReciever>(TestEventName.Apple)
                 );
 
-            protected override object GetEventData(string keyword, Model model, IViewObject viewObject)
+            protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
             {
-                switch ((TestEventName)System.Enum.Parse(typeof(TestEventName), keyword))
+                switch ((TestEventName)System.Enum.Parse(typeof(TestEventName), controllerInfo.Keyword))
                 {
                     case TestEventName.Apple: return SendValue;
                 }
@@ -121,9 +121,9 @@ namespace Hinode.Tests.MVC.Controller
                     EventInfoManager.CreateInfo<IOrangeEventSender, IOrangeEventReciever>(TestEventName.Orange)
                 );
 
-            protected override object GetEventData(string keyword, Model model, IViewObject viewObject)
+            protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
             {
-                switch ((TestEventName)System.Enum.Parse(typeof(TestEventName), keyword))
+                switch ((TestEventName)System.Enum.Parse(typeof(TestEventName), controllerInfo.Keyword))
                 {
                     case TestEventName.Orange: return SendValue;
                 }

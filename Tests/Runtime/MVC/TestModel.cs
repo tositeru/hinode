@@ -654,6 +654,17 @@ namespace Hinode.Tests.MVC
             query = "*"; Assert.IsTrue(root.DoMatchQuery(query), $"Miss match Query({query})...");
         }
 
+        [Test, Description("Model#DoMatchQueryのテスト")]
+        public void DoMatchQueryFail()
+        {
+            var root = new Model() { Name = "root", LogicalID = new ModelIDList("testLg"), StylingID = new ModelIDList("testSl") };
+            string query;
+            query = "#test"; Assert.IsFalse(root.DoMatchQuery(query), $"Don't match Query({query})...");
+            query = "#Lg"; Assert.IsFalse(root.DoMatchQuery(query), $"Don't match Query({query})...");
+            query = ".Sl"; Assert.IsFalse(root.DoMatchQuery(query), $"Don't match Query({query})...");
+            query = ".test"; Assert.IsFalse(root.DoMatchQuery(query), $"Don't match Query({query})...");
+        }
+
         [Test, Description("Model#QueryChildrenのテスト")]
         public void QueryChildrenPasses()
         {

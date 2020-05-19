@@ -30,12 +30,18 @@ namespace Hinode
             get
             {
                 if (!(transform is RectTransform)) return null;
-                var R = transform as RectTransform;
-                var rootCanvas = transform.GetParentEnumerable()
-                    .Select(_p => _p.GetComponent<Canvas>())
-                    .Where(_c => _c != null)
-                    .LastOrDefault();
-                return rootCanvas;
+                if(transform.parent != null)
+                {
+                    var rootCanvas = transform.GetParentEnumerable()
+                        .Select(_p => _p.GetComponent<Canvas>())
+                        .Where(_c => _c != null)
+                        .LastOrDefault();
+                    return rootCanvas;
+                }
+                else
+                {
+                    return transform.GetComponent<Canvas>();
+                }
             }
         }
 
@@ -43,7 +49,19 @@ namespace Hinode
 
         public bool IsOnPointer(Vector3 screenPos, Camera useCamera)
         {
-            throw new System.NotImplementedException();
+            if(IsScreenOverlay)
+            {
+                var R = transform as RectTransform;
+                //var parentTransform = transform.parent == null
+                //    ? transform
+                //    : transform.parent;
+                var localPos = R.worldToLocalMatrix.MultiplyPoint3x4(screenPos);
+                return R.rect.Overlaps(localPos);
+            }
+            else
+            {
+                throw new System.NotImplementedException("このクラスによって自動的に追加されるColliderとのレイキャストで判定する予定");
+            }
         }
         #endregion
     }

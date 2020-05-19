@@ -4,6 +4,18 @@ using UnityEngine;
 
 namespace Hinode
 {
+    public enum RectTransformViewLayoutName
+    {
+        anchorX,
+        anchorY,
+        anchorMin,
+        anchorMax,
+        pivot,
+        size,
+        offsetMin,
+        offsetMax,
+    }
+
     //
     // 以下のクラス定義はHinode/Editors/Assets/MVC/RectTransformViewLayoutTemplate.assetから生成されています。
     //

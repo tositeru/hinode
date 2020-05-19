@@ -6,6 +6,16 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    public enum TransformViewLayoutName
+    {
+        parent,
+        pos,
+        rotate,
+        localPos,
+        localRotate,
+        localScale,
+    }
+
     #region Parent
     public interface ITransformParentViewLayout : IViewLayout
     {

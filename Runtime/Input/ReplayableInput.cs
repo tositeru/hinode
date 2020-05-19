@@ -125,7 +125,7 @@ namespace Hinode
 
         public Touch GetTouch(int index)
         {
-            Assert.IsTrue(0 <= index && index < TouchCount);
+            Assert.IsTrue(0 <= index && index < TouchCount, $"Out of Index... index={index}, TouchCount={TouchCount}");
             if (IsReplaying)
                 return GetRecordedTouch(index);
             else
