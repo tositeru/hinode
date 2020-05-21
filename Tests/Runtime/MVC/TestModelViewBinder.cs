@@ -218,7 +218,7 @@ namespace Hinode.Tests.MVC
                     Assert.IsNull(bindInstance.UseInstanceMap);
                     Assert.IsFalse(bindInstance.ViewObjects.Any());
                     Assert.IsFalse(bindInstance.AutoLayoutViewObjects.Any());
-                    Assert.IsFalse(bindInstance.ControllerObjectsForView.Any());
+                    Assert.IsFalse(bindInstance.EventDispatcherHelpObjectsForView.Any());
                 }
             }
         }

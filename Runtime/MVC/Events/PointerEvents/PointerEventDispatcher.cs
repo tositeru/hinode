@@ -31,9 +31,9 @@ namespace Hinode
             public Model Model { get; }
             public IViewObject ViewObj { get; }
             public ControllerInfo ControllerInfo { get; }
-            public IOnPointerEventControllerObject ControllerObj { get; }
+            public IOnPointerEventHelpObject ControllerObj { get; }
 
-            public SupportedModelInfo(Model model, IViewObject viewObj, ControllerInfo controllerInfo, IOnPointerEventControllerObject controllerObj)
+            public SupportedModelInfo(Model model, IViewObject viewObj, ControllerInfo controllerInfo, IOnPointerEventHelpObject controllerObj)
             {
                 Model = model;
                 ViewObj = viewObj;
@@ -189,7 +189,7 @@ namespace Hinode
                     DragFrame++;
                     DragSeconds += Time.deltaTime;
                 }
-                else if(PointerDownViewObject.UseBindInfo != null)
+                else if (PointerDownViewObject.UseBindInfo != null)
                 {
                     var bindInfo = PointerDownViewObject.UseBindInfo;
                     var isDraggable = bindInfo.Controllers.ContainsKey(PointerEventName.onPointerBeginDrag.ToString())
@@ -204,8 +204,9 @@ namespace Hinode
                 var ray = useCamera.ScreenPointToRay(PointerPos);
                 var raycastResults = Physics.RaycastAll(ray).Select(_r => _r.transform);
                 //Raycastに当たっているものだけを抽出する
-                var currentInAreaObjs = infos.Where(_i => {
-                    if(_i.ControllerObj.IsScreenOverlay)
+                var currentInAreaObjs = infos.Where(_i =>
+                {
+                    if (_i.ControllerObj.IsScreenOverlay)
                     {
                         return _i.ControllerObj.IsOnPointer(PointerPos, useCamera);
                     }
@@ -221,7 +222,7 @@ namespace Hinode
                 Debug.Log($"debug -- check current InAreaObjs = {inAreaObjsStr}");
                 _exitAreaObjects.Clear();
                 //move enter to stationary
-                foreach(var enterObj in EnterAreaObjects
+                foreach (var enterObj in EnterAreaObjects
                     .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
                 {
                     _stationaryAreaObjects.Add(enterObj);
@@ -234,7 +235,7 @@ namespace Hinode
                     _enterAreaObjects.Add(curInAreaObj);
                 }
                 //move stationary to exit
-                foreach(var delInAreaObj in StationaryAreaObjects
+                foreach (var delInAreaObj in StationaryAreaObjects
                     .Where(_o => !currentInAreaObjs.Contains(_o, SupportedModelInfoEquality.DefaultInstance)))
                 {
                     _exitAreaObjects.Add(delInAreaObj);
@@ -398,7 +399,7 @@ namespace Hinode
             return viewObject is MonoBehaviour;
         }
 
-        public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
+        public override IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject)
         {
             Assert.IsTrue(IsCreatableControllerObject(model, viewObject));
 
@@ -411,7 +412,7 @@ namespace Hinode
             return base.GetSupportedControllerInfos(binderInstanceMap)
                 .Where(_c =>
                     _c.viewObj != null
-                    && _c.viewObj.HasControllerObject<IOnPointerEventControllerObject>()
+                    && _c.viewObj.HasEventDispatcherHelpObject<IOnPointerEventHelpObject>()
                 );
         }
 
@@ -422,7 +423,7 @@ namespace Hinode
                     _t.model,
                     _t.viewObj,
                     _t.controllerInfo,
-                    _t.viewObj.GetControllerObject<IOnPointerEventControllerObject>()))
+                    _t.viewObj.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>()))
                 .OrderBy(_t => _t.ControllerObj, new IOnPointerEventControllerObjectComparer(UseCamera))
                 .ToList();
             var checkOrder = supportedControllerInfos
@@ -435,11 +436,11 @@ namespace Hinode
                 var input = ReplayableInput.Instance;
                 //タッチされなくなったものを削除する
                 _touchPointerEventDatas.RemoveAll(_e => !input.GetTouches().Any(_t => _t.fingerId == _e.FingerID));
-                for(var i=0; i<input.TouchCount; ++i)
+                for (var i = 0; i < input.TouchCount; ++i)
                 {
                     var t = input.GetTouch(i);
                     var e = _touchPointerEventDatas.FirstOrDefault(_e => _e.FingerID == t.fingerId);
-                    if(e == null)
+                    if (e == null)
                     {
                         e = new TouchPointerEventData(i, this);
                         _touchPointerEventDatas.Add(e);
@@ -450,25 +451,25 @@ namespace Hinode
                 }
             }
         }
-        
+
         protected override EventInfoManager CreateEventInfoManager()
             => new EventInfoManager(
-                    EventInfoManager.Info.Create<IOnPointerDownSender, IOnPointerDownReciever>(PointerEventName.onPointerDown),
-                    EventInfoManager.Info.Create<IOnPointerUpSender, IOnPointerUpReciever>(PointerEventName.onPointerUp),
-                    EventInfoManager.Info.Create<IOnPointerClickSender, IOnPointerClickReciever>(PointerEventName.onPointerClick),
-                    EventInfoManager.Info.Create<IOnPointerEnterSender, IOnPointerEnterReciever>(PointerEventName.onPointerEnter),
-                    EventInfoManager.Info.Create<IOnPointerInAreaSender, IOnPointerInAreaReciever>(PointerEventName.onPointerInArea),
-                    EventInfoManager.Info.Create<IOnPointerExitSender, IOnPointerExitReciever>(PointerEventName.onPointerExit),
-                    EventInfoManager.Info.Create<IOnPointerBeginDragSender, IOnPointerBeginDragReciever>(PointerEventName.onPointerBeginDrag),
-                    EventInfoManager.Info.Create<IOnPointerDragSender, IOnPointerDragReciever>(PointerEventName.onPointerDrag),
-                    EventInfoManager.Info.Create<IOnPointerEndDragSender, IOnPointerEndDragReciever>(PointerEventName.onPointerEndDrag),
-                    EventInfoManager.Info.Create<IOnPointerDropSender, IOnPointerDropReciever>(PointerEventName.onPointerDrop)
+                    EventInfoManager.Info.Create<IOnPointerDownReciever>(PointerEventName.onPointerDown),
+                    EventInfoManager.Info.Create<IOnPointerUpReciever>(PointerEventName.onPointerUp),
+                    EventInfoManager.Info.Create<IOnPointerClickReciever>(PointerEventName.onPointerClick),
+                    EventInfoManager.Info.Create<IOnPointerEnterReciever>(PointerEventName.onPointerEnter),
+                    EventInfoManager.Info.Create<IOnPointerInAreaReciever>(PointerEventName.onPointerInArea),
+                    EventInfoManager.Info.Create<IOnPointerExitReciever>(PointerEventName.onPointerExit),
+                    EventInfoManager.Info.Create<IOnPointerBeginDragReciever>(PointerEventName.onPointerBeginDrag),
+                    EventInfoManager.Info.Create<IOnPointerDragReciever>(PointerEventName.onPointerDrag),
+                    EventInfoManager.Info.Create<IOnPointerEndDragReciever>(PointerEventName.onPointerEndDrag),
+                    EventInfoManager.Info.Create<IOnPointerDropReciever>(PointerEventName.onPointerDrop)
                     );
 
         protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
         {
-            Assert.IsTrue(viewObject.HasControllerObject<IOnPointerEventControllerObject>());
-            var target = new SupportedModelInfo(model, viewObject, controllerInfo, viewObject.GetControllerObject<IOnPointerEventControllerObject>());
+            Assert.IsTrue(viewObject.HasEventDispatcherHelpObject<IOnPointerEventHelpObject>());
+            var target = new SupportedModelInfo(model, viewObject, controllerInfo, viewObject.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>());
 
             var matchMouseEventData = _mousePointerEventData.AllObjects
                 .Select(_obj => _mousePointerEventData)
@@ -508,49 +509,48 @@ namespace Hinode
 
         public static void ConfigControllerType()
         {
-            ControllerTypeManager.EntryPair<IOnPointerDownSender, IOnPointerDownReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerUpSender, IOnPointerUpReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerClickSender, IOnPointerClickReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerBeginDragSender, IOnPointerBeginDragReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerDragSender, IOnPointerDragReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerEndDragSender, IOnPointerEndDragReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerDropSender, IOnPointerDropReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerEnterSender, IOnPointerEnterReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerInAreaSender, IOnPointerInAreaReciever>();
-            ControllerTypeManager.EntryPair<IOnPointerExitSender, IOnPointerExitReciever>();
-
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDownReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDownReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerDown(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerUpReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerUpReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerUp(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerClickReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerClickReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerClick(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerBeginDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerBeginDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerBeginDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEndDragReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerEndDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerEndDrag(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerDropReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDropReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerDrop(sender, eventData);
             });
 
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerEnterReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerEnterReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerEnter(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerInAreaReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerInAreaReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerInArea(sender, eventData);
             });
-            ControllerTypeManager.EntryRecieverExecuter<IOnPointerExitReciever, IOnPointerEventData>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerExitReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            {
                 reciever.OnPointerExit(sender, eventData);
             });
 

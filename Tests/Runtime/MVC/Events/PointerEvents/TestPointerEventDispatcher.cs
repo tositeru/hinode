@@ -26,25 +26,24 @@ namespace Hinode.Tests.MVC.Controller.Pointer
 
             var eventInfo = senderGroup.EventInfos;
 
-            var checkList = new (PointerEventName, System.Type senderType, System.Type recieverType)[]
+            var checkList = new (PointerEventName, System.Type eventHandlerType)[]
             {
-                (PointerEventName.onPointerDown, typeof(IOnPointerDownSender), typeof(IOnPointerDownReciever)),
-                (PointerEventName.onPointerUp, typeof(IOnPointerUpSender), typeof(IOnPointerUpReciever)),
-                (PointerEventName.onPointerClick, typeof(IOnPointerClickSender), typeof(IOnPointerClickReciever)),
-                (PointerEventName.onPointerEnter, typeof(IOnPointerEnterSender), typeof(IOnPointerEnterReciever)),
-                (PointerEventName.onPointerInArea, typeof(IOnPointerInAreaSender), typeof(IOnPointerInAreaReciever)),
-                (PointerEventName.onPointerExit, typeof(IOnPointerExitSender), typeof(IOnPointerExitReciever)),
-                (PointerEventName.onPointerBeginDrag, typeof(IOnPointerBeginDragSender), typeof(IOnPointerBeginDragReciever)),
-                (PointerEventName.onPointerDrag, typeof(IOnPointerDragSender), typeof(IOnPointerDragReciever)),
-                (PointerEventName.onPointerEndDrag, typeof(IOnPointerEndDragSender), typeof(IOnPointerEndDragReciever)),
-                (PointerEventName.onPointerDrop, typeof(IOnPointerDropSender), typeof(IOnPointerDropReciever))
+                (PointerEventName.onPointerDown, typeof(IOnPointerDownReciever)),
+                (PointerEventName.onPointerUp, typeof(IOnPointerUpReciever)),
+                (PointerEventName.onPointerClick, typeof(IOnPointerClickReciever)),
+                (PointerEventName.onPointerEnter, typeof(IOnPointerEnterReciever)),
+                (PointerEventName.onPointerInArea, typeof(IOnPointerInAreaReciever)),
+                (PointerEventName.onPointerExit, typeof(IOnPointerExitReciever)),
+                (PointerEventName.onPointerBeginDrag, typeof(IOnPointerBeginDragReciever)),
+                (PointerEventName.onPointerDrag, typeof(IOnPointerDragReciever)),
+                (PointerEventName.onPointerEndDrag, typeof(IOnPointerEndDragReciever)),
+                (PointerEventName.onPointerDrop, typeof(IOnPointerDropReciever))
             };
 
-            foreach (var (eventName, senderType, recieverType) in checkList)
+            foreach (var (eventName, eventHandlerType) in checkList)
             {
                 Assert.IsTrue(eventInfo.ContainKeyword(eventName), $"Invalid {eventName}...");
-                Assert.AreEqual(senderType, eventInfo.GetSenderType(eventName), $"Invalid {eventName}...");
-                Assert.AreEqual(recieverType, eventInfo.GetRecieverType(eventName), $"Invalid {eventName}...");
+                Assert.AreEqual(eventHandlerType, eventInfo.GetEventHandlerType(eventName), $"Invalid {eventName}...");
                 Assert.IsTrue(eventInfo.DoEnabledEvent(eventName), $"Invalid {eventName}...");
             }
         }
@@ -138,8 +137,8 @@ namespace Hinode.Tests.MVC.Controller.Pointer
 
         }
 
-        [UnityTest, Description("ModelViewInstanceでIOnPointerEventControllerObjectを作成しているか確認するためのテスト")]
-        public IEnumerator CreatePointerEventControllerObjectPasses()
+        [UnityTest, Description("ModelViewInstanceでIOnPointerEventEventDispathcerHelpObjectを作成しているか確認するためのテスト")]
+        public IEnumerator CreatePointerEventEventDispathcerHelpObjectPasses()
         {
             yield return null;
             #region Initial Enviroment
@@ -160,7 +159,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     new ModelViewBinder.BindInfo(typeof(TestOnPointerEventViewObj))
                         .AddControllerInfo(
                             new ControllerInfo(PointerEventName.onPointerDown,
-                            new RecieverSelector(ModelRelationShip.Self, "", "")
+                            new EventHandlerSelector(ModelRelationShip.Self, "", "")
                         ))
                 )
                 .AddEnabledModelType<CheckOnPointerEventModel>();
@@ -182,23 +181,23 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             {//
                 var binderInstance = binderInstanceMap.BindInstances[model];
                 var viewObj = binderInstance.ViewObjects.First();
-                Assert.IsTrue(binderInstance.HasControllerObject<IOnPointerEventControllerObject>(viewObj));
-                Assert.IsTrue(viewObj.HasControllerObject<IOnPointerEventControllerObject>());
-                Assert.IsNotNull(binderInstance.GetControllerObject<IOnPointerEventControllerObject>(viewObj));
-                Assert.IsNotNull(viewObj.GetControllerObject<IOnPointerEventControllerObject>());
+                Assert.IsTrue((bool)binderInstance.HasEventDispathcerHelpObject<IOnPointerEventHelpObject>(viewObj));
+                Assert.IsTrue(viewObj.HasEventDispatcherHelpObject<IOnPointerEventHelpObject>());
+                Assert.IsNotNull((object)binderInstance.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>(viewObj));
+                Assert.IsNotNull(viewObj.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>());
                 Assert.AreSame(
-                    binderInstance.GetControllerObject<IOnPointerEventControllerObject>(viewObj),
-                    viewObj.GetControllerObject<IOnPointerEventControllerObject>());
+                    binderInstance.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>(viewObj),
+                    viewObj.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>());
             }
 
             {//ない時
                 var binderInstance = binderInstanceMap.BindInstances[child];
                 var viewObj = binderInstance.ViewObjects.First();
-                Assert.IsFalse(binderInstance.HasControllerObject<IOnPointerEventControllerObject>(viewObj));
-                Assert.IsFalse(viewObj.HasControllerObject<IOnPointerEventControllerObject>());
+                Assert.IsFalse((bool)binderInstance.HasEventDispathcerHelpObject<IOnPointerEventHelpObject>(viewObj));
+                Assert.IsFalse(viewObj.HasEventDispatcherHelpObject<IOnPointerEventHelpObject>());
 
-                Assert.IsNull(binderInstance.GetControllerObject<IOnPointerEventControllerObject>(viewObj));
-                Assert.IsNull(viewObj.GetControllerObject<IOnPointerEventControllerObject>());
+                Assert.IsNull((object)binderInstance.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>(viewObj));
+                Assert.IsNull(viewObj.GetEventDispathcerHelpObject<IOnPointerEventHelpObject>());
             }
         }
 
@@ -236,7 +235,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
             mainCamera.tag = "MainCamera";
 
-            var parentSelector = new RecieverSelector(ModelRelationShip.Parent, "", "");
+            var parentSelector = new EventHandlerSelector(ModelRelationShip.Parent, "", "");
 
             // 画面上に以下のViewがあるようにしています。
             // - ScreenOverlayCanvas
@@ -282,7 +281,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "Root", "")))
+                        new EventHandlerSelector(ModelRelationShip.Parent, "Root", "")))
                 );
 
             var screenSpaceCameraBinder = new ModelViewBinder(screenSpaceCameraQuery, null
@@ -495,7 +494,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -652,7 +651,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerUp,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -804,7 +803,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerClick,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -977,7 +976,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerEnter,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -1135,7 +1134,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerInArea,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -1306,7 +1305,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerExit,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -1478,16 +1477,16 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerBeginDrag,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDrag,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerEndDrag,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDrop,
-                        new RecieverSelector(ModelRelationShip.Self, "", "")
+                        new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -1534,7 +1533,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 root.Reset();
             }
             {//Drag
-                for (float t=0.5f; t < 1f; t += 0.1f)
+                for (float t = 0.5f; t < 1f; t += 0.1f)
                 {
                     Debug.Log("test Drag");
                     input.RecordedMousePos = Vector3.Lerp(beginPos, endPos, t);

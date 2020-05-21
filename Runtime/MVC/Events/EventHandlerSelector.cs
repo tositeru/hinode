@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
-    public class RecieverSelector
+    public class EventHandlerSelector
     {
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
@@ -16,16 +16,16 @@ namespace Hinode
         public System.Type FookingRecieverType { get; set; }
         public object FookEventData { get; set; }
 
-        public RecieverSelector(ModelRelationShip relationShip, string queryPath, string viewIdentity)
+        public EventHandlerSelector(ModelRelationShip relationShip, string queryPath, string viewIdentity)
         {
             RelationShip = relationShip;
             QueryPath = queryPath;
             ViewIdentity = viewIdentity;
         }
 
-        public IEnumerable<(System.Type recieverType, IControllerReciever reciever, object eventData)> Query(System.Type recieverType, Model model, ModelViewBinderInstanceMap viewBinderInstance, object eventData)
+        public IEnumerable<(System.Type recieverType, IEventHandler reciever, object eventData)> Query(System.Type recieverType, Model model, ModelViewBinderInstanceMap viewBinderInstance, object eventData)
         {
-            var recievers = GetRecieverEnumerable(model, viewBinderInstance);
+            var recievers = GetEventHandlerEnumerable(model, viewBinderInstance);
             if (IsFooking)
             {
                 return recievers
@@ -40,20 +40,20 @@ namespace Hinode
             }
         }
 
-        public IEnumerable<IControllerReciever> GetRecieverEnumerable(Model model, ModelViewBinderInstanceMap viewBinderInstance)
-            => new RecieverEnumerable(this, model, viewBinderInstance);
+        public IEnumerable<IEventHandler> GetEventHandlerEnumerable(Model model, ModelViewBinderInstanceMap viewBinderInstance)
+            => new EventHandlerEnumerable(this, model, viewBinderInstance);
 
-        public IEnumerable<T> GetRecieverEnumerable<T>(Model model, ModelViewBinderInstanceMap viewBinderInstance)
-            where T : IControllerSender
-            => new RecieverEnumerable(this, model, viewBinderInstance).OfType<T>();
+        public IEnumerable<T> GetEventHandlerEnumerable<T>(Model model, ModelViewBinderInstanceMap viewBinderInstance)
+            where T : IEventHandler
+            => new EventHandlerEnumerable(this, model, viewBinderInstance).OfType<T>();
 
-        class RecieverEnumerable : IEnumerable<IControllerReciever>, IEnumerable
+        class EventHandlerEnumerable : IEnumerable<IEventHandler>, IEnumerable
         {
-            RecieverSelector _target;
+            EventHandlerSelector _target;
             Model _model;
             ModelViewBinderInstanceMap _viewBinderInstanceMap;
 
-            public RecieverEnumerable(RecieverSelector target, Model model, ModelViewBinderInstanceMap viewBinderInstanceMap)
+            public EventHandlerEnumerable(EventHandlerSelector target, Model model, ModelViewBinderInstanceMap viewBinderInstanceMap)
             {
                 Assert.IsNotNull(target);
                 Assert.IsNotNull(model);
@@ -63,7 +63,7 @@ namespace Hinode
                 _viewBinderInstanceMap = viewBinderInstanceMap;
             }
 
-            public IEnumerator<IControllerReciever> GetEnumerator()
+            public IEnumerator<IEventHandler> GetEnumerator()
             {
                 Assert.IsNotNull(_viewBinderInstanceMap);
 
@@ -72,18 +72,18 @@ namespace Hinode
                     case ModelRelationShip.Self:
                         if (_target.ViewIdentity == "")
                         {
-                            if (_model is IControllerReciever)
+                            if (_model is IEventHandler)
                             {
-                                yield return _model as IControllerReciever;
+                                yield return _model as IEventHandler;
                             }
                         }
                         else
                         {
                             var instanceMap = _viewBinderInstanceMap[_model];
                             foreach (var view in instanceMap.QueryViews(_target.ViewIdentity)
-                                .OfType<IControllerReciever>())
+                                .OfType<IEventHandler>())
                             {
-                                yield return view as IControllerReciever;
+                                yield return view as IEventHandler;
                             }
                         }
                         break;
@@ -94,8 +94,8 @@ namespace Hinode
                         if (_target.QueryPath == ""
                             && _target.ViewIdentity == "")
                         {
-                            if (_model.Parent is IControllerReciever)
-                                yield return _model.Parent as IControllerReciever;
+                            if (_model.Parent is IEventHandler)
+                                yield return _model.Parent as IEventHandler;
                             break;
                         }
 
@@ -115,7 +115,7 @@ namespace Hinode
                         if (_target.ViewIdentity == "")
                         {
                             foreach (var p in parentModels
-                                .OfType<IControllerReciever>())
+                                .OfType<IEventHandler>())
                             {
                                 yield return p;
                             }
@@ -126,7 +126,7 @@ namespace Hinode
                             foreach (var view in parentModels
                                 .Where(_p => _viewBinderInstanceMap.BindInstances.ContainsKey(_p))
                                 .SelectMany(_p => _viewBinderInstanceMap[_p].QueryViews(_target.ViewIdentity))
-                                .OfType<IControllerReciever>())
+                                .OfType<IEventHandler>())
                             {
                                 yield return view;
                             }
@@ -140,7 +140,7 @@ namespace Hinode
                         if (_target.ViewIdentity == "")
                         {
                             foreach (var child in children
-                                .OfType<IControllerReciever>())
+                                .OfType<IEventHandler>())
                             {
                                 yield return child;
                             }
@@ -150,7 +150,7 @@ namespace Hinode
                             var views = children
                                 .Where(_c => _viewBinderInstanceMap.BindInstances.ContainsKey(_c))
                                 .SelectMany(_c => _viewBinderInstanceMap[_c].QueryViews(_target.ViewIdentity))
-                                .OfType<IControllerReciever>();
+                                .OfType<IEventHandler>();
                             foreach (var v in views)
                             {
                                 yield return v;
@@ -170,23 +170,23 @@ namespace Hinode
     public static partial class RecieverSelectorExtensions
     {
         /// <summary>
-        /// 指定したtargetModel,eventDataをselectorとマッチするIControllerRecieverへ送信する
+        /// 指定したtargetModel,eventDataをselectorとマッチするIEventHandlerへ送信する
         /// </summary>
         /// <param name="selector"></param>
         /// <param name="recieverType"></param>
         /// <param name="targetModel"></param>
         /// <param name="eventData"></param>
         /// <param name="binderInstanceMap"></param>
-        public static void Send(this RecieverSelector selector, System.Type recieverType, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
+        public static void Send(this EventHandlerSelector selector, System.Type recieverType, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
         {
             foreach (var (useRecieverType, reciever, useEventData) in selector
                 .Query(recieverType, targetModel, binderInstanceMap, eventData))
             {
-                ControllerTypeManager.DoneRecieverExecuter(useRecieverType, reciever, targetModel, useEventData);
+                EventHandlerTypeManager.DoneRecieverExecuter(useRecieverType, reciever, targetModel, useEventData);
             }
         }
-        public static void Send<TReciever>(this RecieverSelector selector, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
-            where TReciever : IControllerReciever
+        public static void Send<TReciever>(this EventHandlerSelector selector, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)
+            where TReciever : IEventHandler
             =>  selector.Send(typeof(TReciever), targetModel, eventData, binderInstanceMap);
 
     }

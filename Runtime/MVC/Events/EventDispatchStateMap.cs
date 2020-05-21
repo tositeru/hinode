@@ -53,16 +53,16 @@ namespace Hinode
         public bool DoMatch(string stateName, Model model, IViewObject viewObj, System.Type eventType)
         {
             Assert.IsTrue(_states.ContainsKey(stateName));
-            Assert.IsTrue(eventType.HasInterface<IControllerReciever>());
+            Assert.IsTrue(eventType.HasInterface<IEventHandler>());
             return _states[stateName].Any(_s => _s.DoMatch(model, viewObj, eventType));
         }
         public bool DoMatch(System.Enum stateName, Model model, IViewObject viewObj, System.Type eventType)
             => DoMatch(stateName.ToString(), model, viewObj, eventType);
         public bool DoMatch<T>(string stateName, Model model, IViewObject viewObj)
-            where T : IControllerReciever
+            where T : IEventHandler
             => DoMatch(stateName, model, viewObj, typeof(T));
         public bool DoMatch<T>(System.Enum stateName, Model model, IViewObject viewObj)
-            where T : IControllerReciever
+            where T : IEventHandler
             => DoMatch(stateName.ToString(), model, viewObj, typeof(T));
 
         public IEnumerable<string> MatchStates(Model model, IViewObject viewObj, System.Type eventType)
@@ -72,7 +72,7 @@ namespace Hinode
                     .Select(_t => _t.Key);
         }
         public IEnumerable<string> MatchStates<T>(Model model, IViewObject viewObj)
-            where T : IControllerReciever
+            where T : IEventHandler
             => MatchStates(model, viewObj, typeof(T));
     }
 }

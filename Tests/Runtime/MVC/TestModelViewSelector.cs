@@ -12,15 +12,8 @@ namespace Hinode.Tests.MVC
     /// </summary>
     public class TestModelViewSelector
     {
-        class SenderViewObj : EmptyViewObject, IControllerSender
+        class SenderViewObj : EmptyViewObject
         {
-            #region IControllerSender
-            public Model Target { get; set; }
-            public ModelViewBinderInstanceMap UseBinderInstanceMap { get; set; }
-            public ModelViewSelector Selector { get; set; }
-
-            #endregion
-
             #region IViewObject
             #endregion
 
@@ -32,13 +25,8 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class RecieverViewObj : EmptyViewObject, IControllerReciever
+        class EventHandlerViewObj : EmptyViewObject, IEventHandler
         {
-            #region IControllerSender
-            public ModelViewBinderInstance ModelViewBinderInstance { get; set; }
-            public ModelViewSelector Selector { get; set; }
-            #endregion
-
             #region IViewObject
             #endregion
 
@@ -50,7 +38,7 @@ namespace Hinode.Tests.MVC
             }
         }
 
-        class RecieverModel : Model, IControllerReciever
+        class RecieverModel : Model, IEventHandler
         {
         }
 
@@ -78,12 +66,12 @@ namespace Hinode.Tests.MVC
             string viewReciever = "reciever";
             var viewCreator = new DefaultViewInstanceCreator(
                 (typeof(SenderViewObj), new SenderViewObj.ParamBinder()),
-                (typeof(RecieverViewObj), new RecieverViewObj.ParamBinder())
+                (typeof(EventHandlerViewObj), new EventHandlerViewObj.ParamBinder())
             );
             var binderMap = new ModelViewBinderMap(viewCreator,
                 new ModelViewBinder("#main", null,
                     new ModelViewBinder.BindInfo(typeof(SenderViewObj)),
-                    new ModelViewBinder.BindInfo(viewReciever, typeof(RecieverViewObj))
+                    new ModelViewBinder.BindInfo(viewReciever, typeof(EventHandlerViewObj))
                 ));
             var binderMapInstance = binderMap.CreateBinderInstaceMap();
             binderMapInstance.RootModel = root;
@@ -146,7 +134,7 @@ namespace Hinode.Tests.MVC
                 var selector = new ModelViewSelector(ModelRelationShip.Parent, "", viewReciever);
                 var enumerable = selector.GetEnumerable(model1, binderMapInstance);
 
-                var errorMessage = "バインドされているModelがIControllerRecieverを継承していない場合でも取得できるようにしてください";
+                var errorMessage = "バインドされているModelがIEventHandlerを継承していない場合でも取得できるようにしてください";
                 AssertionUtils.AssertEnumerableByUnordered(
                     binderMapInstance[noneRecieverModel].ViewObjects
                         .Where(_v => _v.UseBindInfo.ID == viewReciever)
@@ -205,12 +193,12 @@ namespace Hinode.Tests.MVC
             string viewReciever = "reciever";
             var viewCreator = new DefaultViewInstanceCreator(
                 (typeof(SenderViewObj), new SenderViewObj.ParamBinder()),
-                (typeof(RecieverViewObj), new RecieverViewObj.ParamBinder())
+                (typeof(EventHandlerViewObj), new EventHandlerViewObj.ParamBinder())
             );
             var binderMap = new ModelViewBinderMap(viewCreator,
                 new ModelViewBinder("#main", null,
                     new ModelViewBinder.BindInfo(typeof(SenderViewObj)),
-                    new ModelViewBinder.BindInfo(viewReciever, typeof(RecieverViewObj))
+                    new ModelViewBinder.BindInfo(viewReciever, typeof(EventHandlerViewObj))
                 ));
             var binderMapInstance = binderMap.CreateBinderInstaceMap();
             binderMapInstance.RootModel = root;
@@ -223,7 +211,7 @@ namespace Hinode.Tests.MVC
                 var selector = new ModelViewSelector(ModelRelationShip.Child, "", "");
                 var enumerable = selector.GetEnumerable(root, binderMapInstance);
 
-                var errorMessage = "IControllerRecieverを継承している時は取得できるようにしてください。";
+                var errorMessage = "IEventHandlerを継承している時は取得できるようにしてください。";
                 AssertionUtils.AssertEnumerableByUnordered(new object[] {
                     recieverModel,
                     noneRecieverModel,
@@ -272,7 +260,7 @@ namespace Hinode.Tests.MVC
                 var selector = new ModelViewSelector(ModelRelationShip.Child, "", viewReciever);
                 var enumerable = selector.GetEnumerable(root, binderMapInstance);
 
-                var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIControllerRecieverを継承しているViewを全て取得できるようにしてください。";
+                var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
                 var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
                 var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
                 AssertionUtils.AssertEnumerableByUnordered(new object[] {
@@ -299,9 +287,9 @@ namespace Hinode.Tests.MVC
                 var selector = new ModelViewSelector(ModelRelationShip.Child, recieverModel.Name, viewReciever);
                 var enumerable = selector.GetEnumerable(root, binderMapInstance);
 
-                var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIControllerRecieverを継承しているViewを全て取得できるようにしてください。";
+                var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
                 var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                AssertionUtils.AssertEnumerable(enumerable, (new IViewObject[] { viewObj1 }).OfType<IControllerReciever>(), errorMessage);
+                AssertionUtils.AssertEnumerable(enumerable, (new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), errorMessage);
             }
 
             {//Viewを取得しようとした時のテスト(クエリパスを指定し、ViewIDが一致しない時)
@@ -336,12 +324,12 @@ namespace Hinode.Tests.MVC
             string viewReciever = "reciever";
             var viewCreator = new DefaultViewInstanceCreator(
                 (typeof(SenderViewObj), new SenderViewObj.ParamBinder()),
-                (typeof(RecieverViewObj), new RecieverViewObj.ParamBinder())
+                (typeof(EventHandlerViewObj), new EventHandlerViewObj.ParamBinder())
             );
             var binderMap = new ModelViewBinderMap(viewCreator,
                 new ModelViewBinder("#main", null,
                     new ModelViewBinder.BindInfo(typeof(SenderViewObj)),
-                    new ModelViewBinder.BindInfo(viewReciever, typeof(RecieverViewObj))
+                    new ModelViewBinder.BindInfo(viewReciever, typeof(EventHandlerViewObj))
                 ));
             var binderMapInstance = binderMap.CreateBinderInstaceMap();
             binderMapInstance.RootModel = root;
@@ -407,12 +395,12 @@ namespace Hinode.Tests.MVC
             string viewReciever = "reciever";
             var viewCreator = new DefaultViewInstanceCreator(
                 (typeof(SenderViewObj), new SenderViewObj.ParamBinder()),
-                (typeof(RecieverViewObj), new RecieverViewObj.ParamBinder())
+                (typeof(EventHandlerViewObj), new EventHandlerViewObj.ParamBinder())
             );
             var binderMap = new ModelViewBinderMap(viewCreator,
                 new ModelViewBinder("#main", null,
                     new ModelViewBinder.BindInfo(typeof(SenderViewObj)),
-                    new ModelViewBinder.BindInfo(viewReciever, typeof(RecieverViewObj))
+                    new ModelViewBinder.BindInfo(viewReciever, typeof(EventHandlerViewObj))
                 ));
             var binderMapInstance = binderMap.CreateBinderInstaceMap();
             binderMapInstance.RootModel = root;
@@ -431,7 +419,7 @@ namespace Hinode.Tests.MVC
             {//指定した型を持つ時(View)
                 var selector = new ModelViewSelector(ModelRelationShip.Parent, "", viewReciever);
 
-                var enumerable = selector.Query(typeof(RecieverViewObj), recieverModel, binderMapInstance);
+                var enumerable = selector.Query(typeof(EventHandlerViewObj), recieverModel, binderMapInstance);
 
                 var errorMessage = "ModelViewSelector#Queryはクエリと一致したModelの中から指定したTypeのものを返すようにしてください。";
                 AssertionUtils.AssertEnumerableByUnordered(

@@ -65,15 +65,15 @@ namespace Hinode
                 ;
         }
 
-        public  HashSet<IControllerObject> CreateControllerObjects(Model model, IViewObject viewObject, IEnumerable<ControllerInfo> controllerInfos)
+        public  HashSet<IEventDispatcherHelper> CreateEventDispatcherHelpObjects(Model model, IViewObject viewObject, IEnumerable<ControllerInfo> controllerInfos)
         {
             var objs = controllerInfos
                 .Select(_c => _dispatchers.FirstOrDefault(_d => _d.EventInfos.ContainKeyword(_c.Keyword)))
                 .Where(_d => _d != null && _d.IsCreatableControllerObject(model, viewObject))
                 .Distinct()
-                .Select(_d => _d.CreateControllerObject(model, viewObject))
+                .Select(_d => _d.CreateEventDispatcherHelpObject(model, viewObject))
                 ;
-            return objs.Any() ? new HashSet<IControllerObject>(objs) : null;
+            return objs.Any() ? new HashSet<IEventDispatcherHelper>(objs) : null;
         }
 
     }

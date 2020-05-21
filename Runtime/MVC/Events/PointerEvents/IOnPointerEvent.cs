@@ -35,19 +35,11 @@ namespace Hinode
         ReplayableInput Input { get; }
     }
 
-    public interface IOnPointerEventSender : IControllerSender
-    {
-    }
-
-    public interface IOnPointerEventReciever : IControllerReciever
+    public interface IOnPointerEventReciever : IEventHandler
     {
     }
 
     #region OnPointerDown event
-    public interface IOnPointerDownSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerDownReciever : IOnPointerEventReciever
     {
         void OnPointerDown(Model sender, IOnPointerEventData eventData);
@@ -55,10 +47,6 @@ namespace Hinode
     #endregion
 
     #region OnPointerBeginDrag event
-    public interface IOnPointerBeginDragSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerBeginDragReciever : IOnPointerEventReciever
     {
         void OnPointerBeginDrag(Model sender, IOnPointerEventData eventData);
@@ -66,10 +54,6 @@ namespace Hinode
     #endregion
 
     #region OnPointerDrag event
-    public interface IOnPointerDragSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerDragReciever : IOnPointerEventReciever
     {
         void OnPointerDrag(Model sender, IOnPointerEventData eventData);
@@ -77,10 +61,6 @@ namespace Hinode
     #endregion
 
     #region OnPointerBeginDrag event
-    public interface IOnPointerEndDragSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerEndDragReciever : IOnPointerEventReciever
     {
         void OnPointerEndDrag(Model sender, IOnPointerEventData eventData);
@@ -88,10 +68,6 @@ namespace Hinode
     #endregion
 
     #region OnPointerDrop event
-    public interface IOnPointerDropSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerDropReciever : IOnPointerEventReciever
     {
         void OnPointerDrop(Model sender, IOnPointerEventData eventData);
@@ -99,10 +75,6 @@ namespace Hinode
     #endregion
 
     #region OnPointerUp event
-    public interface IOnPointerUpSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerUpReciever : IOnPointerEventReciever
     {
         void OnPointerUp(Model sender, IOnPointerEventData eventData);
@@ -110,10 +82,6 @@ namespace Hinode
     #endregion
 
     #region OnClick event
-    public interface IOnPointerClickSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerClickReciever : IOnPointerEventReciever
     {
         void OnPointerClick(Model sender, IOnPointerEventData eventData);
@@ -121,30 +89,18 @@ namespace Hinode
     #endregion
 
     #region OnPointerEnter event
-    public interface IOnPointerEnterSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerEnterReciever : IOnPointerEventReciever
     {
         void OnPointerEnter(Model sender, IOnPointerEventData eventData);
     }
     #endregion
     #region OnPointerInArea event
-    public interface IOnPointerInAreaSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerInAreaReciever : IOnPointerEventReciever
     {
         void OnPointerInArea(Model sender, IOnPointerEventData eventData);
     }
     #endregion
     #region OnPointerExit event
-    public interface IOnPointerExitSender : IOnPointerEventSender
-    {
-    }
-
     public interface IOnPointerExitReciever : IOnPointerEventReciever
     {
         void OnPointerExit(Model sender, IOnPointerEventData eventData);

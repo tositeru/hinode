@@ -5,11 +5,10 @@ using UnityEngine;
 namespace Hinode
 {
     /// <summary>
-    /// Controller用のオブジェクト
+    /// IEventDispatcherの処理を助けるためのオブジェクト
     ///
-    /// 
     /// </summary>
-    public interface IControllerObject
+    public interface IEventDispatcherHelper
     {
         void Destroy();
     }

@@ -21,21 +21,17 @@ namespace Hinode
     {
         public static void ConfigControllerType()
         {
-            ControllerTypeManager.EntryPair<IOnMouseCursorMoveSender, IOnMouseCursorMoveReciever>();
-            ControllerTypeManager.EntryRecieverExecuter<IOnMouseCursorMoveReciever, OnMouseCursorMoveEventData>(
-                (reciever, sender, eventData) => (reciever as IOnMouseCursorMoveReciever).OnMouseCursorMove(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseCursorMoveEventHandler, OnMouseCursorMoveEventData>(
+                (reciever, sender, eventData) => (reciever as IOnMouseCursorMoveEventHandler).OnMouseCursorMove(sender, eventData));
 
-            ControllerTypeManager.EntryPair<IOnMouseLeftButtonSender, IOnMouseLeftButtonReciever>();
-            ControllerTypeManager.EntryRecieverExecuter<IOnMouseLeftButtonReciever, OnMouseButtonEventData>(
-                (reciever, sender, eventData) => (reciever as IOnMouseLeftButtonReciever).OnMouseLeftButton(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseLeftButtonEventHandler, OnMouseButtonEventData>(
+                (reciever, sender, eventData) => (reciever as IOnMouseLeftButtonEventHandler).OnMouseLeftButton(sender, eventData));
 
-            ControllerTypeManager.EntryPair<IOnMouseRightButtonSender, IOnMouseRightButtonReciever>();
-            ControllerTypeManager.EntryRecieverExecuter<IOnMouseRightButtonReciever, OnMouseButtonEventData>(
-                (reciever, sender, eventData) => (reciever as IOnMouseRightButtonReciever).OnMouseRightButton(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseRightButtonEventHandler, OnMouseButtonEventData>(
+                (reciever, sender, eventData) => (reciever as IOnMouseRightButtonEventHandler).OnMouseRightButton(sender, eventData));
 
-            ControllerTypeManager.EntryPair<IOnMouseMiddleButtonSender, IOnMouseMiddleButtonReciever>();
-            ControllerTypeManager.EntryRecieverExecuter<IOnMouseMiddleButtonReciever, OnMouseButtonEventData>(
-                (reciever, sender, eventData) => (reciever as IOnMouseMiddleButtonReciever).OnMouseMiddleButton(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseMiddleButtonEventHandler, OnMouseButtonEventData>(
+                (reciever, sender, eventData) => (reciever as IOnMouseMiddleButtonEventHandler).OnMouseMiddleButton(sender, eventData));
 
         }
 
@@ -47,7 +43,7 @@ namespace Hinode
             _onMoveEventData = new OnMouseCursorMoveEventData(ReplayableInput.Instance.MousePos, ReplayableInput.Instance.MousePos);
             var buttons = System.Enum.GetValues(typeof(InputDefines.MouseButton));
             _onButtonEventDatas = new OnMouseButtonEventData[buttons.Length];
-            foreach(InputDefines.MouseButton btn in buttons)
+            foreach (InputDefines.MouseButton btn in buttons)
             {
                 _onButtonEventDatas[(int)btn] = new OnMouseButtonEventData(btn);
             }
@@ -64,15 +60,15 @@ namespace Hinode
         public override bool IsCreatableControllerObject(Model model, IViewObject viewObject)
             => false;
 
-        public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
-            => throw new System.ArgumentException($"'{this.GetType()}' don't need IControllerObject!");
+        public override IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject)
+            => throw new System.ArgumentException($"'{this.GetType()}' don't need IEventDispatcherHelper!");
 
         protected override EventInfoManager CreateEventInfoManager()
             => new EventInfoManager(
-                    EventInfoManager.Info.Create<IOnMouseCursorMoveSender, IOnMouseCursorMoveReciever>(MouseEventName.onMouseCursorMove),
-                    EventInfoManager.Info.Create<IOnMouseLeftButtonSender, IOnMouseLeftButtonReciever>(MouseEventName.onMouseLeftButton),
-                    EventInfoManager.Info.Create<IOnMouseRightButtonSender, IOnMouseRightButtonReciever>(MouseEventName.onMouseRightButton),
-                    EventInfoManager.Info.Create<IOnMouseMiddleButtonSender, IOnMouseMiddleButtonReciever>(MouseEventName.onMouseMiddleButton)
+                    EventInfoManager.Info.Create<IOnMouseCursorMoveEventHandler>(MouseEventName.onMouseCursorMove),
+                    EventInfoManager.Info.Create<IOnMouseLeftButtonEventHandler>(MouseEventName.onMouseLeftButton),
+                    EventInfoManager.Info.Create<IOnMouseRightButtonEventHandler>(MouseEventName.onMouseRightButton),
+                    EventInfoManager.Info.Create<IOnMouseMiddleButtonEventHandler>(MouseEventName.onMouseMiddleButton)
                     );
 
         protected override void UpdateImpl(ModelViewBinderInstanceMap binderInstanceMap)
@@ -87,7 +83,7 @@ namespace Hinode
                 _onMoveEventData.UpdatePos(ReplayableInput.Instance.MousePos);
             }
 
-            foreach(var btn in _onButtonEventDatas)
+            foreach (var btn in _onButtonEventDatas)
             {
                 btn.Update();
             }

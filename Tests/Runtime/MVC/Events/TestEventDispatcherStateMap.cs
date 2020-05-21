@@ -22,7 +22,7 @@ namespace Hinode.Tests.MVC.Controller
             test,
             testSecond,
         }
-        interface IOnTestReciever : IControllerReciever { }
+        interface IOnTestReciever : IEventHandler { }
 
         // A Test behaves as an ordinary method
         [Test]
@@ -35,9 +35,9 @@ namespace Hinode.Tests.MVC.Controller
             );
             var testBinder = new ModelViewBinder("*", null,
                     new ModelViewBinder.BindInfo(typeof(EmptyViewObject))
-                        .AddControllerInfo(new ControllerInfo(TestEventName.test, new RecieverSelector(ModelRelationShip.Self, "", ""))),
+                        .AddControllerInfo(new ControllerInfo(TestEventName.test, new EventHandlerSelector(ModelRelationShip.Self, "", ""))),
                     new ModelViewBinder.BindInfo(viewID, typeof(EmptyViewObject))
-                        .AddControllerInfo(new ControllerInfo(TestEventName.test, new RecieverSelector(ModelRelationShip.Self, "", "")))
+                        .AddControllerInfo(new ControllerInfo(TestEventName.test, new EventHandlerSelector(ModelRelationShip.Self, "", "")))
                 );
             var binderMap = new ModelViewBinderMap(viewCreator,
                     testBinder

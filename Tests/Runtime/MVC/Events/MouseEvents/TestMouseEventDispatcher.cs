@@ -19,32 +19,31 @@ namespace Hinode.Tests.MVC.Controller.Mouse
 
             var eventInfo = senderGroup.EventInfos;
 
-            var checkList = new (MouseEventName, System.Type senderType, System.Type recieverType)[]
+            var checkList = new (MouseEventName, System.Type eventHandlerType)[]
             {
-                (MouseEventName.onMouseCursorMove, typeof(IOnMouseCursorMoveSender), typeof(IOnMouseCursorMoveReciever)),
-                (MouseEventName.onMouseLeftButton, typeof(IOnMouseLeftButtonSender), typeof(IOnMouseLeftButtonReciever)),
-                (MouseEventName.onMouseRightButton, typeof(IOnMouseRightButtonSender), typeof(IOnMouseRightButtonReciever)),
-                (MouseEventName.onMouseMiddleButton, typeof(IOnMouseMiddleButtonSender), typeof(IOnMouseMiddleButtonReciever)),
+                (MouseEventName.onMouseCursorMove, typeof(IOnMouseCursorMoveEventHandler)),
+                (MouseEventName.onMouseLeftButton, typeof(IOnMouseLeftButtonEventHandler)),
+                (MouseEventName.onMouseRightButton, typeof(IOnMouseRightButtonEventHandler)),
+                (MouseEventName.onMouseMiddleButton, typeof(IOnMouseMiddleButtonEventHandler)),
             };
 
-            foreach(var (eventName, senderType, recieverType) in checkList)
+            foreach (var (eventName, eventHandlerType) in checkList)
             {
                 Assert.IsTrue(eventInfo.ContainKeyword(eventName), $"Invalid {eventName}...");
-                Assert.AreEqual(senderType, eventInfo.GetSenderType(eventName), $"Invalid {eventName}...");
-                Assert.AreEqual(recieverType, eventInfo.GetRecieverType(eventName), $"Invalid {eventName}...");
+                Assert.AreEqual(eventHandlerType, eventInfo.GetEventHandlerType(eventName), $"Invalid {eventName}...");
                 Assert.IsTrue(eventInfo.DoEnabledEvent(eventName), $"Invalid {eventName}...");
             }
         }
 
         class OnMovePassModel : Model
-            , IOnMouseCursorMoveReciever
+            , IOnMouseCursorMoveEventHandler
         {
             public Model SendModel { get; private set; }
             public OnMouseCursorMoveEventData EventData { get; set; }
             public int RecievedCount { get; set; }
 
             public void OnMouseCursorMove(Model sender, OnMouseCursorMoveEventData eventData)
-			{
+            {
                 RecievedCount++;
                 SendModel = sender;
                 EventData = eventData;
@@ -60,7 +59,7 @@ namespace Hinode.Tests.MVC.Controller.Mouse
             var allBinder = new ModelViewBinder("*", null)
                 .AddControllerInfo(new ControllerInfo(
                     MouseEventName.onMouseCursorMove.ToString(),
-                    new RecieverSelector(ModelRelationShip.Self, "", "")
+                    new EventHandlerSelector(ModelRelationShip.Self, "", "")
                 ));
             var binderMap = new ModelViewBinderMap(viewInstanceCreator,
                 allBinder);
@@ -80,37 +79,37 @@ namespace Hinode.Tests.MVC.Controller.Mouse
                 var endPos = new Vector3(222f, -111f, 0);
                 var loopCount = 5;
                 model.RecievedCount = 0;
-                for (var i=0; i < loopCount; ++i)
-			    {
-                    var mousePos = Vector3.Lerp(startPos, endPos, (float)i/ loopCount);
+                for (var i = 0; i < loopCount; ++i)
+                {
+                    var mousePos = Vector3.Lerp(startPos, endPos, (float)i / loopCount);
                     var prevMousePos = ReplayableInput.Instance.RecordedMousePos;
                     ReplayableInput.Instance.RecordedMousePos = mousePos;
                     senderGroup.Update(binderInstanceMap);
                     senderGroup.SendTo(binderInstanceMap);
 
-                    Assert.AreEqual(i+1, model.RecievedCount);
+                    Assert.AreEqual(i + 1, model.RecievedCount);
                     Assert.AreSame(model, model.SendModel);
                     Assert.AreEqual(mousePos, model.EventData.CursorPosition);
                     Assert.AreEqual(prevMousePos, model.EventData.PrevCursorPosition);
                 }
             }
 
-			{//
+            {//
                 ReplayableInput.Instance.RecordedMousePos = Vector2.zero;
                 model.RecievedCount = 0;
-                for (var i=0; i<5; ++i)
-				{
+                for (var i = 0; i < 5; ++i)
+                {
                     senderGroup.Update(binderInstanceMap);
                     senderGroup.SendTo(binderInstanceMap);
-				}
+                }
                 Assert.AreEqual(1, model.RecievedCount, $"OnMouseCursorMove send only when move mouse position...");
             }
         }
 
         class OnButtonPassModel : Model
-            , IOnMouseLeftButtonReciever
-            , IOnMouseRightButtonReciever
-            , IOnMouseMiddleButtonReciever
+            , IOnMouseLeftButtonEventHandler
+            , IOnMouseRightButtonEventHandler
+            , IOnMouseMiddleButtonEventHandler
         {
             public Model SendModel { get; set; }
             public OnMouseButtonEventData LastEventData { get; set; }
@@ -140,15 +139,15 @@ namespace Hinode.Tests.MVC.Controller.Mouse
             var allBinder = new ModelViewBinder("*", null)
                 .AddControllerInfo(new ControllerInfo(
                     MouseEventName.onMouseLeftButton.ToString(),
-                    new RecieverSelector(ModelRelationShip.Self, "", "")
+                    new EventHandlerSelector(ModelRelationShip.Self, "", "")
                 ))
                 .AddControllerInfo(new ControllerInfo(
                     MouseEventName.onMouseRightButton.ToString(),
-                    new RecieverSelector(ModelRelationShip.Self, "", "")
+                    new EventHandlerSelector(ModelRelationShip.Self, "", "")
                 ))
                 .AddControllerInfo(new ControllerInfo(
                     MouseEventName.onMouseMiddleButton.ToString(),
-                    new RecieverSelector(ModelRelationShip.Self, "", "")
+                    new EventHandlerSelector(ModelRelationShip.Self, "", "")
                 ))
                 ;
             var binderMap = new ModelViewBinderMap(viewInstanceCreator,
@@ -169,14 +168,14 @@ namespace Hinode.Tests.MVC.Controller.Mouse
                 MouseEventName.onMouseRightButton,
                 MouseEventName.onMouseMiddleButton,
             };
-            foreach(var btn in btnEvents)
+            foreach (var btn in btnEvents)
             {
                 Assert.IsTrue(senderGroup.DoEnabledEvent(btn), $"Invalid Mouse Button({btn})...");
 
                 senderGroup.SetEnabledEvent(btn, false);//for Test
             }
 
-            foreach(var (btn, eventName) in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>()
+            foreach (var (btn, eventName) in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>()
                 .Zip(btnEvents, (b, e) => (b, e)))
             {
                 senderGroup.SetEnabledEvent(eventName, true);//for Test
@@ -216,18 +215,18 @@ namespace Hinode.Tests.MVC.Controller.Mouse
 
                     int prevFrame = 0;
                     float prevSecond = 0f;
-                    for(var i=0; i<pushFrameCount; ++i)
+                    for (var i = 0; i < pushFrameCount; ++i)
                     {//Push
                         senderGroup.Update(binderInstanceMap);
                         senderGroup.SendTo(binderInstanceMap);
 
                         var errorMessage = $"Invalid Mouse Button{btn}...";
                         Assert.AreEqual(model, model.SendModel, errorMessage);
-                        Assert.AreEqual(i+1, model.RecievedCount, errorMessage);
+                        Assert.AreEqual(i + 1, model.RecievedCount, errorMessage);
                         Assert.IsNotNull(model.LastEventData, errorMessage);
                         Assert.AreEqual(btn, model.LastEventData.TargetButton, errorMessage);
                         Assert.AreEqual(condition, model.LastEventData.Condition, errorMessage);
-                        Assert.AreEqual(prevFrame+1, model.LastEventData.PushFrame, errorMessage);
+                        Assert.AreEqual(prevFrame + 1, model.LastEventData.PushFrame, errorMessage);
                         Assert.IsTrue(prevSecond < model.LastEventData.PushSeconds, errorMessage);
                         Assert.AreEqual(ReplayableInput.Instance, model.LastEventData.Input, errorMessage);
 
@@ -263,7 +262,7 @@ namespace Hinode.Tests.MVC.Controller.Mouse
                     Assert.IsNotNull(model.LastEventData, errorMessage);
                     Assert.AreEqual(btn, model.LastEventData.TargetButton, errorMessage);
                     Assert.AreEqual(condition, model.LastEventData.Condition, errorMessage);
-                    Assert.AreEqual(prevFrame+1, model.LastEventData.PushFrame, errorMessage);
+                    Assert.AreEqual(prevFrame + 1, model.LastEventData.PushFrame, errorMessage);
                     Assert.IsTrue(prevSecond < model.LastEventData.PushSeconds, errorMessage);
                     Assert.AreEqual(ReplayableInput.Instance, model.LastEventData.Input, errorMessage);
                 }

@@ -6,27 +6,17 @@ using UnityEngine;
 
 namespace Hinode.Tests.MVC.Controller
 {
-    interface ITestSender : IControllerSender
-    { }
-
-    interface ITestReciever : IControllerReciever
+    interface ITestReciever : IEventHandler
     {
         void Test(Model sender, int value);
     }
 
-
-    interface ITest2Sender : IControllerSender
-    { }
-
-    interface ITest2Reciever : IControllerReciever
+    interface ITest2Reciever : IEventHandler
     {
         void Test2(Model sender, int value);
     }
 
-    interface IEmptySender : IControllerSender
-    { }
-
-    interface IEmptyReciever : IControllerReciever
+    interface IEmptyReciever : IEventHandler
     {
     }
 
@@ -38,7 +28,7 @@ namespace Hinode.Tests.MVC.Controller
         #region IEventDispatcher interface
         public override bool DoEnabled { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
-        public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
+        public override IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject)
         {
             throw new System.NotImplementedException();
         }
@@ -50,8 +40,8 @@ namespace Hinode.Tests.MVC.Controller
 
         protected override EventInfoManager CreateEventInfoManager()
             => new EventInfoManager(
-                EventInfoManager.CreateInfo<ITestSender, ITestReciever>("onTest"),
-                EventInfoManager.CreateInfo<ITest2Sender, ITest2Reciever>("onTest2")
+                EventInfoManager.CreateInfo<ITestReciever>("onTest"),
+                EventInfoManager.CreateInfo<ITest2Reciever>("onTest2")
             );
 
         protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)

@@ -348,14 +348,14 @@ namespace Hinode
         List<IViewObject> _viewObjects = new List<IViewObject>();
         Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
 
-        Dictionary<IViewObject, HashSet<IControllerObject>> _controllerObjectListDict = new Dictionary<IViewObject, HashSet<IControllerObject>>();
+        Dictionary<IViewObject, HashSet<IEventDispatcherHelper>> _eventDispathcerHelpObjectListDict = new Dictionary<IViewObject, HashSet<IEventDispatcherHelper>>();
 
         public ModelViewBinder Binder { get; private set; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; private set; }
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
-        public IReadOnlyDictionary<IViewObject, HashSet<IControllerObject>> ControllerObjectsForView { get => _controllerObjectListDict; }
+        public IReadOnlyDictionary<IViewObject, HashSet<IEventDispatcherHelper>> EventDispatcherHelpObjectsForView { get => _eventDispathcerHelpObjectListDict; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
@@ -374,9 +374,9 @@ namespace Hinode
                 foreach (var view in ViewObjects
                     .Where(_v => eventDispatcherMap.IsCreatableControllerObjects(Model, _v, _v.UseBindInfo.Controllers.Values)))
                 {
-                    var controllerObjects = eventDispatcherMap.CreateControllerObjects(Model, view, view.UseBindInfo.Controllers.Values);
+                    var controllerObjects = eventDispatcherMap.CreateEventDispatcherHelpObjects(Model, view, view.UseBindInfo.Controllers.Values);
                     var objsTypes = controllerObjects.Select(_o => _o.GetType().FullName).Aggregate((_s, _c) => _s + ";" + _c);
-                    _controllerObjectListDict.Add(view, controllerObjects);
+                    _eventDispathcerHelpObjectListDict.Add(view, controllerObjects);
                 }
             }
 
@@ -484,35 +484,35 @@ namespace Hinode
             return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
         }
 
-        #region IControllerObject
-        public bool HasControllerObject(IViewObject viewObject, System.Type controllerObjectType)
+        #region IEventDispatcherHelper
+        public bool HasEventDispatcherHelpObject(IViewObject viewObject, System.Type helpObjectType)
         {
-            Assert.IsTrue(controllerObjectType.HasInterface<IControllerObject>(), $"{controllerObjectType} is not IControllerObject interface...");
+            Assert.IsTrue(helpObjectType.HasInterface<IEventDispatcherHelper>(), $"{helpObjectType} is not IEventDispatcherHelper interface...");
             Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
 
-            if (!_controllerObjectListDict.ContainsKey(viewObject)) return false;
-            return _controllerObjectListDict[viewObject]
-                .Any(_c => _c.GetType().IsSameOrInheritedType(controllerObjectType));
+            if (!_eventDispathcerHelpObjectListDict.ContainsKey(viewObject)) return false;
+            return _eventDispathcerHelpObjectListDict[viewObject]
+                .Any(_c => _c.GetType().IsSameOrInheritedType(helpObjectType));
         }
 
-        public bool HasControllerObject<T>(IViewObject viewObject)
-            where T : class, IControllerObject
-            => HasControllerObject(viewObject, typeof(T));
+        public bool HasEventDispathcerHelpObject<T>(IViewObject viewObject)
+            where T : class, IEventDispatcherHelper
+            => HasEventDispatcherHelpObject(viewObject, typeof(T));
 
-        public IControllerObject GetControllerObject(IViewObject viewObject, System.Type controllerObjectType)
+        public IEventDispatcherHelper GetEventDispathcerHelpObject(IViewObject viewObject, System.Type controllerObjectType)
         {
-            Assert.IsTrue(controllerObjectType.HasInterface<IControllerObject>(), $"{controllerObjectType} is not IControllerObject interface...");
+            Assert.IsTrue(controllerObjectType.HasInterface<IEventDispatcherHelper>(), $"{controllerObjectType} is not IEventDispatcherHelper interface...");
             Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
 
 
-            if (!_controllerObjectListDict.ContainsKey(viewObject)) return null;
-            return _controllerObjectListDict[viewObject]
+            if (!_eventDispathcerHelpObjectListDict.ContainsKey(viewObject)) return null;
+            return _eventDispathcerHelpObjectListDict[viewObject]
                 .FirstOrDefault(_c => _c.GetType().IsSameOrInheritedType(controllerObjectType));
         }
 
-        public T GetControllerObject<T>(IViewObject viewObject)
-            where T : class, IControllerObject
-            => GetControllerObject(viewObject, typeof(T)) as T;
+        public T GetEventDispathcerHelpObject<T>(IViewObject viewObject)
+            where T : class, IEventDispatcherHelper
+            => GetEventDispathcerHelpObject(viewObject, typeof(T)) as T;
         #endregion
 
         #region IDisposabe interface
@@ -522,9 +522,9 @@ namespace Hinode
             {
                 foreach (var view in ViewObjects)
                 {
-                    if(_controllerObjectListDict.ContainsKey(view))
+                    if(_eventDispathcerHelpObjectListDict.ContainsKey(view))
                     {
-                        foreach(var sender in _controllerObjectListDict[view])
+                        foreach(var sender in _eventDispathcerHelpObjectListDict[view])
                         {
                             sender.Destroy();
                         }
@@ -543,7 +543,7 @@ namespace Hinode
                     view.UseBinderInstance = null;
                 }
                 _autoLayoutViewObjects.Clear();
-                _controllerObjectListDict.Clear();
+                _eventDispathcerHelpObjectListDict.Clear();
                 _viewObjects.Clear();
             }
 
@@ -613,25 +613,25 @@ namespace Hinode
 
     public static partial class IViewObjectExtensions
     {
-        public static bool HasControllerObject(this IViewObject viewObject, System.Type controllerObjectType)
+        public static bool HasEventDispathcerHelpObject(this IViewObject viewObject, System.Type controllerObjectType)
         {
             if (viewObject.UseBinderInstance == null) return false;
-            return viewObject.UseBinderInstance.HasControllerObject(viewObject, controllerObjectType);
+            return viewObject.UseBinderInstance.HasEventDispatcherHelpObject(viewObject, controllerObjectType);
         }
 
-        public static bool HasControllerObject<T>(this IViewObject viewObject)
-            where T : class, IControllerObject
-            => viewObject.UseBinderInstance.HasControllerObject<T>(viewObject);
+        public static bool HasEventDispatcherHelpObject<T>(this IViewObject viewObject)
+            where T : class, IEventDispatcherHelper
+            => viewObject.UseBinderInstance.HasEventDispathcerHelpObject<T>(viewObject);
 
-        public static IControllerObject GetControllerObject(this IViewObject viewObject, System.Type controllerObjectType)
+        public static IEventDispatcherHelper GetEventDispathcerHelpObject(this IViewObject viewObject, System.Type controllerObjectType)
         {
             if (viewObject.UseBinderInstance == null) return null;
-            return viewObject.UseBinderInstance.GetControllerObject(viewObject, controllerObjectType);
+            return viewObject.UseBinderInstance.GetEventDispathcerHelpObject(viewObject, controllerObjectType);
         }
 
-        public static T GetControllerObject<T>(this IViewObject viewObject)
-            where T : class, IControllerObject
-            => viewObject.UseBinderInstance.GetControllerObject<T>(viewObject);
+        public static T GetEventDispathcerHelpObject<T>(this IViewObject viewObject)
+            where T : class, IEventDispatcherHelper
+            => viewObject.UseBinderInstance.GetEventDispathcerHelpObject<T>(viewObject);
 
     }
 }

@@ -13,7 +13,7 @@ namespace Hinode
     /// <seealso cref="ModelViewBinderInstance"/>
     /// <seealso cref="PointerEventDispatcher"/>
     /// </summary>
-    public interface IOnPointerEventControllerObject : IControllerObject
+    public interface IOnPointerEventHelpObject : IEventDispatcherHelper
     {
         bool IsScreenOverlay { get; }
         bool IsOnPointer(Vector3 screenPos, Camera useCamera);
@@ -31,7 +31,7 @@ namespace Hinode
     ///
     /// NOTE: 実際にOnPointerEventを処理する時はUseCameraからのRaycastも併用されます。
     /// </summary>
-    public class IOnPointerEventControllerObjectComparer : IComparer<IOnPointerEventControllerObject>
+    public class IOnPointerEventControllerObjectComparer : IComparer<IOnPointerEventHelpObject>
     {
         public Camera UseCamera { get; }
         public IOnPointerEventControllerObjectComparer(Camera useCamera)
@@ -41,7 +41,7 @@ namespace Hinode
         }
 
         #region IComparer<IOnPointerEventControllerObject>
-        public int Compare(IOnPointerEventControllerObject left, IOnPointerEventControllerObject right)
+        public int Compare(IOnPointerEventHelpObject left, IOnPointerEventHelpObject right)
         {
             if (left.IsScreenOverlay && !right.IsScreenOverlay)
                 return -1;
@@ -59,7 +59,7 @@ namespace Hinode
         }
         #endregion
 
-        int CompareBothScreenOverlay(IOnPointerEventControllerObject left, IOnPointerEventControllerObject right)
+        int CompareBothScreenOverlay(IOnPointerEventHelpObject left, IOnPointerEventHelpObject right)
         {
             Assert.IsNotNull(left.RootCanvas);
             Assert.IsNotNull(right.RootCanvas);
@@ -88,7 +88,7 @@ namespace Hinode
             }
         }
 
-        int CompareBothInWorld(IOnPointerEventControllerObject left, IOnPointerEventControllerObject right)
+        int CompareBothInWorld(IOnPointerEventHelpObject left, IOnPointerEventHelpObject right)
         {
             Assert.IsFalse(left.IsScreenOverlay);
             Assert.IsFalse(right.IsScreenOverlay);

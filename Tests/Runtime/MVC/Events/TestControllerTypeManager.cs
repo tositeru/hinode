@@ -7,9 +7,8 @@ using UnityEngine.TestTools;
 namespace Hinode.Tests.MVC.Controller
 {
     /// <summary>
-    /// <seealso cref="ControllerTypeManager"/>
-    /// <seealso cref="IControllerSender"/>
-    /// <seealso cref="IControllerSender"/>
+    /// <seealso cref="EventHandlerTypeManager"/>
+    /// <seealso cref="IEventHandler"/>
     /// </summary>
     public class TestControllerTypeManager
     {

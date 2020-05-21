@@ -19,8 +19,8 @@ namespace Hinode.Tests.MVC.Controller
             test,
             testSecond,
         }
-        interface IOnTestReciever : IControllerReciever { }
-        interface IOnTest2Reciever : IControllerReciever { }
+        interface IOnTestReciever : IEventHandler { }
+        interface IOnTest2Reciever : IEventHandler { }
 
         [Test]
         public void BasicPasses()

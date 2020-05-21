@@ -18,14 +18,12 @@ namespace Hinode.Tests.MVC.Controller
             Orange
         }
 
-        interface IAppleEventSender : IControllerSender
-        { }
-        interface IAppleEventReciever : IControllerReciever
+        interface IAppleEventHandler : IEventHandler
         {
             void OnApple(Model sender, int value);
         }
 
-        class AppleModel : Model, IAppleEventReciever
+        class AppleModel : Model, IAppleEventHandler
         {
             public Model Sender { get; set; }
             public int Value { get; set; }
@@ -36,14 +34,12 @@ namespace Hinode.Tests.MVC.Controller
             }
         }
 
-        interface IOrangeEventSender : IControllerSender
-        { }
-        interface IOrangeEventReciever : IControllerReciever
+        interface IOrangeEventHandler : IEventHandler
         {
             void OnOrange(Model sender, float value);
         }
 
-        class OrangeModel : Model, IOrangeEventReciever
+        class OrangeModel : Model, IOrangeEventHandler
         {
             public Model Sender { get; set; }
             public float Value { get; set; }
@@ -54,13 +50,13 @@ namespace Hinode.Tests.MVC.Controller
             }
         }
 
-        class ControllerObj : IControllerObject
+        class ControllerObj : IEventDispatcherHelper
         {
             public TestEventName EventName { get; }
 
             public ControllerObj(TestEventName eventName) { EventName = eventName; }
 
-            #region IControllerObject
+            #region IEventDispatcherHelper
             public void Destroy()
             { }
             #endregion
@@ -73,7 +69,7 @@ namespace Hinode.Tests.MVC.Controller
             #region IEventDispatcher interface
             public override bool DoEnabled { get; set; } = true;
 
-            public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
+            public override IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject)
             {
                 return new ControllerObj(TestEventName.Apple);
             }
@@ -85,7 +81,7 @@ namespace Hinode.Tests.MVC.Controller
 
             protected override EventInfoManager CreateEventInfoManager()
                 => new EventInfoManager(
-                    EventInfoManager.CreateInfo<IAppleEventSender, IAppleEventReciever>(TestEventName.Apple)
+                    EventInfoManager.CreateInfo<IAppleEventHandler>(TestEventName.Apple)
                 );
 
             protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
@@ -111,7 +107,7 @@ namespace Hinode.Tests.MVC.Controller
             #region IEventDispatcher interface
             public override bool DoEnabled { get; set; } = true;
 
-            public override IControllerObject CreateControllerObject(Model model, IViewObject viewObject)
+            public override IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject)
             {
                 return new ControllerObj(TestEventName.Orange);
             }
@@ -123,7 +119,7 @@ namespace Hinode.Tests.MVC.Controller
 
             protected override EventInfoManager CreateEventInfoManager()
                 => new EventInfoManager(
-                    EventInfoManager.CreateInfo<IOrangeEventSender, IOrangeEventReciever>(TestEventName.Orange)
+                    EventInfoManager.CreateInfo<IOrangeEventHandler>(TestEventName.Orange)
                 );
 
             protected override object GetEventData(Model model, IViewObject viewObject, ControllerInfo controllerInfo)
@@ -145,10 +141,10 @@ namespace Hinode.Tests.MVC.Controller
         [SetUp]
         public void Setup()
         {
-            ControllerTypeManager.EntryRecieverExecuter<IAppleEventReciever, int>(
-                (reciever, sender, eventData) => (reciever as IAppleEventReciever).OnApple(sender, eventData));
-            ControllerTypeManager.EntryRecieverExecuter<IOrangeEventReciever, float>(
-                (reciever, sender, eventData) => (reciever as IOrangeEventReciever).OnOrange(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IAppleEventHandler, int>(
+                (reciever, sender, eventData) => (reciever as IAppleEventHandler).OnApple(sender, eventData));
+            EventHandlerTypeManager.EntryEventHandlerExecuter<IOrangeEventHandler, float>(
+                (reciever, sender, eventData) => (reciever as IOrangeEventHandler).OnOrange(sender, eventData));
         }
 
         [Test, Description("IControllerObjectの作成関係のテスト")]
@@ -182,7 +178,7 @@ namespace Hinode.Tests.MVC.Controller
                     var errorMessage = $"Failed... {identity}";
                     Assert.IsTrue(eventDispatcherMap.IsCreatableControllerObjects(model, viewObj, controllerInfos), errorMessage);
                     Assert.DoesNotThrow(() => {
-                        var objs = eventDispatcherMap.CreateControllerObjects(model, viewObj, controllerInfos);
+                        var objs = eventDispatcherMap.CreateEventDispatcherHelpObjects(model, viewObj, controllerInfos);
                         var errorMessageAtCreate = $"Failed to create controller objects... {identity}";
                         Assert.IsNotNull(objs, errorMessageAtCreate);
                         Assert.AreEqual(1, objs.Count, errorMessageAtCreate);
@@ -210,7 +206,7 @@ namespace Hinode.Tests.MVC.Controller
                     var identity = $"model={model}, viewObj={viewObj}, controllerInfos={controllerInfoKeywords}";
                     var errorMessage = $"Failed... {identity}";
                     Assert.IsFalse(eventDispatcherMap.IsCreatableControllerObjects(model, viewObj, controllerInfos), errorMessage);
-                    Assert.IsNull(eventDispatcherMap.CreateControllerObjects(model, viewObj, controllerInfos), $"Not return Null... {identity}");
+                    Assert.IsNull(eventDispatcherMap.CreateEventDispatcherHelpObjects(model, viewObj, controllerInfos), $"Not return Null... {identity}");
                 }
             }
         }
@@ -245,7 +241,7 @@ namespace Hinode.Tests.MVC.Controller
         [Test]
         public void UpdateAndSendToPasses()
         {
-            var selfSelector = new RecieverSelector(ModelRelationShip.Self, "", "");
+            var selfSelector = new EventHandlerSelector(ModelRelationShip.Self, "", "");
             var appleBinder = new ModelViewBinder("Apple", null)
                 .AddEnabledModelType<AppleModel>()
                 .AddControllerInfo(new ControllerInfo(TestEventName.Apple, selfSelector));

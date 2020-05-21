@@ -10,28 +10,28 @@ namespace Hinode
     /// </summary>
     public class ControllerInfo
     {
-        List<RecieverSelector> _recieverInfos = new List<RecieverSelector>();
+        List<EventHandlerSelector> _recieverInfos = new List<EventHandlerSelector>();
         public string Keyword { get; set; }
-        public IEnumerable<RecieverSelector> RecieverSelectors { get => _recieverInfos; }
+        public IEnumerable<EventHandlerSelector> RecieverSelectors { get => _recieverInfos; }
 
-        public ControllerInfo(string keyword, params RecieverSelector[] recieverInfos)
+        public ControllerInfo(string keyword, params EventHandlerSelector[] recieverInfos)
             : this(keyword, recieverInfos.AsEnumerable())
         { }
 
-        public ControllerInfo(string keyword, IEnumerable<RecieverSelector> recieverInfos)
+        public ControllerInfo(string keyword, IEnumerable<EventHandlerSelector> recieverInfos)
         {
             Keyword = keyword;
             _recieverInfos = recieverInfos.ToList();
         }
 
-        public ControllerInfo(System.Enum keyword, params RecieverSelector[] recieverInfos)
+        public ControllerInfo(System.Enum keyword, params EventHandlerSelector[] recieverInfos)
             : this(keyword.ToString(), recieverInfos.AsEnumerable())
         { }
-        public ControllerInfo(System.Enum keyword, IEnumerable<RecieverSelector> recieverInfos)
+        public ControllerInfo(System.Enum keyword, IEnumerable<EventHandlerSelector> recieverInfos)
             : this(keyword.ToString(), recieverInfos.AsEnumerable())
         { }
 
-        public void AddRecieverInfo(RecieverSelector selector)
+        public void AddRecieverInfo(EventHandlerSelector selector)
         {
             _recieverInfos.Add(selector);
         }

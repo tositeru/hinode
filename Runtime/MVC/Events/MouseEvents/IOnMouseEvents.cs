@@ -27,12 +27,7 @@ namespace Hinode
         }
     }
 
-    public interface IOnMouseCursorMoveSender : IControllerSender
-    {
-
-    }
-
-    public interface IOnMouseCursorMoveReciever : IControllerReciever
+    public interface IOnMouseCursorMoveEventHandler : IEventHandler
     {
         void OnMouseCursorMove(Model sender, OnMouseCursorMoveEventData eventData);
     }
@@ -74,25 +69,17 @@ namespace Hinode
         }
     }
 
-    public interface IOnMouseLeftButtonSender : IControllerSender
-    {}
-
-    public interface IOnMouseLeftButtonReciever : IControllerReciever
+    public interface IOnMouseLeftButtonEventHandler : IEventHandler
     {
         void OnMouseLeftButton(Model sender, OnMouseButtonEventData eventData);
     }
-    public interface IOnMouseRightButtonSender : IControllerSender
-    { }
 
-    public interface IOnMouseRightButtonReciever : IControllerReciever
+    public interface IOnMouseRightButtonEventHandler : IEventHandler
     {
         void OnMouseRightButton(Model sender, OnMouseButtonEventData eventData);
     }
 
-    public interface IOnMouseMiddleButtonSender : IControllerSender
-    { }
-
-    public interface IOnMouseMiddleButtonReciever : IControllerReciever
+    public interface IOnMouseMiddleButtonEventHandler : IEventHandler
     {
         void OnMouseMiddleButton(Model sender, OnMouseButtonEventData eventData);
     }

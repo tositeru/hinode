@@ -27,20 +27,20 @@ namespace Hinode
         {
             if (!_enabledEventTypes.Contains(type))
             {
-                Assert.IsTrue(type.HasInterface<IControllerReciever>());
+                Assert.IsTrue(type.HasInterface<IEventHandler>());
 
                 _enabledEventTypes.Add(type);
             }
             return this;
         }
         public EventDispatchQuery AddIncludedEventType<T>()
-            where T : IControllerReciever
+            where T : IEventHandler
             => AddIncludedEventType(typeof(T));
 
         public bool DoMatch(Model model, IViewObject viewObj, System.Type eventType)
         {
             Assert.IsNotNull(model);
-            Assert.IsTrue(eventType.HasInterface<IControllerReciever>(), $"Invalid EventType({eventType})...");
+            Assert.IsTrue(eventType.HasInterface<IEventHandler>(), $"Invalid EventType({eventType})...");
             if(viewObj == null)
             {
                 return model.DoMatchQuery(Query)
@@ -57,13 +57,13 @@ namespace Hinode
             }
         }
         public bool DoMatch<T>(Model model, IViewObject viewObj)
-            where T : IControllerReciever
+            where T : IEventHandler
             => DoMatch(model, viewObj, typeof(T));
 
         public bool DoEnableEventType(System.Type eventType)
             => (!_enabledEventTypes.Any() || _enabledEventTypes.Contains(eventType));
         public bool DoEnableEventType<T>()
-            where T : IControllerReciever
+            where T : IEventHandler
             => DoEnableEventType(typeof(T));
 
     }

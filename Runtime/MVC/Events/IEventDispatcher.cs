@@ -7,7 +7,7 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
-    /// グループ化できるIControllerSenderをまとめたもの
+    /// Eventを発行するためのクラス
     /// </summary>
     public abstract class IEventDispatcher
     {
@@ -33,7 +33,7 @@ namespace Hinode
         /// <param name="model"></param>
         /// <param name="viewObject"></param>
         /// <returns></returns>
-        public abstract IControllerObject CreateControllerObject(Model model, IViewObject viewObject);
+        public abstract IEventDispatcherHelper CreateEventDispatcherHelpObject(Model model, IViewObject viewObject);
 
         /// <summary>
         /// 派生クラスがサポートするEventの情報をまとめたEventInfoManagerを作成します。
@@ -61,7 +61,7 @@ namespace Hinode
                             DispatchStateName.disable,
                             _c.model,
                             _c.viewObj,
-                            EventInfos.GetRecieverType(_c.controllerInfo.Keyword))
+                            EventInfos.GetEventHandlerType(_c.controllerInfo.Keyword))
                         ?? true)
                 );
         }
@@ -100,7 +100,7 @@ namespace Hinode
         }
 
         /// <summary>
-        /// binderInstanceMapが保持しているModel,IViewObjectの内、このISenderGroupが対応しているIControllerSenderのControllerInfoを持つものを検索し、現在のEventDataを送信する関数
+        /// binderInstanceMapが保持しているModel,IViewObject中からこのIEventDispatcherが対応しているControllerInfoを持つものを検索し、イベントを送信します
         /// </summary>
         /// <param name="binderInstanceMap"></param>
         public void SendTo(ModelViewBinderInstanceMap binderInstanceMap)
@@ -109,7 +109,7 @@ namespace Hinode
             var supportedControllerInfos = GetSupportedControllerInfos(binderInstanceMap);
             foreach (var (model, viewObj, controllerInfo) in supportedControllerInfos)
             {
-                var recieverType = EventInfos.GetRecieverType(controllerInfo.Keyword);
+                var recieverType = EventInfos.GetEventHandlerType(controllerInfo.Keyword);
                 var eventData = GetEventData(model, viewObj, controllerInfo);
                 if (recieverType == null || eventData == null) continue;
 
@@ -161,45 +161,39 @@ namespace Hinode
     {
         public class Info
         {
-            public static Info Create<TSender, TReciever>(System.Enum keyword)
-                where TSender : IControllerSender
-                where TReciever : IControllerReciever
-                => Create<TSender, TReciever>(keyword.ToString());
-            public static Info Create<TSender, TReciever>(string keyword)
-                where TSender : IControllerSender
-                where TReciever : IControllerReciever
+            public static Info Create<TEventHandler>(System.Enum keyword)
+                where TEventHandler : IEventHandler
+                => Create<TEventHandler>(keyword.ToString());
+            public static Info Create<TEventHandler>(string keyword)
+                where TEventHandler : IEventHandler
             {
-                return new Info(keyword, typeof(TSender), typeof(TReciever));
+                return new Info(keyword, typeof(TEventHandler));
             }
 
             public string Keyword { get; }
-            public System.Type SenderType { get; }
-            public System.Type RecieverType { get; }
+            public System.Type EnvetHandlerType { get; }
 
             public bool DoEnabled { get; set; } = true;
 
-            public Info(System.Enum keyword, System.Type senderType, System.Type recieverType)
-                : this(keyword.ToString(), senderType, recieverType)
+            public Info(System.Enum keyword, System.Type recieverType)
+                : this(keyword.ToString(), recieverType)
             { }
 
-            public Info(string keyword, System.Type senderType, System.Type recieverType)
+            public Info(string keyword, System.Type recieverType)
             {
                 Keyword = keyword;
-                SenderType = senderType;
-                RecieverType = recieverType;
+                EnvetHandlerType = recieverType;
 
                 //TODO Validate Reciever, Sender and Keyword with Attribute
             }
         }
 
-        public static Info CreateInfo<TSender, TReciever>(string keyword)
-            where TSender : IControllerSender
-            where TReciever : IControllerReciever
-            => new Info(keyword, typeof(TSender), typeof(TReciever));
-        public static Info CreateInfo<TSender, TReciever>(System.Enum keyword)
-            where TSender : IControllerSender
-            where TReciever : IControllerReciever
-            => new Info(keyword.ToString(), typeof(TSender), typeof(TReciever));
+        public static Info CreateInfo<TEventHandler>(string keyword)
+            where TEventHandler : IEventHandler
+            => new Info(keyword, typeof(TEventHandler));
+        public static Info CreateInfo<TEventHandler>(System.Enum keyword)
+            where TEventHandler : IEventHandler
+            => new Info(keyword.ToString(), typeof(TEventHandler));
 
         Dictionary<string, Info> _infos = new Dictionary<string, Info>();
 
@@ -249,14 +243,9 @@ namespace Hinode
         public void SetEnabledEvent(string keyword, bool enabled)
             => this[keyword].DoEnabled = enabled;
 
-        public System.Type GetSenderType(System.Enum keyword)
-            => this[keyword].SenderType;
-        public System.Type GetSenderType(string keyword)
-            => this[keyword].SenderType;
-
-        public System.Type GetRecieverType(System.Enum keyword)
-            => this[keyword].RecieverType;
-        public System.Type GetRecieverType(string keyword)
-            => this[keyword].RecieverType;
+        public System.Type GetEventHandlerType(System.Enum keyword)
+            => this[keyword].EnvetHandlerType;
+        public System.Type GetEventHandlerType(string keyword)
+            => this[keyword].EnvetHandlerType;
     }
 }

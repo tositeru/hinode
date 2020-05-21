@@ -9,11 +9,11 @@ namespace Hinode
     /// OnPointerEventDispatcherのためにオブジェクトの当たり判定を表すMonoBehaviour
     ///
     /// 
-    /// <seealso cref="IOnPointerEventControllerObject"/>
+    /// <seealso cref="IOnPointerEventHelpObject"/>
     /// <seealso cref="PointerEventDispatcher"/>
     /// </summary>
     public class OnPointerEventControllerMonoBehaivour : MonoBehaviour
-        , IOnPointerEventControllerObject
+        , IOnPointerEventHelpObject
     {
         BoxCollider _autoBoxCollider;
 

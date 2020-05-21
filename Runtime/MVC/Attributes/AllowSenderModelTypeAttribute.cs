@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
-    /// IControllerRecieverのメソッドに指定するAttribute
+    /// IEventHandlerのメソッドに指定するAttribute
     /// 受け取ることを想定しているModelの型を指定します。
     /// 簡易的な検証に使用されます。
     /// </summary>
