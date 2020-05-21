@@ -91,6 +91,60 @@ namespace Hinode.Tests.MVC
             Assert.AreEqual(1, count);
         }
 
+        [Test, Description("Modelが更新された時のコールバック呼び出しのテスト")]
+        public void OnDestroyedCallbackPasses()
+        {
+            var parent = new Model() { Name = "Parent" };
+            var child1 = new Model() { Name = "Child1" };
+            var child2 = new Model() { Name = "Child2" };
+
+            var model = new Model() { Name = "model" };
+            model.Parent = parent;
+            model.AddChildren(child1, child2);
+
+            var count = 0;
+            OnDestroyedCallback incrementCounter = (m) => {
+                Assert.AreSame(model, m); count++;
+            };
+            model.OnDestroyed.Add(incrementCounter);
+            var childCount = 0;
+            OnDestroyedCallback childIncrementCounter = (m) => {
+                childCount++;
+            };
+            child1.OnDestroyed.Add(childIncrementCounter);
+            child2.OnDestroyed.Add(childIncrementCounter);
+
+            var otherCallbackCount = 0;
+            model.OnUpdated.Add((m) => { otherCallbackCount++; });
+            model.OnChangedHierarchy.Add((_, __, ___) => { otherCallbackCount++; });
+            model.OnChangedModelIdentities.Add((_) => { otherCallbackCount++; });
+
+            model.Destroy();
+
+            #region Destroyを呼び出したものの確認
+            Assert.AreEqual(1, count);
+            Assert.IsNull(model.Parent);
+            Assert.AreEqual(0, model.ChildCount);
+            #endregion
+
+            #region 子ModelのDestroyも呼び出されているかの確認
+            Assert.AreEqual(2, childCount);
+            Assert.IsNull(child1.Parent);
+            Assert.IsNull(child2.Parent);
+            #endregion
+
+            #region CallbackがClearされているかの確認
+            model.DoneUpdate();
+            Assert.AreEqual(0, otherCallbackCount);
+
+            model.Name = "otherName";
+            Assert.AreEqual(0, otherCallbackCount);
+
+            model.Parent = parent;
+            Assert.AreEqual(0, otherCallbackCount);
+            #endregion
+        }
+
         [Test, Description("Name,LogicalID,StyleIDが変更された時のコールバック呼び出しのテスト")]
         public void OnChangedIdentityCallbackPasses()
         {

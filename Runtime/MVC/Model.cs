@@ -13,6 +13,12 @@ namespace Hinode
     public delegate void OnUpdatedCallback(Model model);
 
     /// <summary>
+    /// Modelの削除された時に呼び出されるイベント
+    /// </summary>
+    /// <param name="model"></param>
+    public delegate void OnDestroyedCallback(Model model);
+
+    /// <summary>
     /// Model#Name,Model#LogicalID,Model#StyleIDのいずれかが変更された時に呼び出されるイベント
     /// </summary>
     public delegate void OnChangedModelIdentitiesCallback(Model model);
@@ -82,10 +88,13 @@ namespace Hinode
         private HashSet<string> _stylingIDs = new HashSet<string>();
 
         private SmartDelegate<OnUpdatedCallback> _onUpdatedCallback = new SmartDelegate<OnUpdatedCallback>();
+        private SmartDelegate<OnDestroyedCallback> _onDestroyedCallback = new SmartDelegate<OnDestroyedCallback>();
+
         private SmartDelegate<OnChangedModelIdentitiesCallback> _onChangedIdentitiesCallback = new SmartDelegate<OnChangedModelIdentitiesCallback>();
         private SmartDelegate<OnChangedModelHierarchyCallback> _onChangedHierarchyCallback = new SmartDelegate<OnChangedModelHierarchyCallback>();
 
         public NotInvokableDelegate<OnUpdatedCallback> OnUpdated { get => _onUpdatedCallback; }
+        public NotInvokableDelegate<OnDestroyedCallback> OnDestroyed { get => _onDestroyedCallback; }
 
         /// <summary>
         /// Model#Name,Model#LogicalID,Model#StyleIDのいずれかが変更された時に呼び出されるDelegate
@@ -142,6 +151,26 @@ namespace Hinode
         {
             _onUpdatedCallback.Instance?.Invoke(this);
         }
+        #endregion
+
+        #region Destroy
+
+        public void Destroy()
+        {
+            _onUpdatedCallback.Clear();
+            _onChangedHierarchyCallback.Clear();
+            _onChangedIdentitiesCallback.Clear();
+
+            foreach(var child in Children.ToArray())
+            {
+                child.Destroy();
+            }
+            Parent = null;
+            _onDestroyedCallback.Instance?.Invoke(this);
+
+            _onDestroyedCallback.Clear();
+        }
+
         #endregion
 
         #region Logical && Styling ID

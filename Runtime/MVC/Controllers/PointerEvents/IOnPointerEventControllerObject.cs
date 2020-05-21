@@ -36,6 +36,7 @@ namespace Hinode
         public Camera UseCamera { get; }
         public IOnPointerEventControllerObjectComparer(Camera useCamera)
         {
+            Assert.IsNotNull(useCamera);
             UseCamera = useCamera;
         }
 
@@ -67,7 +68,9 @@ namespace Hinode
             Assert.IsTrue(left.IsScreenOverlay);
             Assert.IsTrue(right.IsScreenOverlay);
             if (left == right || left.Transform == right.Transform)
+            {
                 return 0;
+            }
 
             var leftRootCanvas = left.RootCanvas;
             var rightRootCanvas = right.RootCanvas;
@@ -76,15 +79,12 @@ namespace Hinode
 
             if (leftRootCanvas == rightRootCanvas)
             {
-                var first = leftRootCanvas.transform.GetHierarchyEnumerable()
-                    .First(_t => _t == left.Transform || _t == right.Transform);
-                return first == left.Transform
-                    ? 1
-                    : -1;
+                return CompareObjectHierarchyBySameRoot(leftRootCanvas.transform, left.Transform, right.Transform);
             }
             else
             {
-                return leftRootCanvas.transform.GetSiblingIndex().CompareTo(rightRootCanvas.transform.GetSiblingIndex());
+                return leftRootCanvas.transform.GetSiblingIndex()
+                    .CompareTo(rightRootCanvas.transform.GetSiblingIndex());
             }
         }
 
@@ -97,8 +97,38 @@ namespace Hinode
             if (left == right || left.Transform == right.Transform)
                 return 0;
 
-            return (left.Transform.position - UseCamera.transform.position).sqrMagnitude
-                .CompareTo(right.Transform.position - UseCamera.transform.position);
+            if (left.RootCanvas != null && right.RootCanvas != null)
+            {
+                if (left.RootCanvas == right.RootCanvas)
+                {
+                    return CompareObjectHierarchyBySameRoot(left.RootCanvas.transform, left.Transform, right.Transform);
+                }
+                else
+                {
+                    return CompareWithCameraDistance(left.RootCanvas.transform, right.RootCanvas.transform);
+                }
+            }
+            else
+            {//どちらかがCanvas内のオブジェクトとは異なる場合
+                var leftTransform = left.RootCanvas != null ? left.RootCanvas.transform : left.Transform;
+                var rightTransform = right.RootCanvas != null ? right.RootCanvas.transform : right.Transform;
+                return CompareWithCameraDistance(leftTransform, rightTransform);
+            }
+        }
+
+        int CompareObjectHierarchyBySameRoot(Transform root, Transform left, Transform right)
+        {
+            var first = root.transform.GetHierarchyEnumerable()
+                .First(_t => _t == left || _t == right);
+            return first == left
+                ? 1
+                : -1;
+        }
+
+        int CompareWithCameraDistance(Transform left, Transform right)
+        {
+            return (left.position - UseCamera.transform.position).sqrMagnitude
+                .CompareTo((right.position - UseCamera.transform.position).sqrMagnitude);
         }
     }
 }

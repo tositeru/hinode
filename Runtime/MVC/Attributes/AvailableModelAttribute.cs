@@ -6,9 +6,8 @@ using UnityEngine;
 namespace Hinode
 {
     /// <summary>
-    /// 有効なModelを指定するAttribute
+    /// IViewObjectのターゲットにできるModelを指定するAttribute
     /// 簡易的な検証に使用されます。
-    /// Modelの派生クラスに指定してください
     /// </summary>
     [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public sealed class AvailableModelAttribute : System.Attribute

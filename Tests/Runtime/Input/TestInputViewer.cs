@@ -62,7 +62,7 @@ namespace Hinode.Tests.Input
             Assert.IsFalse(inputViewer.GetTouchCursor(1).gameObject.activeInHierarchy);
         }
 
-        [UnityTest, Description("ボタンの入力情報のテスト")]
+        [Ignore("yet not implement..."), UnityTest, Description("ボタンの入力情報のテスト")]
         public IEnumerator ButtonInfoPasses()
         {
             yield return null;

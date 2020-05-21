@@ -96,6 +96,7 @@ namespace Hinode
             HashSet<SupportedModelInfo> _enterAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _stationaryAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _exitAreaObjects = new HashSet<SupportedModelInfo>();
+            SupportedModelInfo _topInAreaObject;
 
             public IReadOnlyCollection<SupportedModelInfo> EnterAreaObjects { get => _enterAreaObjects; }
             public IReadOnlyCollection<SupportedModelInfo> StationaryAreaObjects { get => _stationaryAreaObjects; }
@@ -214,6 +215,10 @@ namespace Hinode
                     }
                 });
 
+                var inAreaObjsStr = currentInAreaObjs.Select(_i => $"{_i.Model.Name}:{_i.ControllerInfo.Keyword}")
+                    .Aggregate("", (_s, _c) => _s + _c + " ; ");
+
+                Debug.Log($"debug -- check current InAreaObjs = {inAreaObjsStr}");
                 _exitAreaObjects.Clear();
                 //move enter to stationary
                 foreach(var enterObj in EnterAreaObjects
@@ -236,11 +241,11 @@ namespace Hinode
                 }
                 _stationaryAreaObjects.RemoveWhere(_i => !currentInAreaObjs.Contains(_i, SupportedModelInfoEquality.DefaultInstance));
 
-                switch(ButtonCondition)
+                _topInAreaObject = GetTopModelInfoInArea();
+                switch (ButtonCondition)
                 {
                     case InputDefines.ButtonCondition.Down:
-                        var topModelInfo = GetTopModelInfoInArea();
-                        PointerDownViewObject = topModelInfo?.ViewObj ?? null;
+                        PointerDownViewObject = _topInAreaObject?.ViewObj ?? null;
                         break;
                     case InputDefines.ButtonCondition.Free:
                         PointerDownViewObject = null;
@@ -257,13 +262,13 @@ namespace Hinode
                 {
                     case PointerEventName.onPointerDown:
                         return ButtonCondition == InputDefines.ButtonCondition.Down
-                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
+                            && (_topInAreaObject?.HasSameModelView(supportedModelInfo) ?? false);
                     case PointerEventName.onPointerUp:
                         return ButtonCondition == InputDefines.ButtonCondition.Up
-                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance);
+                            && (_topInAreaObject?.HasSameModelView(supportedModelInfo) ?? false);
                     case PointerEventName.onPointerClick:
                         return ButtonCondition == InputDefines.ButtonCondition.Up
-                            && InAreaObjects.Contains(supportedModelInfo, SupportedModelInfoEquality.DefaultInstance)
+                            && (_topInAreaObject?.HasSameModelView(supportedModelInfo) ?? false)
                             && PointerDownViewObject == supportedModelInfo.ViewObj;
                     case PointerEventName.onPointerEnter:
                         return (ButtonCondition == InputDefines.ButtonCondition.Push
@@ -294,10 +299,9 @@ namespace Hinode
                             && PointerDownViewObject == supportedModelInfo.ViewObj;
                     case PointerEventName.onPointerDrop:
                         {
-                            var topModelInfo = GetTopModelInfoInArea();
                             return IsDrag
                                 && ButtonCondition == InputDefines.ButtonCondition.Up
-                                && supportedModelInfo.HasSameModelView(topModelInfo);
+                                && (_topInAreaObject?.HasSameModelView(supportedModelInfo) ?? false);
                         }
                     default:
                         throw new System.NotImplementedException();
@@ -307,7 +311,8 @@ namespace Hinode
             public SupportedModelInfo GetTopModelInfoInArea()
             {
                 return InAreaObjects
-                    .OrderBy(_i => _i.ControllerObj, new IOnPointerEventControllerObjectComparer(Dispatcher.UseCamera)).FirstOrDefault();
+                    .OrderBy(_i => _i.ControllerObj, new IOnPointerEventControllerObjectComparer(Dispatcher.UseCamera))
+                    .FirstOrDefault();
             }
         }
 
@@ -420,6 +425,9 @@ namespace Hinode
                     _t.viewObj.GetControllerObject<IOnPointerEventControllerObject>()))
                 .OrderBy(_t => _t.ControllerObj, new IOnPointerEventControllerObjectComparer(UseCamera))
                 .ToList();
+            var checkOrder = supportedControllerInfos
+                .Select(_s => _s.Model.Name)
+                .Aggregate("", (_s, _c) => _s + _c + " : ");
 
             _mousePointerEventData.Update();
             _mousePointerEventData.UpdateInAreaObjects(UseCamera, supportedControllerInfos);

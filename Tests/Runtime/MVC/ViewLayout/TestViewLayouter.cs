@@ -214,10 +214,10 @@ namespace Hinode.Tests.MVC.ViewLayout
             //    layout(color=(0, 0, 1, 1))
             //  - TestView2Obj:
             //    layout(color=(0, 1, 0, 1))
-            var useBindInfo = new ModelViewBinder.BindInfo(typeof(TestViewObj));
-            useBindInfo.AddViewLayout("color", Color.blue);
+            var useBindInfo = new ModelViewBinder.BindInfo(typeof(TestViewObj))
+                .AddViewLayout("color", Color.blue);
             var useBindInfo2 = new ModelViewBinder.BindInfo(typeof(TestView2Obj))//<- Not include IViewLayout
-                    .AddViewLayout("color", Color.green);
+                .AddViewLayout("color", Color.green);
             #region Initial Enviroment
             var viewInstanceCreator = new DefaultViewInstanceCreator(
                 (typeof(TestViewObj), new TestViewObj.ParamBinder()),

@@ -15,6 +15,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         [SetUp]
         public void Setup()
         {
+            PackagePath = PackageDefines.PACKAGE_ASSET_ROOT_PATH;
             Logger.PriorityLevel = Logger.Priority.Debug;
         }
 
@@ -53,9 +54,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         {
             var input = ReplayableInput.Instance;
             input.IsReplaying = true;
-
             var pointerEventDispatcher = new PointerEventDispatcher();
-            Assert.IsFalse(pointerEventDispatcher.DoEnabled, "ReplayableInput#MousePresentまたはReplayableInput#TouchSupportedがtrue出ない時はfalseを返すようにしてください");
 
             var testData = new (bool result, bool mousePresent, bool touchSupported)[]
             {
@@ -207,6 +206,10 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             , IOnPointerDownReciever
         {
             public Model SenderModel { get; set; }
+            public void Reset()
+            {
+                SenderModel = null;
+            }
 
             public void OnPointerDown(Model sender, IOnPointerEventData eventData)
             {
@@ -217,6 +220,9 @@ namespace Hinode.Tests.MVC.Controller.Pointer
         [UnityTest, Description("オブジェクトが重なっている場合にイベントが発生される優先順位の確認")]
         public IEnumerator PointerPriorityOrderPasses()
         {
+            //var stackFrame = new System.Diagnostics.StackFrame();
+            //TakeOrValid(100, stackFrame, 0, (_, __) => true, "This Snapshot is for Check Scene.");
+
             string screenOverlayQuery = "ScreenOverlay";
             string nearestScreenOverlayQuery = "NearestScreenOverlay";
             string sameCanvasScreenOverlayQuery = "SameCanvasScreenOverlay";
@@ -225,11 +231,13 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             string object3DQuery = "3DObject";
             string canvasViewID = "canvas";
 
-            string disableEventID = "disableEvents";
+            string disableEventID = "#disableEvents";
             #region Construct Enviroment
             var mainCamera = new GameObject("MainCamera", typeof(Camera)).GetComponent<Camera>();
             mainCamera.tag = "MainCamera";
-            //
+
+            var parentSelector = new RecieverSelector(ModelRelationShip.Parent, "", "");
+
             // 画面上に以下のViewがあるようにしています。
             // - ScreenOverlayCanvas
             //   - screenOverlay
@@ -243,6 +251,10 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
 
+            var nearestCameraDistance = 10f;
+            var middleCameraDistance = 20f;
+            var farestCameraDistance = 100f;
+
             var nearestScreenOverlayBinder = new ModelViewBinder(nearestScreenOverlayQuery, null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
                     .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
@@ -250,13 +262,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                         RenderMode = RenderMode.ScreenSpaceOverlay,
                         SortingOrder = 10,
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.05f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.05f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
             var screenOverlayBinder = new ModelViewBinder(screenOverlayQuery, null
@@ -265,13 +271,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
             var sameCanvasScreenOverlayBinder = new ModelViewBinder(sameCanvasScreenOverlayQuery, null
@@ -282,8 +282,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     .AddViewLayout("offsetMin", Vector2.zero)
                     .AddViewLayout("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                        new RecieverSelector(ModelRelationShip.Parent, "Root", "")))
                 );
 
             var screenSpaceCameraBinder = new ModelViewBinder(screenSpaceCameraQuery, null
@@ -292,18 +291,12 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceCamera,
                         WorldCamera = mainCamera,
-                        PlaneDistance = 10f,
+                        PlaneDistance = nearestCameraDistance,
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.2f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.2f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
-            var worldCanvasPos = mainCamera.transform.position + mainCamera.transform.forward * 20f;
+            var worldCanvasPos = mainCamera.transform.position + mainCamera.transform.forward * middleCameraDistance;
             var worldCanvasBinder = new ModelViewBinder(worldCanvasQuery, null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
                     .SetUseParamBinder(new CanvasViewObject.FixedParamBinder()
@@ -312,24 +305,16 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                         WorldCamera = mainCamera,
                     })
                     .AddViewLayout(TransformViewLayoutName.pos, worldCanvasPos)
-                    .AddViewLayout(RectTransformViewLayoutName.size, new Vector2(10, 10))
-                    .AddViewLayout(RectTransformViewLayoutName.anchorMin, new Vector2(0f, 0f))
-                    .AddViewLayout(RectTransformViewLayoutName.anchorMax, new Vector2(0.6f, 0.6f))
-                    .AddViewLayout(RectTransformViewLayoutName.offsetMin, Vector2.zero)
-                    .AddViewLayout(RectTransformViewLayoutName.offsetMax, Vector2.zero)
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                    .AddViewLayout(RectTransformViewLayoutName.size, new Vector2(20, 20))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
-            var object3DPos = mainCamera.transform.position + mainCamera.transform.forward * 40f;
+            var object3DPos = mainCamera.transform.position + mainCamera.transform.forward * farestCameraDistance;
             var obj3DBinder = new ModelViewBinder(object3DQuery, null
-                , new ModelViewBinder.BindInfo(typeof(CanvasViewObject))
+                , new ModelViewBinder.BindInfo(typeof(CubeViewObject))
                     .AddViewLayout(TransformViewLayoutName.pos, object3DPos)
                     .AddViewLayout(TransformViewLayoutName.localScale, new Vector3(40f, 40f, 1))
-                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
-                        new RecieverSelector(ModelRelationShip.Parent, "root", "")
-                    ))
+                    .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
             var binderMap = new ModelViewBinderMap(viewCreator
@@ -339,10 +324,18 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 , screenSpaceCameraBinder
                 , worldCanvasBinder
                 , obj3DBinder
-                );
-            binderMap.UseEventDispatchStateMap = new EventDispatchStateMap()
-                .AddState(DispatchStateName.disable, new EventDispatchQuery(disableEventID, ""))
-            ;
+                )
+            {
+                UseViewLayouter = new ViewLayouter()
+                    .AddBasicViewLayouter()
+                    .AddTransformKeywordsAndAutoCreator()
+                    .AddRectTransformKeywordsAndAutoCreator(),
+                UseEventDispatcherMap = new EventDispatcherMap(
+                    new PointerEventDispatcher()
+                ),
+                UseEventDispatchStateMap = new EventDispatchStateMap()
+                    .AddState(DispatchStateName.disable, new EventDispatchQuery(disableEventID, ""))
+            };
             var root = new PointerPriorityOrderPassesModel() { Name = "Root" };
             var nearestScreenOverlay = new Model() { Name = nearestScreenOverlayQuery };
             var screenOverlay = new Model() { Name = screenOverlayQuery };
@@ -350,15 +343,18 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             var screenSpaceCamera = new Model() { Name = screenSpaceCameraQuery };
             var worldCanvas = new Model() { Name = worldCanvasQuery };
             var object3D = new Model() { Name = object3DQuery };
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
             root.AddChildren(
+                nearestScreenOverlay,
                 screenOverlay,
                 screenSpaceCamera,
                 worldCanvas,
                 object3D);
             screenOverlay.AddChildren(sameCanvasScreenOverlay);
-
-            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
             binderInstanceMap.RootModel = root;
+
             #endregion
             yield return null;
 
@@ -374,12 +370,14 @@ namespace Hinode.Tests.MVC.Controller.Pointer
 
             var input = ReplayableInput.Instance;
             input.IsReplaying = true;
+            input.RecordedMousePresent = true;
             input.RecordedMousePos = new Vector2(Screen.width / 2f, Screen.height / 2f);
 
             //テスト自体は前にあるものから順にイベントを無効化していくものになります
 
 
             {// nearestScreenOverlay
+                root.Reset();
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
                 var eventDispatcherMap = binderInstanceMap.UseEventDispatcherMap;
                 eventDispatcherMap.Update(binderInstanceMap);
@@ -393,6 +391,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             yield return null;
 
             {// sameCanvasScreenOverlay
+                root.Reset();
                 nearestScreenOverlay.AddLogicalID(disableEventID);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
@@ -400,13 +399,15 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 eventDispatcherMap.Update(binderInstanceMap);
                 eventDispatcherMap.SendTo(binderInstanceMap);
 
-                Assert.AreSame(nearestScreenOverlay, root.SenderModel);
+                Assert.AreSame(sameCanvasScreenOverlay, root.SenderModel);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
                 eventDispatcherMap.Update(binderInstanceMap);
             }
             yield return null;
             {// screenOverlay
+                root.Reset();
+
                 sameCanvasScreenOverlay.AddLogicalID(disableEventID);
 
                 nearestScreenOverlay.AddLogicalID("disableEvent");
@@ -415,7 +416,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 eventDispatcherMap.Update(binderInstanceMap);
                 eventDispatcherMap.SendTo(binderInstanceMap);
 
-                Assert.AreSame(nearestScreenOverlay, root.SenderModel);
+                Assert.AreSame(screenOverlay, root.SenderModel);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
                 eventDispatcherMap.Update(binderInstanceMap);
@@ -423,6 +424,8 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             }
             yield return null;
             {// screenSpaceCamera
+                root.Reset();
+
                 screenOverlay.AddLogicalID(disableEventID);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
@@ -430,7 +433,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 eventDispatcherMap.Update(binderInstanceMap);
                 eventDispatcherMap.SendTo(binderInstanceMap);
 
-                Assert.AreSame(nearestScreenOverlay, root.SenderModel);
+                Assert.AreSame(screenSpaceCamera, root.SenderModel);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
                 eventDispatcherMap.Update(binderInstanceMap);
@@ -438,6 +441,8 @@ namespace Hinode.Tests.MVC.Controller.Pointer
             }
             yield return null;
             {// worldCanvas
+                root.Reset();
+
                 screenSpaceCamera.AddLogicalID(disableEventID);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
@@ -445,13 +450,14 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 eventDispatcherMap.Update(binderInstanceMap);
                 eventDispatcherMap.SendTo(binderInstanceMap);
 
-                Assert.AreSame(nearestScreenOverlay, root.SenderModel);
+                Assert.AreSame(worldCanvas, root.SenderModel);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
                 eventDispatcherMap.Update(binderInstanceMap);
             }
             yield return null;
             {// 3DObject
+                root.Reset();
                 worldCanvas.AddLogicalID(disableEventID);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
@@ -459,7 +465,7 @@ namespace Hinode.Tests.MVC.Controller.Pointer
                 eventDispatcherMap.Update(binderInstanceMap);
                 eventDispatcherMap.SendTo(binderInstanceMap);
 
-                Assert.AreSame(nearestScreenOverlay, root.SenderModel);
+                Assert.AreSame(object3D, root.SenderModel);
 
                 input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
                 eventDispatcherMap.Update(binderInstanceMap);

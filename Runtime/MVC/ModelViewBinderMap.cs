@@ -84,6 +84,9 @@ namespace Hinode
 
     /// <summary>
     /// BindInstanceをまとめたもの
+    ///
+    /// EnabledDelayOperationがfalseの場合はViewLayout関係の処理は基本的に自動的には行いません。
+    /// そのため、手動でApplyViewLayouts()を呼び出すようにしてください。
     /// <seealso cref="IModel"/>
     /// <seealso cref="ModelViewBinderInstance"/>
     /// <seealso cref="ModelViewBinder"/>
@@ -110,6 +113,9 @@ namespace Hinode
             get => _bindInstanceDict;
         }
 
+        /// <summary>
+        /// EnabledDelayOperationがfalseの場合は処理の最後にApplyViewLayouts()が呼び出されます。
+        /// </summary>
         public Model RootModel
         {
             get => _rootModel;
@@ -151,7 +157,14 @@ namespace Hinode
                 });
                 _rootModel.OnChangedModelIdentities.Add(model =>
                 {
-                    Rebind(model);
+                    if (BindInstances.ContainsKey(model))
+                    {
+                        Rebind(model);
+                    }
+                    else
+                    {
+                        Add(false, model);
+                    }
                 });
 
                 //ViewLayoutの適応
@@ -182,6 +195,7 @@ namespace Hinode
             get => BindInstances[model];
         }
 
+        #region Add
         public void AddImpl(Model model, bool doDelay, bool allowRebind)
         {
             if (doDelay)
@@ -244,7 +258,9 @@ namespace Hinode
                 Add(model, allowRebind);
             }
         }
+        #endregion
 
+        #region Rebind
         bool RebindImpl(Model model, bool doDelay)
         {
             if (doDelay)
@@ -264,12 +280,15 @@ namespace Hinode
                 if (!_bindInstanceDict.ContainsKey(model)) return false;
                 try
                 {
-                    var currentBinderInstance = _bindInstanceDict[model];
+                    var prevBinderInstance = _bindInstanceDict[model];
                     var matchBinder = BinderMap.MatchBinder(model);
-                    if (matchBinder == currentBinderInstance.Binder)
+                    if (matchBinder == prevBinderInstance.Binder)
                     {
                         return false;
                     }
+
+                    // TODO BinderInstanceで同じBindInfoを使っていたらそれを使い回すようにする
+                    RemoveImpl(model, false);
 
                     var bindInst = matchBinder.CreateBindInstance(model, this);
                     if (bindInst != null)
@@ -282,7 +301,6 @@ namespace Hinode
                     {
                         Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Rebind: Don't match queryPathes  model({model})!!");
                     }
-                    _bindInstanceDict[model].Dispose();
                     return true;
                 }
                 catch (System.Exception e)
@@ -303,6 +321,9 @@ namespace Hinode
             return RebindImpl(model, EnabledDelayOperation);
         }
 
+        #endregion
+
+        #region Remove
         void RemoveImpl(Model model, bool doDelay)
         {
             if (doDelay)
@@ -317,12 +338,25 @@ namespace Hinode
                 foreach (var m in model.GetHierarchyEnumerable()
                     .Where(_m => BindInstances.ContainsKey(_m)))
                 {
-                    _bindInstanceDict[m].Dispose();
-                    _bindInstanceDict.Remove(m);
+                    if(_bindInstanceDict[m].UseInstanceMap == this)
+                    {
+                        _bindInstanceDict[m].Dispose();
+                        _bindInstanceDict.Remove(m);
+                    }
+                    else
+                    {
+                        _bindInstanceDict.Remove(m);
+                    }
                 }
+
+
             }
         }
 
+        /// <summary>
+        /// 指定したModelとその子Modelと対応しているModelViewBinderInstance全てを取り除きます。
+        /// </summary>
+        /// <param name="model"></param>
         public void Remove(Model model)
         {
             RemoveImpl(model, EnabledDelayOperation);
@@ -341,6 +375,8 @@ namespace Hinode
 
         public void ClearBindInstances()
             => Remove(_bindInstanceDict.Keys.ToArray());
+
+        #endregion
 
         public void UpdateViewObjects()
         {
@@ -362,6 +398,14 @@ namespace Hinode
             }
         }
 
+        /// <summary>
+        /// 処理負荷の問題およびModelの階層状態によって正しくLayoutが設定されない可能性があるため、
+        /// 自動的には呼び出すようにはなってませんので、別途呼び出すようにしてください。
+        ///
+        /// Modelの階層状態によって正しくLayoutが設定されない可能性のケース)
+        ///  - 他のModelを参照する必要があるIViewLayout -> TransformParentViewLayoutAccessorの値にModelViewSelectorを指定した時
+        /// 
+        /// </summary>
         public void ApplyViewLayouts()
         {
             foreach (var bindInstance in BindInstances.Values)
@@ -386,6 +430,7 @@ namespace Hinode
             else
             {
                 BindInstances[model].UpdateViewObjects();
+                BindInstances[model].ApplyViewLayout();
             }
         }
 
@@ -457,6 +502,8 @@ namespace Hinode
         /// <summary>
         /// 遅延操作として登録されたものを全て実行します。
         ///
+        /// 登録された後にViewLayoutの更新も行います。
+        /// 
         /// 一つのModelにおける遅延操作の実行の優先順位としては以下のものになります。
         ///     - 削除
         ///     - 追加

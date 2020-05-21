@@ -127,10 +127,10 @@ namespace Hinode.Tests.MVC
         {
             var root = new ModelClass() { Name = "root" };
             var apple = new ModelClass() { Name = "apple" };
-            var grape = new ModelClass() { Name = "grape" };
-            root.AddChildren(apple, grape);
+            var noneBinderModel = new ModelClass() { Name = "grape" };
+            root.AddChildren(apple, noneBinderModel);
             var orange = new ModelClass() { Name = "orange" };
-            grape.AddChildren(orange);
+            noneBinderModel.AddChildren(orange);
 
             var appleBinder = new ModelViewBinder("apple", null,
                 new ModelViewBinder.BindInfo(typeof(IntViewObjClass)));
@@ -151,7 +151,7 @@ namespace Hinode.Tests.MVC
 
                 {//BindInstanceMap#Addのテスト
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
-                    bindInstanceMap.Add(false, apple, grape);
+                    bindInstanceMap.Add(false, apple, noneBinderModel);
                     //grapeはQueryPathと一致しないので追加されない
                     AssertionUtils.AssertEnumerableByUnordered(new Model[] {
                             apple, orange
@@ -226,7 +226,7 @@ namespace Hinode.Tests.MVC
                 }
 
                 {//BindInstanceMap#Removeのテスト
-                    bindInstanceMap.Remove(apple, grape);
+                    bindInstanceMap.Remove(apple, noneBinderModel);
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
 

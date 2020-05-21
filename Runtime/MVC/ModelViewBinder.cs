@@ -326,6 +326,14 @@ namespace Hinode
                 view.UseBinderInstance = binderInstance;
                 view.Bind(model, _i, binderInstanceMap);
                 Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateViewObjects: Create View Obj {view.GetModelAndTypeName()}!!");
+
+#if UNITY_EDITOR
+                if (view is MonoBehaviour)
+                {
+                    (view as MonoBehaviour).name = $"{model} viewID={view.UseBindInfo.ID}";
+                }
+#endif
+
                 return view;
             }).ToList();
         }
@@ -342,11 +350,12 @@ namespace Hinode
 
         Dictionary<IViewObject, HashSet<IControllerObject>> _controllerObjectListDict = new Dictionary<IViewObject, HashSet<IControllerObject>>();
 
-        public ModelViewBinder Binder { get; }
+        public ModelViewBinder Binder { get; private set; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
-        public Model Model { get; }
+        public Model Model { get; private set; }
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
+        public IReadOnlyDictionary<IViewObject, HashSet<IControllerObject>> ControllerObjectsForView { get => _controllerObjectListDict; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
@@ -390,11 +399,16 @@ namespace Hinode
                             v.UseBinderInstance = this;
                         }
                         _autoLayoutViewObjects.Add(viewObj, autoViewObjHash);
+
+                        Logger.Log(Logger.Priority.Debug, () => {
+                            var list = autoViewObjHash.Select(_v => _v.GetType().FullName).Aggregate("",(_s, _c) => _s + _c + ", ");
+                            return $"Add Auto ViewObjs!! {model} : {viewObj} : {list}";
+                        });
                     }
                 }
             }
 
-            AttachModelOnUpdated();
+            AttachModelCallback();
         }
 
         void ModelOnUpdated(Model m)
@@ -409,15 +423,23 @@ namespace Hinode
             }
         }
 
-        public void AttachModelOnUpdated()
+        void ModelOnDestroyed(Model m)
         {
-            Model.OnUpdated.Remove(ModelOnUpdated);
-            Model.OnUpdated.Add(ModelOnUpdated);
+            Dispose();
         }
 
-        public void DettachModelOnUpdated()
+        public void AttachModelCallback()
+        {
+            DettachModelCallback();
+
+            Model.OnUpdated.Add(ModelOnUpdated);
+            Model.OnDestroyed.Add(ModelOnDestroyed);
+        }
+
+        public void DettachModelCallback()
         {
             Model.OnUpdated.Remove(ModelOnUpdated);
+            Model.OnUpdated.Remove(ModelOnDestroyed);
         }
 
         public void UpdateViewObjects()
@@ -496,34 +518,48 @@ namespace Hinode
         #region IDisposabe interface
         public void Dispose()
         {
-            foreach(var keyAndViews in _autoLayoutViewObjects)
+            if(ViewObjects.Any())
             {
-                var view = keyAndViews.Key;
-                var autoViews = keyAndViews.Value;
-                foreach(var v in autoViews)
+                foreach (var view in ViewObjects)
                 {
-                    v.Unbind();
-                }
-            }
-            _autoLayoutViewObjects.Clear();
-
-            foreach (var view in ViewObjects)
-            {
-                if(_controllerObjectListDict.ContainsKey(view))
-                {
-                    foreach(var sender in _controllerObjectListDict[view])
+                    if(_controllerObjectListDict.ContainsKey(view))
                     {
-                        sender.Destroy();
+                        foreach(var sender in _controllerObjectListDict[view])
+                        {
+                            sender.Destroy();
+                        }
                     }
+                    if(_autoLayoutViewObjects.ContainsKey(view))
+                    {
+                        foreach(var autoView in _autoLayoutViewObjects[view])
+                        {
+                            autoView.Unbind();
+                            autoView.UseModel = null;
+                            autoView.UseBinderInstance = null;
+                        }
+                    }
+                    view.Unbind();
+                    view.UseModel = null;
+                    view.UseBinderInstance = null;
                 }
-
-                view.Unbind();
-                view.UseModel = null;
-                view.UseBinderInstance = null;
+                _autoLayoutViewObjects.Clear();
+                _controllerObjectListDict.Clear();
+                _viewObjects.Clear();
             }
-            _viewObjects.Clear();
 
-            DettachModelOnUpdated();
+            if(UseInstanceMap != null)
+            {
+                var instanceMap = UseInstanceMap;
+                UseInstanceMap = null;
+                instanceMap?.Remove(Model);
+            }
+
+            if(Model != null)
+            {
+                DettachModelCallback();
+                Model = null;
+            }
+            Binder = null;
         }
         #endregion
     }

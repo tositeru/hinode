@@ -15,6 +15,44 @@ namespace Hinode
     public class OnPointerEventControllerMonoBehaivour : MonoBehaviour
         , IOnPointerEventControllerObject
     {
+        BoxCollider _autoBoxCollider;
+
+        bool HasAutoBoxCollider { get => _autoBoxCollider != null; }
+
+        void Awake()
+        {
+            if(!IsScreenOverlay && !TryGetComponent<Collider>(out var _))
+            {
+                _autoBoxCollider = gameObject.AddComponent<BoxCollider>();
+            }
+            ResizeAutoBoxCollider();
+        }
+
+        void Update()
+        {
+            ResizeAutoBoxCollider();
+        }
+
+        void ResizeAutoBoxCollider()
+        {
+            if (IsScreenOverlay || _autoBoxCollider == null) return;
+
+            if (RootCanvas == null)
+            {
+                if(TryGetComponent<Renderer>(out var renderer))
+                {
+                    _autoBoxCollider.size = renderer.bounds.center;
+                    _autoBoxCollider.size = renderer.bounds.size;
+                }
+            }
+            else if(_autoBoxCollider != null)
+            {
+                var R = Transform as RectTransform;
+                _autoBoxCollider.size = R.rect.size;
+                _autoBoxCollider.center = R.rect.size * (R.pivot - Vector2.one * 0.5f) * -1f;
+            }
+        }
+
         #region IOnPointerEventControllerObject interface
         public bool IsScreenOverlay
         {
