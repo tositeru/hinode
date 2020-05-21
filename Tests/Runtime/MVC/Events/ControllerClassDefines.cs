@@ -4,7 +4,7 @@ using Hinode;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Hinode.Tests.MVC.Controller
+namespace Hinode.Tests.MVC.Events
 {
     interface ITestReciever : IEventHandler
     {

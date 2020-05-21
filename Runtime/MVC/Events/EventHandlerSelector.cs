@@ -23,20 +23,20 @@ namespace Hinode
             ViewIdentity = viewIdentity;
         }
 
-        public IEnumerable<(System.Type recieverType, IEventHandler reciever, object eventData)> Query(System.Type recieverType, Model model, ModelViewBinderInstanceMap viewBinderInstance, object eventData)
+        public IEnumerable<(System.Type eventHandlerType, IEventHandler eventHandler, object eventData)> Query(System.Type eventHandlerType, Model model, ModelViewBinderInstanceMap viewBinderInstance, object eventData)
         {
             var recievers = GetEventHandlerEnumerable(model, viewBinderInstance);
             if (IsFooking)
             {
                 return recievers
                     .Where(_r => _r.GetType().HasInterface(FookingRecieverType))
-                    .Select(_r => (recieverType: FookingRecieverType, reciever: _r, eventData: FookEventData));
+                    .Select(_r => (eventHandlerType: FookingRecieverType, eventHandler: _r, eventData: FookEventData));
             }
             else
             {
                 return recievers
-                    .Where(_r => _r.GetType().HasInterface(recieverType))
-                    .Select(_r => (recieverType: recieverType, reciever: _r, eventData: eventData));
+                    .Where(_r => _r.GetType().HasInterface(eventHandlerType))
+                    .Select(_r => (eventHandlerType: eventHandlerType, eventHandler: _r, eventData: eventData));
             }
         }
 
@@ -182,7 +182,7 @@ namespace Hinode
             foreach (var (useRecieverType, reciever, useEventData) in selector
                 .Query(recieverType, targetModel, binderInstanceMap, eventData))
             {
-                EventHandlerTypeManager.DoneRecieverExecuter(useRecieverType, reciever, targetModel, useEventData);
+                EventHandlerTypeManager.Instance.DoneRecieverExecuter(useRecieverType, reciever, targetModel, useEventData);
             }
         }
         public static void Send<TReciever>(this EventHandlerSelector selector, Model targetModel, object eventData, ModelViewBinderInstanceMap binderInstanceMap)

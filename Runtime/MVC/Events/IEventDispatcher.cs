@@ -175,16 +175,24 @@ namespace Hinode
 
             public bool DoEnabled { get; set; } = true;
 
-            public Info(System.Enum keyword, System.Type recieverType)
-                : this(keyword.ToString(), recieverType)
+            public Info(System.Enum keyword, System.Type eventHandlerType)
+                : this(keyword.ToString(), eventHandlerType)
             { }
 
-            public Info(string keyword, System.Type recieverType)
+            public Info(string keyword, System.Type eventHandlerType)
             {
-                Keyword = keyword;
-                EnvetHandlerType = recieverType;
+                Assert.IsTrue(eventHandlerType.HasInterface<IEventHandler>());
 
-                //TODO Validate Reciever, Sender and Keyword with Attribute
+                Keyword = keyword;
+                EnvetHandlerType = eventHandlerType;
+
+                var enableKeywordsAttr = eventHandlerType.GetCustomAttributes(false)
+                    .OfType<EnableKeywordForEventHandlerAttribute>()
+                    .FirstOrDefault();
+                if (enableKeywordsAttr != null)
+                {
+                    Assert.IsTrue(enableKeywordsAttr.DoMatchKeyword(Keyword));
+                }
             }
         }
 

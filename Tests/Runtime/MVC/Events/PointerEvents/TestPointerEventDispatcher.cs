@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.MVC.Controller.Pointer
+namespace Hinode.Tests.MVC.Events.Pointer
 {
     /// <summary>
     /// <seealso cref="PointerEventDispatcher"/>

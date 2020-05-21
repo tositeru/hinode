@@ -7,20 +7,19 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
-    /// TODO Singletonに変更
-    /// IoC的なものに変更?
+    /// TODO IoC的なものに変更?
     /// </summary>
-    public class EventHandlerTypeManager
+    public class EventHandlerTypeManager : ISingleton<EventHandlerTypeManager>
     {
-        static Dictionary<System.Type, System.Action<IEventHandler, Model, object>> _executerDict = new Dictionary<System.Type, System.Action<IEventHandler, Model, object>>();
+        Dictionary<System.Type, System.Action<IEventHandler, Model, object>> _executerDict = new Dictionary<System.Type, System.Action<IEventHandler, Model, object>>();
 
-        static EventHandlerTypeManager()
+        override protected void OnCreated()
         {
-            MouseEventDispatcher.ConfigControllerType();
-            PointerEventDispatcher.ConfigControllerType();
+            MouseEventDispatcher.ConfigControllerType(this);
+            PointerEventDispatcher.ConfigControllerType(this);
         }
 
-        public static void EntryEventHandlerExecuter<TReciever, TEventData>(System.Action<TReciever, Model, TEventData> action)
+        public void EntryEventHandlerExecuter<TReciever, TEventData>(System.Action<TReciever, Model, TEventData> action)
             where TReciever : class, IEventHandler
         {
             if (_executerDict.ContainsKey(typeof(TReciever)))
@@ -33,7 +32,7 @@ namespace Hinode
             }
         }
 
-        static System.Action<IEventHandler, Model, object> CreateExecuter<TReciever, TEventData>(System.Action<TReciever, Model, TEventData> action)
+        System.Action<IEventHandler, Model, object> CreateExecuter<TReciever, TEventData>(System.Action<TReciever, Model, TEventData> action)
             where TReciever : class, IEventHandler
         {
             return (reciever, sender, eventData) =>
@@ -46,7 +45,7 @@ namespace Hinode
             };
         }
 
-        public static void DoneRecieverExecuter(System.Type useRecieverType, IEventHandler reciever, Model sender, object eventData)
+        public void DoneRecieverExecuter(System.Type useRecieverType, IEventHandler reciever, Model sender, object eventData)
         {
             Assert.IsTrue(_executerDict.ContainsKey(useRecieverType), $"Don't entry Type({useRecieverType}) executer... Please Use EventHandlerTypeManager#EntryRecieverExecuter()!!");
             Assert.IsTrue(reciever.GetType().HasInterface(useRecieverType));

@@ -7,7 +7,9 @@ using UnityEngine.Assertions;
 namespace Hinode
 {
     /// <summary>
-    /// TODO UnityEngine.Inputをリプレイ可能にしたクラス 基本的にInputクラスのラッパーになる予定
+    /// UnityEngine.Inputをリプレイ可能にしたクラス
+    ///
+    /// TODO 残りのInputのプロパティ対応
     /// </summary>
     public class ReplayableInput : ISingleton<ReplayableInput>
     {

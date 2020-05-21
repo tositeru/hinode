@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.MVC.Controller
+namespace Hinode.Tests.MVC.Events
 {
     /// <summary>
     /// <seealso cref="EventHandlerTypeManager"/>

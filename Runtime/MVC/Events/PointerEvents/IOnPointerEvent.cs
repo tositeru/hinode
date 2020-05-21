@@ -35,73 +35,83 @@ namespace Hinode
         ReplayableInput Input { get; }
     }
 
-    public interface IOnPointerEventReciever : IEventHandler
+    public interface IOnPointerEventHandler : IEventHandler
     {
     }
 
     #region OnPointerDown event
-    public interface IOnPointerDownReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerDown")]
+    public interface IOnPointerDownReciever : IOnPointerEventHandler
     {
         void OnPointerDown(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerBeginDrag event
-    public interface IOnPointerBeginDragReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerBeginDrag")]
+    public interface IOnPointerBeginDragReciever : IOnPointerEventHandler
     {
         void OnPointerBeginDrag(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerDrag event
-    public interface IOnPointerDragReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerDrag")]
+    public interface IOnPointerDragReciever : IOnPointerEventHandler
     {
         void OnPointerDrag(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerBeginDrag event
-    public interface IOnPointerEndDragReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerEndDrag")]
+    public interface IOnPointerEndDragReciever : IOnPointerEventHandler
     {
         void OnPointerEndDrag(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerDrop event
-    public interface IOnPointerDropReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerDrop")]
+    public interface IOnPointerDropReciever : IOnPointerEventHandler
     {
         void OnPointerDrop(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerUp event
-    public interface IOnPointerUpReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerUp")]
+    public interface IOnPointerUpReciever : IOnPointerEventHandler
     {
         void OnPointerUp(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnClick event
-    public interface IOnPointerClickReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerClick")]
+    public interface IOnPointerClickReciever : IOnPointerEventHandler
     {
         void OnPointerClick(Model sender, IOnPointerEventData eventData);
     }
     #endregion
 
     #region OnPointerEnter event
-    public interface IOnPointerEnterReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerEnter")]
+    public interface IOnPointerEnterReciever : IOnPointerEventHandler
     {
         void OnPointerEnter(Model sender, IOnPointerEventData eventData);
     }
     #endregion
     #region OnPointerInArea event
-    public interface IOnPointerInAreaReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerInArea")]
+    public interface IOnPointerInAreaReciever : IOnPointerEventHandler
     {
         void OnPointerInArea(Model sender, IOnPointerEventData eventData);
     }
     #endregion
     #region OnPointerExit event
-    public interface IOnPointerExitReciever : IOnPointerEventReciever
+    [EnableKeywordForEventHandler("onPointerExit")]
+    public interface IOnPointerExitReciever : IOnPointerEventHandler
     {
         void OnPointerExit(Model sender, IOnPointerEventData eventData);
     }

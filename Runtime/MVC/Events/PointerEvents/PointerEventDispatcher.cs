@@ -507,49 +507,49 @@ namespace Hinode
         }
         #endregion
 
-        public static void ConfigControllerType()
+        public static void ConfigControllerType(EventHandlerTypeManager typeManager)
         {
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDownReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerDownReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerDown(sender, eventData);
             });
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerUpReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerUpReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerUp(sender, eventData);
             });
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerClickReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerClickReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerClick(sender, eventData);
             });
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerBeginDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerBeginDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerBeginDrag(sender, eventData);
             });
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerDrag(sender, eventData);
             });
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerEndDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerEndDragReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerEndDrag(sender, eventData);
             });
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerDropReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerDropReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerDrop(sender, eventData);
             });
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerEnterReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerEnterReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerEnter(sender, eventData);
             });
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerInAreaReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerInAreaReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerInArea(sender, eventData);
             });
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnPointerExitReciever, IOnPointerEventData>((reciever, sender, eventData) =>
+            typeManager.EntryEventHandlerExecuter<IOnPointerExitReciever, IOnPointerEventData>((reciever, sender, eventData) =>
             {
                 reciever.OnPointerExit(sender, eventData);
             });

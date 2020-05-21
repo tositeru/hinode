@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace Hinode
 {
+    public interface IOnMouseEventHandler : IEventHandler { }
+
     #region MouseCursorMove Sender/Reciever
     public class OnMouseCursorMoveEventData
     {
@@ -27,7 +29,8 @@ namespace Hinode
         }
     }
 
-    public interface IOnMouseCursorMoveEventHandler : IEventHandler
+    [EnableKeywordForEventHandler("onMouseCursorMove")]
+    public interface IOnMouseCursorMoveEventHandler : IOnMouseEventHandler
     {
         void OnMouseCursorMove(Model sender, OnMouseCursorMoveEventData eventData);
     }
@@ -69,17 +72,20 @@ namespace Hinode
         }
     }
 
-    public interface IOnMouseLeftButtonEventHandler : IEventHandler
+    [EnableKeywordForEventHandler("onMouseLeftButton")]
+    public interface IOnMouseLeftButtonEventHandler : IOnMouseEventHandler
     {
         void OnMouseLeftButton(Model sender, OnMouseButtonEventData eventData);
     }
 
-    public interface IOnMouseRightButtonEventHandler : IEventHandler
+    [EnableKeywordForEventHandler("onMouseRightButton")]
+    public interface IOnMouseRightButtonEventHandler : IOnMouseEventHandler
     {
         void OnMouseRightButton(Model sender, OnMouseButtonEventData eventData);
     }
 
-    public interface IOnMouseMiddleButtonEventHandler : IEventHandler
+    [EnableKeywordForEventHandler("onMouseMiddleButton")]
+    public interface IOnMouseMiddleButtonEventHandler : IOnMouseEventHandler
     {
         void OnMouseMiddleButton(Model sender, OnMouseButtonEventData eventData);
     }

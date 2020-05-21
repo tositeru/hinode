@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.MVC.Controller.Mouse
+namespace Hinode.Tests.MVC.Events.Mouse
 {
     /// <summary>
 	/// <seealso cref="MouseEventSenderGroup"/>

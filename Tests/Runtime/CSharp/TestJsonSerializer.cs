@@ -214,7 +214,6 @@ namespace Hinode.Tests.CSharp
                 Debug.Log($"debug Vec2 ctor => {ctor.Name} params={ctor.GetParameters().Length}");
             }
             //TODO シリアライズに失敗したケースでエラーを出すようにする
-            // vec2Intとvec3Int
             var inst = new InstanceCreatorPassesClass()
             {
                 vec2 = new Vector2(1.234f, 5f),

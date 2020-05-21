@@ -8,13 +8,23 @@ namespace Hinode
     /// 
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ISingleton<T>
-        where T : new()
+    public abstract class ISingleton<T>
+        where T : ISingleton<T>, new()
     {
         static T _instance;
         public static T Instance
         {
-            get => _instance != null ? _instance : _instance = new T();
+            get
+            {
+                if (_instance != null) return _instance;
+                _instance = new T();
+                _instance.OnCreated();
+                return _instance;
+            }
         }
+
+        protected ISingleton() {}
+
+        virtual protected void OnCreated() { }
     }
 }

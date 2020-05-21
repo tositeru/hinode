@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.MVC.Controller
+namespace Hinode.Tests.MVC.Events
 {
     /// <summary>
     /// <seealso cref="EventDispatcherMap"/>
@@ -141,9 +141,9 @@ namespace Hinode.Tests.MVC.Controller
         [SetUp]
         public void Setup()
         {
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IAppleEventHandler, int>(
+            EventHandlerTypeManager.Instance.EntryEventHandlerExecuter<IAppleEventHandler, int>(
                 (reciever, sender, eventData) => (reciever as IAppleEventHandler).OnApple(sender, eventData));
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOrangeEventHandler, float>(
+            EventHandlerTypeManager.Instance.EntryEventHandlerExecuter<IOrangeEventHandler, float>(
                 (reciever, sender, eventData) => (reciever as IOrangeEventHandler).OnOrange(sender, eventData));
         }
 

@@ -9,7 +9,6 @@ namespace Hinode
     /// <summary>
     /// 入力データの再生ができるようにしたBaseInput
     ///
-    /// TODO　まだ未検証
     /// TODO BaseInput#GetAxisRaw, BaseInput#GetButtonDownの対応
     /// </summary>
     public class ReplayableBaseInput : BaseInput

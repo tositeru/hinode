@@ -19,20 +19,21 @@ namespace Hinode
     /// </summary>
     public class MouseEventDispatcher : IEventDispatcher
     {
-        public static void ConfigControllerType()
+        public static void ConfigControllerType(EventHandlerTypeManager typeManager)
         {
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseCursorMoveEventHandler, OnMouseCursorMoveEventData>(
+            Assert.IsNotNull(typeManager);
+
+            typeManager.EntryEventHandlerExecuter<IOnMouseCursorMoveEventHandler, OnMouseCursorMoveEventData>(
                 (reciever, sender, eventData) => (reciever as IOnMouseCursorMoveEventHandler).OnMouseCursorMove(sender, eventData));
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseLeftButtonEventHandler, OnMouseButtonEventData>(
+            typeManager.EntryEventHandlerExecuter<IOnMouseLeftButtonEventHandler, OnMouseButtonEventData>(
                 (reciever, sender, eventData) => (reciever as IOnMouseLeftButtonEventHandler).OnMouseLeftButton(sender, eventData));
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseRightButtonEventHandler, OnMouseButtonEventData>(
+            typeManager.EntryEventHandlerExecuter<IOnMouseRightButtonEventHandler, OnMouseButtonEventData>(
                 (reciever, sender, eventData) => (reciever as IOnMouseRightButtonEventHandler).OnMouseRightButton(sender, eventData));
 
-            EventHandlerTypeManager.EntryEventHandlerExecuter<IOnMouseMiddleButtonEventHandler, OnMouseButtonEventData>(
+            typeManager.EntryEventHandlerExecuter<IOnMouseMiddleButtonEventHandler, OnMouseButtonEventData>(
                 (reciever, sender, eventData) => (reciever as IOnMouseMiddleButtonEventHandler).OnMouseMiddleButton(sender, eventData));
-
         }
 
         OnMouseCursorMoveEventData _onMoveEventData;
