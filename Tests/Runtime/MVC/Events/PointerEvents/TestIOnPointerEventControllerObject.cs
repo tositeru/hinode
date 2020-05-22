@@ -5,13 +5,27 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.MVC.Events
+namespace Hinode.Tests.MVC.Events.Pointer
 {
     /// <summary>
 	/// <seealso cref="TestIOnPointerEventControllerObject"/>
 	/// </summary>
     public class TestIOnPointerEventControllerObject
     {
+        [UnityTest]
+        public IEnumerator RootCanvasPasses()
+        {
+            yield return null;
+            var rootCanvas = CanvasViewObject.Create("rootCanvas");
+            var parentCanvas = CanvasViewObject.Create("parentCanvas");
+            parentCanvas.transform.SetParent(rootCanvas.transform);
+            var obj = RectTransformViewObject.Create("obj")
+                .gameObject.AddComponent<OnPointerEventControllerMonoBehaivour>();
+            obj.transform.SetParent(parentCanvas.transform);
+
+            Assert.AreSame(rootCanvas.GetComponent<Canvas>(), obj.RootCanvas);
+        }
+
         [UnityTest]
         public IEnumerator ComparerPasses()
         {

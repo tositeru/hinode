@@ -55,29 +55,29 @@ MonoBehaviour:
   - _pairKeywords:
     - RenderMode
     - RenderMode
-    - renderMode
+    - c.renderMode
   - _pairKeywords:
     - SortingLayerID
     - int
-    - sortingLayerID
+    - c.sortingLayerID
   - _pairKeywords:
     - SortingOrder
     - int
-    - sortingOrder
+    - c.sortingOrder
   - _pairKeywords:
     - WorldCamera
     - Camera
-    - worldCamera
+    - c.worldCamera
   - _pairKeywords:
     - PlaneDistance
     - float
-    - planeDistance
+    - c.planeDistance
   - _pairKeywords:
     - PixelPerfect
     - bool
-    - pixelPerfect
+    - c.pixelPerfect
   - _pairKeywords:
     - TargetDisplay
     - int
-    - targetDisplay
+    - c.targetDisplay
   _newline: 0

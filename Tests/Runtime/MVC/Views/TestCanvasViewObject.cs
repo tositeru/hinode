@@ -84,41 +84,5 @@ namespace Hinode.Tests.MVC.Views
             canvas.DepthLayout = depth;
             Assert.AreEqual(depth, canvas.Canvas.sortingOrder);
         }
-
-        class AppendViewObj : CanvasViewObject.IAppendableViewObject
-        {
-            public int Value { get; set; }
-            public class ParamBinder : CanvasViewObject.IAppendableViewObjectParamBinder
-            {
-                public int Value { get; set; }
-                public CanvasViewObject.IAppendableViewObject Append(GameObject target)
-                {
-                    return target.AddComponent<AppendViewObj>();
-                }
-
-                public void Update(Model model, IViewObject viewObj)
-                {
-                    (viewObj as AppendViewObj).Value = Value;
-                }
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator AppendableViewObjectPasses()
-        {
-            var canvas = CanvasViewObject.Create();
-            yield return null;
-            Assert.IsNull(canvas.GetComponent<AppendViewObj>());
-
-            var paramBinder = new CanvasViewObject.FixedParamBinder();
-            paramBinder.AddAppendedViewObjectParamBinder(new AppendViewObj.ParamBinder() { Value = 432 });
-            
-            paramBinder.Update(null, canvas);
-
-            Assert.IsNotNull(canvas.GetComponent<AppendViewObj>());
-            var appendParamBinder = paramBinder.AppendedViewObjectParamBinders.OfType<AppendViewObj.ParamBinder>().First();
-            Assert.AreEqual(appendParamBinder.Value, canvas.GetComponent<AppendViewObj>().Value);
-        }
-
     }
 }

@@ -31,7 +31,9 @@ namespace Hinode
         public bool Update()
         {
             var v = _predicate();
-            _didUpdated = !_currentValue.Equals(v);
+            _didUpdated = (_currentValue == null)
+                ? v == null
+                : !_currentValue.Equals(v);
             if (!_didUpdated) return false;
 
             _currentValue = v;

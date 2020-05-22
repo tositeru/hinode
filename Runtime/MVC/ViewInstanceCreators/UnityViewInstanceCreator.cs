@@ -158,8 +158,10 @@ namespace Hinode
         public static UnityViewInstanceCreator AddUnityViewObjects(this UnityViewInstanceCreator target)
         {
             target
+                .AddPredicate(typeof(RectTransformViewObject), () => RectTransformViewObject.Create("__rectTransform"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(CanvasViewObject), () => CanvasViewObject.Create("__canvas"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(HVLayoutGroupViewObject), () => HVLayoutGroupViewObject.Create("__HVLayoutGroup"), new EmptyModelViewParamBinder())
+                .AddPredicate(typeof(TextViewObject), () => TextViewObject.Create("__text"), new EmptyModelViewParamBinder())
             ;
             return target;
         }

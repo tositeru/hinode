@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4a6c09edcc541a887e86dce9c80413, type: 3}
+  m_Name: TestFixedParamBinderPasses
+  m_EditorClassIdentifier: 
+  _isOnlyEmbbed: 0
+  _doShareKaywords: 0
+  _isSingleKeywordPairMode: 1
+  _templateText: "{//$PropName$\r\n    var paramBinder = new TextViewObject.FixedParamBinder();\r\n
+    \   paramBinder.$PropName$ = $Value$;\r\n    paramBinder.Update(null, text);\r\n
+    \   yield return null;\r\n    Assert.AreEqual(paramBinder.$PropName$, $ViewPropName$);\r\n}\r\n"
+  _keywords:
+  - key: PropName
+    values: []
+  - key: Value
+    values: []
+  - key: ViewPropName
+    values: []
+  _ignorePairs: []
+  _embbedTemplates: []
+  _singleKeywordPairList:
+  - _pairKeywords:
+    - AlignByGeometry
+    - true
+    - text.Text.alignByGeometry
+  - _pairKeywords:
+    - Alignment
+    - TextAnchor.MiddleCenter
+    - text.Text.alignment
+  - _pairKeywords:
+    - Color
+    - Color.blue
+    - text.Text.color
+  - _pairKeywords:
+    - FontSize
+    - 22
+    - text.Text.fontSize
+  - _pairKeywords:
+    - FontStyle
+    - FontStyle.Italic
+    - text.Text.fontStyle
+  - _pairKeywords:
+    - HorizontalOverflow
+    - HorizontalWrapMode.Overflow
+    - text.Text.horizontalOverflow
+  - _pairKeywords:
+    - VerticalOverflow
+    - VerticalWrapMode.Overflow
+    - text.Text.verticalOverflow
+  - _pairKeywords:
+    - LineSpacing
+    - 33
+    - text.Text.lineSpacing
+  - _pairKeywords:
+    - Text
+    - '"Apple"'
+    - text.Text.text
+  - _pairKeywords:
+    - SupportRichText
+    - true
+    - text.Text.supportRichText
+  _newline: 0

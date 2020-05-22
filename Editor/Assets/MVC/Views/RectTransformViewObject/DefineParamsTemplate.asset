@@ -27,7 +27,7 @@ MonoBehaviour:
     %DefineProperties%
 
 
-    void UpdateParams(Canvas c)
+    void UpdateParams(RectTransform R)
 
     {
 
@@ -51,33 +51,5 @@ MonoBehaviour:
     _template: {fileID: 11400000, guid: b4bb150a429ef44298bf5c3df5af74f9, type: 2}
   - _key: DefineSetters
     _template: {fileID: 11400000, guid: c89a1b9889646497e8aa4d1fdb65edd2, type: 2}
-  _singleKeywordPairList:
-  - _pairKeywords:
-    - RenderMode
-    - RenderMode
-    - c.renderMode
-  - _pairKeywords:
-    - SortingLayerID
-    - int
-    - c.sortingLayerID
-  - _pairKeywords:
-    - SortingOrder
-    - int
-    - c.sortingOrder
-  - _pairKeywords:
-    - WorldCamera
-    - Camera
-    - c.worldCamera
-  - _pairKeywords:
-    - PlaneDistance
-    - float
-    - c.planeDistance
-  - _pairKeywords:
-    - PixelPerfect
-    - bool
-    - c.pixelPerfect
-  - _pairKeywords:
-    - TargetDisplay
-    - int
-    - c.targetDisplay
+  _singleKeywordPairList: []
   _newline: 0

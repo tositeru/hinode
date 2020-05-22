@@ -130,5 +130,23 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
                 Assert.AreEqual(1, counter, "値が変更されない場合はOnChangedValueコールバックを呼び出さないようにしてください。");
             }
         }
+
+        class NullValuePassesClass
+        { }
+
+        [Test]
+        public void NullValuePasses()
+        {
+            var obj = new NullValuePassesClass();
+            var observer = new PredicateUpdateObserver<NullValuePassesClass>(() => obj);
+
+            obj = null;
+            Assert.IsTrue(observer.Update());
+
+            Assert.DoesNotThrow(() => {
+                obj = new NullValuePassesClass();
+                observer.Update();
+            });
+        }
     }
 }

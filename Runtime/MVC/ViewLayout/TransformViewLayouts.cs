@@ -35,7 +35,6 @@ namespace Hinode
 
         protected override void SetImpl(object value, IViewObject viewObj)
         {
-            Debug.Log("pass");
             var layout = (viewObj as ITransformParentViewLayout);
             if (value is Transform)
             {
@@ -63,12 +62,14 @@ namespace Hinode
                         : null;
                     if(2 <= parents.Count())
                     {
-                        Debug.LogWarning($"複数のModelViewがマッチしました。初めに見つかったものを使用します。 model={viewObj.UseModel}, viewObj={viewObj.GetType()}");
+                        Logger.LogWarning(Logger.Priority.High, () => 
+                            $"複数のModelViewがマッチしました。初めに見つかったものを使用します。 model={viewObj.UseModel}, viewObj={viewObj.GetType()}");
                     }
                 }
                 else
                 {
-                    Debug.Log($"セレクタがマッチしませんでした。セレクタを設定を変更するか、クエリ対象となるModel,IViewObjectがMonoBehaviourかITransformParentViewLayoutを継承しているかどうか確認してください。{selector}");
+                    Logger.LogWarning(Logger.Priority.High, () =>
+                        $"セレクタがマッチしませんでした。セレクタを設定を変更するか、クエリ対象となるModel,IViewObjectがMonoBehaviourかITransformParentViewLayoutを継承しているかどうか確認してください。{selector}");
                     layout.TransformParentLayout = null;
                 }
             }

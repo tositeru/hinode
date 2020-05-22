@@ -216,10 +216,6 @@ namespace Hinode
                     }
                 });
 
-                var inAreaObjsStr = currentInAreaObjs.Select(_i => $"{_i.Model.Name}:{_i.ControllerInfo.Keyword}")
-                    .Aggregate("", (_s, _c) => _s + _c + " ; ");
-
-                Debug.Log($"debug -- check current InAreaObjs = {inAreaObjsStr}");
                 _exitAreaObjects.Clear();
                 //move enter to stationary
                 foreach (var enterObj in EnterAreaObjects

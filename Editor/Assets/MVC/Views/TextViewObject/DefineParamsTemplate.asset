@@ -27,7 +27,7 @@ MonoBehaviour:
     %DefineProperties%
 
 
-    void UpdateParams(Canvas c)
+    void UpdateParams(TextViewObject text)
 
     {
 
@@ -53,31 +53,43 @@ MonoBehaviour:
     _template: {fileID: 11400000, guid: c89a1b9889646497e8aa4d1fdb65edd2, type: 2}
   _singleKeywordPairList:
   - _pairKeywords:
-    - RenderMode
-    - RenderMode
-    - c.renderMode
-  - _pairKeywords:
-    - SortingLayerID
-    - int
-    - c.sortingLayerID
-  - _pairKeywords:
-    - SortingOrder
-    - int
-    - c.sortingOrder
-  - _pairKeywords:
-    - WorldCamera
-    - Camera
-    - c.worldCamera
-  - _pairKeywords:
-    - PlaneDistance
-    - float
-    - c.planeDistance
-  - _pairKeywords:
-    - PixelPerfect
+    - AlignByGeometry
     - bool
-    - c.pixelPerfect
+    - text.Text.alignByGeometry
   - _pairKeywords:
-    - TargetDisplay
+    - Alignment
+    - TextAnchor
+    - text.Text.alignment
+  - _pairKeywords:
+    - Color
+    - Color
+    - text.Text.color
+  - _pairKeywords:
+    - FontSize
     - int
-    - c.targetDisplay
+    - text.Text.fontSize
+  - _pairKeywords:
+    - FontStyle
+    - FontStyle
+    - text.Text.fontStyle
+  - _pairKeywords:
+    - HorizontalOverflow
+    - HorizontalWrapMode
+    - text.Text.horizontalOverflow
+  - _pairKeywords:
+    - VerticalOverflow
+    - VerticalWrapMode
+    - text.Text.verticalOverflow
+  - _pairKeywords:
+    - LineSpacing
+    - float
+    - text.Text.lineSpacing
+  - _pairKeywords:
+    - Text
+    - string
+    - text.Text.text
+  - _pairKeywords:
+    - SupportRichText
+    - bool
+    - text.Text.supportRichText
   _newline: 0

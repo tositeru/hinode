@@ -236,7 +236,7 @@ namespace Hinode
                         catch (System.Exception e)
                         {
                             Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Add: !!Catch Exception!! Not add model...{System.Environment.NewLine}-- {e}");
-                            throw new System.Exception($"Failed to Add model({m})...");
+                            throw new System.Exception($"Failed to Add model({m})... {System.Environment.NewLine}{System.Environment.NewLine}{e}");
                         }
                     }
                 }
@@ -306,7 +306,7 @@ namespace Hinode
                 catch (System.Exception e)
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#Rebind: !!Catch Exception!! Failed to rebind model...{System.Environment.NewLine}-- {e}");
-                    throw new System.Exception($"Failed to Rebind model({model})...");
+                    throw new System.Exception($"Failed to Rebind model({model})... {System.Environment.NewLine}{System.Environment.NewLine}{e}");
                 }
             }
         }
@@ -582,7 +582,7 @@ namespace Hinode
                     }
                     catch (System.Exception e)
                     {
-                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception!! model={op.Value.Model}, op={op.Value.OperationFlags}...{System.Environment.NewLine}+++ {e}");
+                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception!! model={op.Value.Model}, op={op.Value.OperationFlags}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
                     }
 
                     OperationList.Remove(op.Key);

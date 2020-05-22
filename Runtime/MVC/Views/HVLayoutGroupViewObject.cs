@@ -17,12 +17,12 @@ namespace Hinode
     [RequireComponent(typeof(RectTransform))]
     [AvailableModelViewParamBinder(typeof(HVLayoutGroupViewObject.FixedParamBinder))]
     [DisallowMultipleComponent()]
-    public class HVLayoutGroupViewObject : CanvasViewObject.IAppendableViewObject
+    public class HVLayoutGroupViewObject : RectTransformViewObject
+        , RectTransformViewObject.IOptionalViewObject
     {
-        public static HVLayoutGroupViewObject Create(string name = "HVLayoutGroup")
+        public static new HVLayoutGroupViewObject Create(string name = "HVLayoutGroup")
         {
-            var obj = new GameObject(name);
-            obj.AddComponent<RectTransform>();
+            var obj = new GameObject(name, typeof(RectTransform));
             return obj.AddComponent<HVLayoutGroupViewObject>();
         }
 
@@ -102,8 +102,8 @@ namespace Hinode
             if(layout != null) Destroy(layout);
         }
 
-        public class FixedParamBinder : IDictinaryModelViewParamBinder
-            , CanvasViewObject.IAppendableViewObjectParamBinder
+        public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
+            , RectTransformViewObject.IOptionalViewObjectParamBinder
         {
             public bool Contains(Params paramType)
                 => Contains(paramType.ToString());
@@ -119,14 +119,14 @@ namespace Hinode
             public FixedParamBinder Delete(Params param)
                 => Delete(param.ToString()) as FixedParamBinder;
 
-            public override void Update(Model model, IViewObject viewObj)
+            protected override void UpdateImpl(Model model, IViewObject viewObj)
             {
                 var layoutView = viewObj as HVLayoutGroupViewObject;
                 UpdateParams(layoutView);
             }
 
-            #region CanvasViewObject.IAppendableViewObjectParamBinder
-            public CanvasViewObject.IAppendableViewObject Append(GameObject target)
+            #region RectTransform.IOptionalViewObjectParamBinder
+            public RectTransformViewObject.IOptionalViewObject AppendTo(GameObject target)
             {
                 return target.AddComponent<HVLayoutGroupViewObject>();
             }

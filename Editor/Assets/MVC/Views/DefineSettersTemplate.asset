@@ -15,7 +15,7 @@ MonoBehaviour:
   _isOnlyEmbbed: 0
   _doShareKaywords: 0
   _isSingleKeywordPairMode: 0
-  _templateText: if (Contains(Params.$EnumName$)) c.$ValueName$ = $EnumName$;
+  _templateText: if (Contains(Params.$EnumName$)) $ValueName$ = $EnumName$;
   _keywords: []
   _ignorePairs: []
   _embbedTemplates: []

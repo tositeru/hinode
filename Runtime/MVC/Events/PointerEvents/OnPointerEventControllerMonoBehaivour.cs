@@ -16,21 +16,46 @@ namespace Hinode
         , IOnPointerEventHelpObject
     {
         BoxCollider _autoBoxCollider;
+        PredicateUpdateObserver<Transform> _parentObserver;
 
-        bool HasAutoBoxCollider { get => _autoBoxCollider != null; }
+        public bool HasAutoBoxCollider { get => _autoBoxCollider != null; }
 
         void Awake()
         {
-            if(!IsScreenOverlay && !TryGetComponent<Collider>(out var _))
+            _parentObserver = new PredicateUpdateObserver<Transform>(() =>
             {
-                _autoBoxCollider = gameObject.AddComponent<BoxCollider>();
-            }
-            ResizeAutoBoxCollider();
+                return Transform.parent;
+            });
+            _parentObserver.OnChangedValue.Add(parent =>
+            {
+                CreateAutoBoxCollider();
+            });
+        }
+
+        void Start()
+        {
+            CreateAutoBoxCollider();
         }
 
         void Update()
         {
+            _parentObserver.Update();
             ResizeAutoBoxCollider();
+        }
+
+        void CreateAutoBoxCollider()
+        {
+            if (HasAutoBoxCollider)
+            {
+                Object.Destroy(_autoBoxCollider);
+                _autoBoxCollider = null;
+            }
+
+            if (!IsScreenOverlay && !TryGetComponent<Collider>(out var _))
+            {
+                _autoBoxCollider = gameObject.AddComponent<BoxCollider>();
+                ResizeAutoBoxCollider();
+            }
         }
 
         void ResizeAutoBoxCollider()
@@ -59,7 +84,8 @@ namespace Hinode
             get
             {
                 if (!(transform is RectTransform)) return false;
-                return RootCanvas.renderMode == RenderMode.ScreenSpaceOverlay;
+                var c = RootCanvas;
+                return c.renderMode == RenderMode.ScreenSpaceOverlay;
             }
         }
 
@@ -70,11 +96,10 @@ namespace Hinode
                 if (!(transform is RectTransform)) return null;
                 if(transform.parent != null)
                 {
-                    var rootCanvas = transform.GetParentEnumerable()
-                        .Select(_p => _p.GetComponent<Canvas>())
-                        .Where(_c => _c != null)
-                        .LastOrDefault();
-                    return rootCanvas;
+                    var parentCanvas = transform.GetParentEnumerable()
+                        .Select(_p => _p.TryGetComponent<Canvas>(out var c) ? c : null)
+                        .Where(_c => _c != null);
+                    return parentCanvas.LastOrDefault();
                 }
                 else
                 {

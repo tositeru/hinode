@@ -5,13 +5,15 @@ using UnityEngine.UI;
 
 namespace Hinode
 {
+    [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(Canvas))]
     [AvailableModelViewParamBinder(typeof(CanvasViewObject.FixedParamBinder))]
     [DisallowMultipleComponent()]
-    public class CanvasViewObject : MonoBehaviourViewObject
+    public class CanvasViewObject : RectTransformViewObject
         , IDepthViewLayout
+        , RectTransformViewObject.IOptionalViewObject
     {
-        public static CanvasViewObject Create(string name="canvasViewObj")
+        public static new CanvasViewObject Create(string name="canvasViewObj")
         {
             var obj = new GameObject(name);
             obj.AddComponent<RectTransform>();
@@ -23,8 +25,6 @@ namespace Hinode
         }
         Canvas _canvas;
         public Canvas Canvas { get => _canvas != null ? _canvas : _canvas = gameObject.GetOrAddComponent<Canvas>(); }
-
-        Dictionary<IAppendableViewObjectParamBinder, IAppendableViewObject> AppendedViewObjectDict { get; } = new Dictionary<IAppendableViewObjectParamBinder, IAppendableViewObject>();
 
         #region IDepthViewLayout
         public float DepthLayout
@@ -38,40 +38,9 @@ namespace Hinode
         #endregion
 
         #region IViewObject
-        public override void Unbind()
-        {
-            base.Unbind();
-            foreach(var appendedViewObj in AppendedViewObjectDict.Values)
-            {
-                appendedViewObj.Unbind();
-            }
-        }
         #endregion
 
-        /// <summary>
-        /// CanvasViewObjectを持つGameObjectに追加できるComponentを表すIViewObject
-        ///
-        /// LayoutGroupなどが対応しています。
-        /// <seealso cref="HVLayoutGroupViewObject"/>
-        /// </summary>
-        public abstract class IAppendableViewObject : MonoBehaviourViewObject
-        {
-        }
-
-        /// <summary>
-        /// CanvasViewObjectに追加したいIAppendableViewObjectをCanvasViewObject#FixedParamBinderに登録する時に使うIModelViewParamBinder
-        /// </summary>
-        public interface IAppendableViewObjectParamBinder : IModelViewParamBinder
-        {
-            /// <summary>
-            /// 複数個同じComponentが追加できるようにしてください。
-            /// </summary>
-            /// <param name="target"></param>
-            /// <returns></returns>
-            IAppendableViewObject Append(GameObject target);
-        }
-
-        public class FixedParamBinder : IDictinaryModelViewParamBinder
+        public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
         {
             public bool Contains(Params paramType)
                 => Contains(paramType.ToString());
@@ -87,31 +56,11 @@ namespace Hinode
             public FixedParamBinder Delete(Params param)
                 => Delete(param.ToString()) as FixedParamBinder;
 
-            public List<IAppendableViewObjectParamBinder> AppendedViewObjectParamBinders { get; set; } = new List<IAppendableViewObjectParamBinder>();
-
-            public override void Update(Model model, IViewObject viewObj)
+            protected override void UpdateImpl(Model model, IViewObject viewObj)
             {
                 var canvas = viewObj as CanvasViewObject;
                 var c = canvas.Canvas;
                 UpdateParams(c);
-
-                //Appended View ObjectのUpdate
-                foreach(var appendedParamBinder in AppendedViewObjectParamBinders)
-                {
-                    if(!canvas.AppendedViewObjectDict.ContainsKey(appendedParamBinder))
-                    {
-                        var obj = appendedParamBinder.Append(canvas.gameObject);
-                        canvas.AppendedViewObjectDict.Add(appendedParamBinder, obj);
-                    }
-                    var appendedViewObj = canvas.AppendedViewObjectDict[appendedParamBinder];
-                    appendedParamBinder.Update(model, appendedViewObj);
-                }
-            }
-
-            public FixedParamBinder AddAppendedViewObjectParamBinder(IAppendableViewObjectParamBinder paramBinder)
-            {
-                AppendedViewObjectParamBinders.Add(paramBinder);
-                return this;
             }
 
             ////@@ Packages/com.tositeru.hinode/Editor/Assets/MVC/Views/CanvasViewObject/DefineParamsTemplate.asset
