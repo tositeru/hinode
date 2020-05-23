@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4a6c09edcc541a887e86dce9c80413, type: 3}
+  m_Name: TestFixedParamBinderPasses
+  m_EditorClassIdentifier: 
+  _isOnlyEmbbed: 0
+  _doShareKaywords: 0
+  _isSingleKeywordPairMode: 1
+  _templateText: "{//$PropName$\r\n    var paramBinder = new ImageViewObject.FixedParamBinder();\r\n
+    \   paramBinder.$PropName$ = $Value$;\r\n    paramBinder.Update(null, image);\r\n
+    \   yield return null;\r\n    Assert.AreEqual(paramBinder.$PropName$, $ViewPropName$);\r\n}\r\n"
+  _keywords:
+  - key: PropName
+    values: []
+  - key: Value
+    values: []
+  - key: ViewPropName
+    values: []
+  _ignorePairs: []
+  _embbedTemplates: []
+  _singleKeywordPairList:
+  - _pairKeywords:
+    - Color
+    - Color.red
+    - image.Image.color
+  - _pairKeywords:
+    - FillAmount
+    - 0.75f
+    - image.Image.fillAmount
+  - _pairKeywords:
+    - FillCenter
+    - true
+    - image.Image.fillCenter
+  - _pairKeywords:
+    - FillClockwise
+    - true
+    - image.Image.fillClockwise
+  - _pairKeywords:
+    - FillMethod
+    - Image.FillMethod.Radial180
+    - image.Image.fillMethod
+  - _pairKeywords:
+    - FillOrigin
+    - 3
+    - image.Image.fillOrigin
+  - _pairKeywords:
+    - PixelsPerUnitMultiplier
+    - 1.2f
+    - image.Image.pixelsPerUnitMultiplier
+  - _pairKeywords:
+    - PreserveAspect
+    - true
+    - image.Image.preserveAspect
+  - _pairKeywords:
+    - Sprite
+    - Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero)
+    - image.Image.sprite
+  - _pairKeywords:
+    - Type
+    - Image.Type.Sliced
+    - image.Image.type
+  - _pairKeywords:
+    - UseSpriteMesh
+    - true
+    - image.Image.useSpriteMesh
+  _newline: 0

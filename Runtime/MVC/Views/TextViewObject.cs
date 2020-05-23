@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace Hinode
 {
     /// <summary>
-    /// 
+    /// TODO TextViewObjectのFontの設定
     /// </summary>
     [RequireComponent(typeof(RectTransform), typeof(Text))]
     [AvailableModelViewParamBinder(typeof(TextViewObject.FixedParamBinder))]
@@ -22,6 +22,14 @@ namespace Hinode
         }
 
         public Text Text { get => gameObject.GetOrAddComponent<Text>(); }
+
+        void OnGUI()
+        {
+            if(Text.font == null)
+            {//
+                Text.font = GUI.skin.font;
+            }
+        }
 
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
             , RectTransformViewObject.IOptionalViewObjectParamBinder

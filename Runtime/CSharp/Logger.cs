@@ -30,7 +30,7 @@ namespace Hinode
             if (PriorityLevel < priority)
                 return;
 
-            Debug.Log(getLog());
+            Debug.Log(GetPrefix(priority) + getLog());
         }
 
         public static void LogWarning(Priority priority, System.Func<string> getLog)
@@ -38,7 +38,7 @@ namespace Hinode
             if (PriorityLevel < priority)
                 return;
 
-            Debug.LogWarning(getLog());
+            Debug.LogWarning("Warning!! " + GetPrefix(priority) + getLog());
         }
 
         public static void LogError(Priority priority, System.Func<string> getLog)
@@ -46,7 +46,16 @@ namespace Hinode
             if (PriorityLevel < priority)
                 return;
 
-            Debug.LogError(getLog());
+            Debug.LogError("Error!! " + GetPrefix(priority) + getLog());
+        }
+
+        static string GetPrefix(Priority priority)
+        {
+            switch(priority)
+            {
+                case Priority.Debug: return "debug -- ";
+                default: return "";
+            }
         }
     }
 }

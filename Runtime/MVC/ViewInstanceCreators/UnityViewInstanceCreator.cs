@@ -162,6 +162,7 @@ namespace Hinode
                 .AddPredicate(typeof(CanvasViewObject), () => CanvasViewObject.Create("__canvas"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(HVLayoutGroupViewObject), () => HVLayoutGroupViewObject.Create("__HVLayoutGroup"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(TextViewObject), () => TextViewObject.Create("__text"), new EmptyModelViewParamBinder())
+                .AddPredicate(typeof(ImageViewObject), () => ImageViewObject.Create("__image"), new EmptyModelViewParamBinder())
             ;
             return target;
         }

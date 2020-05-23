@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 namespace Hinode
@@ -58,6 +59,7 @@ namespace Hinode
 
             protected override void UpdateImpl(Model model, IViewObject viewObj)
             {
+                Assert.IsTrue(viewObj is CanvasViewObject, $"ViewObj Type Must be CanvasViewObject... viewObj={viewObj} model={model}");
                 var canvas = viewObj as CanvasViewObject;
                 var c = canvas.Canvas;
                 UpdateParams(c);
