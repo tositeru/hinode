@@ -65,6 +65,13 @@ namespace Hinode
                 return base.GetHashCode();
             }
             #endregion
+
+            #region
+            public override string ToString()
+            {
+                return $"({Model} : {ViewObj} : {ControllerInfo.Keyword})";
+            }
+            #endregion
         }
 
         class SupportedModelInfoEquality : IEqualityComparer<SupportedModelInfo>
@@ -249,7 +256,7 @@ namespace Hinode
                         break;
                 }
 
-                Logger.Log(Logger.Priority.Debug, () => $"debug -- PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID}:{ButtonCondition} AreaObject count(enter={EnterAreaObjects.Count}, stationary={StationaryAreaObjects.Count}, exit={_exitAreaObjects.Count})");
+                Logger.Log(Logger.Priority.Debug, () => $"PointerEventDispatcher -- UpdatePointer {PointerType}:{FingerID}:{ButtonCondition} AreaObject count(enter={EnterAreaObjects.Count}, stationary={StationaryAreaObjects.Count}, exit={_exitAreaObjects.Count})");
             }
 
             public bool DoMatchControllerInfo(SupportedModelInfo supportedModelInfo)
@@ -426,6 +433,10 @@ namespace Hinode
                 .Select(_s => _s.Model.Name)
                 .Aggregate("", (_s, _c) => _s + _c + " : ");
 
+            Logger.Log(Logger.Priority.Debug, () => {
+                var log = supportedControllerInfos.Aggregate("", (_s, _c) => _s + _c + " : ");
+                return $"PointerEventDispatcher -- current supported infos=>{log}";
+            });
             _mousePointerEventData.Update();
             _mousePointerEventData.UpdateInAreaObjects(UseCamera, supportedControllerInfos);
             {//Touch

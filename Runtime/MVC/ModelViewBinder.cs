@@ -350,6 +350,8 @@ namespace Hinode
 
         Dictionary<IViewObject, HashSet<IEventDispatcherHelper>> _eventDispathcerHelpObjectListDict = new Dictionary<IViewObject, HashSet<IEventDispatcherHelper>>();
 
+        public bool IsValid { get => Model != null && !Model.IsMarkedDestory && Binder != null; }
+
         public ModelViewBinder Binder { get; private set; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; private set; }
@@ -585,6 +587,9 @@ namespace Hinode
         /// <returns></returns>
         public static IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetControllersAttachedModel(this ModelViewBinderInstance target)
         {
+            if (!target.IsValid)
+                return Enumerable.Range(0, 0).Select(t => ((Model)null, (IViewObject)null, (ControllerInfo)null));
+
             return target.Binder.Controllers
                 .Select(_c => (
                     model: target.Model,
@@ -600,6 +605,9 @@ namespace Hinode
         /// <returns></returns>
         public static IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetControllersAttachedViewObjs(this ModelViewBinderInstance target)
         {
+            if (!target.IsValid)
+                return Enumerable.Range(0, 0).Select(t => ((Model)null, (IViewObject)null, (ControllerInfo)null));
+
             return target.ViewObjects
                 .SelectMany(_v =>
                     _v.UseBindInfo.Controllers.Select(_c => (

@@ -119,7 +119,9 @@ namespace Hinode.Tests.MVC
             model.OnChangedHierarchy.Add((_, __, ___) => { otherCallbackCount++; });
             model.OnChangedModelIdentities.Add((_) => { otherCallbackCount++; });
 
-            model.Destroy();
+            model.MarkDestroy();
+
+            Model.DestoryMarkedModels();
 
             #region Destroyを呼び出したものの確認
             Assert.AreEqual(1, count);
@@ -134,9 +136,11 @@ namespace Hinode.Tests.MVC
             #endregion
 
             #region CallbackがClearされているかの確認
+            otherCallbackCount = 0;
             model.DoneUpdate();
             Assert.AreEqual(0, otherCallbackCount);
 
+            otherCallbackCount = 0;
             model.Name = "otherName";
             Assert.AreEqual(0, otherCallbackCount);
 

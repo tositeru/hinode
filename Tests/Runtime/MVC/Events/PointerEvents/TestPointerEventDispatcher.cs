@@ -219,6 +219,8 @@ namespace Hinode.Tests.MVC.Events.Pointer
         [UnityTest, Description("オブジェクトが重なっている場合にイベントが発生される優先順位の確認")]
         public IEnumerator PointerPriorityOrderPasses()
         {
+            //NOTO: たまにテストに失敗するが、原因不明
+
             //var stackFrame = new System.Diagnostics.StackFrame();
             //TakeOrValid(100, stackFrame, 0, (_, __) => true, "This Snapshot is for Check Scene.");
 
@@ -355,6 +357,8 @@ namespace Hinode.Tests.MVC.Events.Pointer
             binderInstanceMap.RootModel = root;
 
             #endregion
+            yield return null;
+            yield return null;
             yield return null;
 
             //画面中央でPointerを押した時に送られるイベントを確認していく

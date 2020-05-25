@@ -154,20 +154,48 @@ namespace Hinode
         #endregion
 
         #region Destroy
+        public static HashSet<Model> _markedDestrotModels = new HashSet<Model>();
 
-        public void Destroy()
+        public static bool IsMarkedDestroy(Model model)
+            => _markedDestrotModels.Contains(model);
+        public static void DestoryMarkedModels()
         {
+            foreach (var model in _markedDestrotModels.ToArray())
+            {
+                Logger.Log(Logger.Priority.Middle, () => $"Destory model={model}");
+                model.Destroy();
+            }
+            _markedDestrotModels.Clear();
+        }
+
+        public bool IsMarkedDestory { get => Model.IsMarkedDestroy(this); }
+
+        /// <summary>
+        /// 破棄されるようにマーキングします。
+        /// 実際の破棄はModel#DestoryMarkedModels()が呼び出されるまで行われません。
+        /// 
+        /// 破棄されるタイミングよっては他の処理で問題(EventDispatcher周り)が発生したため、マーキング形式にしています。
+        /// </summary>
+        public void MarkDestroy()
+        {
+            if (IsMarkedDestroy(this)) return;
+
+            _markedDestrotModels.Add(this);
+            foreach (var child in Children)
+            {
+                child.MarkDestroy();
+            }
+        }
+
+        void Destroy()
+        {
+            Parent = null;
+            ClearChildren();
             _onUpdatedCallback.Clear();
             _onChangedHierarchyCallback.Clear();
             _onChangedIdentitiesCallback.Clear();
 
-            foreach(var child in Children.ToArray())
-            {
-                child.Destroy();
-            }
-            Parent = null;
             _onDestroyedCallback.Instance?.Invoke(this);
-
             _onDestroyedCallback.Clear();
         }
 

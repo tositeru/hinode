@@ -18,6 +18,12 @@ namespace Hinode
         public virtual ModelViewBinder.BindInfo UseBindInfo { get; set; }
         public virtual ModelViewBinderInstance UseBinderInstance { get; set; }
 
+        public virtual object QueryChild(string childID)
+        {
+            Logger.LogWarning(Logger.Priority.Debug, () => $"Please Override QueryChild(string childID) in SubClass!!");
+            return null;
+        }
+
         public virtual void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
         {
         }

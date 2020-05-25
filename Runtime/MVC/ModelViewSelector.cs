@@ -15,23 +15,36 @@ namespace Hinode
 
     public class ModelViewSelector
     {
+        List<string> _childViewIdentities = new List<string>();
+
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
         public string ViewIdentity { get; } = "";
+        public IEnumerable<string> ChildViewIdentities { get => _childViewIdentities; }
+        public bool HasChildViewId { get => _childViewIdentities.Any(); }
 
         public ModelViewSelector(ModelRelationShip relationShip, string queryPath, string viewIdentity)
         {
             RelationShip = relationShip;
             QueryPath = queryPath;
-            ViewIdentity = viewIdentity;
+            if (viewIdentity.Contains('.'))
+            {
+                var ids = viewIdentity.Split('.');
+                ViewIdentity = ids[0];
+                _childViewIdentities = ids.Skip(1).ToList();
+            }
+            else
+            {
+                ViewIdentity = viewIdentity;
+            }
         }
 
         public IEnumerable<object> Query(System.Type objectType, Model model, ModelViewBinderInstanceMap viewBinderInstance)
         {
-            Assert.IsTrue(objectType.IsSubclassOf(typeof(Model))
-                || objectType.HasInterface<IViewObject>()
-                || objectType.HasInterface<IViewLayout>()
-                , $"'{objectType}' is not subclass of Model, IViewObject or IViewLayout...");
+            //Assert.IsTrue(objectType.IsSubclassOf(typeof(Model))
+            //    || objectType.HasInterface<IViewObject>()
+            //    || objectType.HasInterface<IViewLayout>()
+            //    , $"'{objectType}' is not subclass of Model, IViewObject or IViewLayout...");
 
             var objs = GetEnumerable(model, viewBinderInstance);
             return objs
@@ -73,7 +86,9 @@ namespace Hinode
                         else
                         {
                             var instanceMap = _viewBinderInstanceMap[_model];
-                            foreach (var view in instanceMap.QueryViews(_target.ViewIdentity))
+                            foreach (var view in instanceMap.QueryViews(_target.ViewIdentity)
+                                .Select(_v => QueryChildViewID(_v))
+                                .Where(_v => _v != null))
                             {
                                 yield return view;
                             }
@@ -115,7 +130,9 @@ namespace Hinode
                             var instanceMap = _viewBinderInstanceMap[_model.Parent];
                             foreach (var view in parentModels
                                 .Where(_p => _viewBinderInstanceMap.BindInstances.ContainsKey(_p))
-                                .SelectMany(_p => _viewBinderInstanceMap[_p].QueryViews(_target.ViewIdentity)))
+                                .SelectMany(_p => _viewBinderInstanceMap[_p].QueryViews(_target.ViewIdentity))
+                                .Select(_v => QueryChildViewID(_v))
+                                .Where(_v => _v != null))
                             {
                                 yield return view;
                             }
@@ -137,7 +154,10 @@ namespace Hinode
                         {
                             var views = children
                                 .Where(_c => _viewBinderInstanceMap.BindInstances.ContainsKey(_c))
-                                .SelectMany(_c => _viewBinderInstanceMap[_c].QueryViews(_target.ViewIdentity));
+                                .SelectMany(_c => _viewBinderInstanceMap[_c].QueryViews(_target.ViewIdentity))
+                                .Select(_v => QueryChildViewID(_v))
+                                .Where(_v => _v != null)
+                            ;
                             foreach (var v in views)
                             {
                                 yield return v;
@@ -150,6 +170,18 @@ namespace Hinode
             }
 
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+
+            object QueryChildViewID(IViewObject rootViewObj)
+            {
+                if (_target.HasChildViewId)
+                {
+                    return rootViewObj.QueryChild(_target.ChildViewIdentities);
+                }
+                else
+                {
+                    return rootViewObj;
+                }
+            }
         }
 
         #region Object

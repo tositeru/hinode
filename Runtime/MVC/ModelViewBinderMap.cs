@@ -258,6 +258,7 @@ namespace Hinode
                 Add(model, allowRebind);
             }
         }
+
         #endregion
 
         #region Rebind
@@ -513,7 +514,9 @@ namespace Hinode
         public void DoDelayOperations()
         {
             bool doApplyViewLayout = false;
-            foreach (var op in OperationList.Values)
+
+            //TODO ループ途中でOperationListに要素が追加・削除された時に対応できるようにする(=> ToArray()を呼び出さなくてもいいようにする)
+            foreach (var op in OperationList.Values.ToArray())
             {
                 try
                 {
@@ -527,6 +530,7 @@ namespace Hinode
                     Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception!! model={op.Model}, op={op.OperationFlags}...{System.Environment.NewLine}+++ {e}");
                 }
             }
+            Model.DestoryMarkedModels();
 
             if (doApplyViewLayout)
             {

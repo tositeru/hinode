@@ -444,5 +444,100 @@ namespace Hinode.Tests.MVC
             }
         }
 
+        class ChildViewIDPassesViewObject : EmptyViewObject
+        {
+            public static string CHILD_ID = "child";
+            public static string NEST_CHILD_ID = "nest";
+            public EmptyViewObject Child { get; } = new EmptyViewObject();
+            public NestChildView NestChild { get; } = new NestChildView();
+
+            public override object QueryChild(string query)
+            {
+                if (CHILD_ID == query) return Child;
+                if (NEST_CHILD_ID == query) return NestChild;
+                return null;
+            }
+
+            public class NestChildView : EmptyViewObject
+            {
+                public static string CHILD_APPLE_ID = "apple";
+                public Apple Child { get; } = new Apple();
+                public override object QueryChild(string query)
+                    => query == CHILD_APPLE_ID ? Child : null;
+
+                public class Apple { }
+            }
+        }
+
+        [Test]
+        public void ChildViewIDPasses()
+        {
+            #region Construct Enviroment
+            //Model Hierarchy
+            // - root: #main type=FookableModel
+            //   - reciever: #main type=RecieverModel
+            //   - noneReciever: #main type=NoneRecieverModel
+            //     - model: #main type=Model
+            //
+            //View info
+            // #main:
+            //   - SenderViewObj: ID=SenderViewObj, InstanceID=SenderViewObj, BinderID=SenderViewObj
+            //   - RecieverViewObj: ID=reciever, InstanceID=SenderViewObj, BinderID=SenderViewObj
+
+            var root = new Model() { Name = "root", LogicalID = new ModelIDList("main") };
+            var recieverModel = new Model() { Name = "reciever", Parent = root, LogicalID = new ModelIDList("main") };
+            var noneRecieverModel = new Model() { Name = "noneReciever", Parent = root, LogicalID = new ModelIDList("main") };
+            var model1 = new Model() { Name = "model", Parent = noneRecieverModel, LogicalID = new ModelIDList("main") };
+
+            string viewID = "viewObj";
+            var viewCreator = new DefaultViewInstanceCreator(
+                (typeof(ChildViewIDPassesViewObject), new EmptyModelViewParamBinder())
+            );
+            var binderMap = new ModelViewBinderMap(viewCreator,
+                new ModelViewBinder("#main", null,
+                    new ModelViewBinder.BindInfo(viewID, typeof(ChildViewIDPassesViewObject))
+                ));
+            var binderMapInstance = binderMap.CreateBinderInstaceMap();
+            binderMapInstance.RootModel = root;
+            #endregion
+
+
+            {//Case Success childViewID
+                var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}.{ChildViewIDPassesViewObject.CHILD_ID}");
+                var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
+
+                var rootViewObjs = binderMapInstance[root].ViewObjects;
+                AssertionUtils.AssertEnumerableByUnordered(
+                    rootViewObjs.Select(_v => _v.QueryChild<EmptyViewObject>(ChildViewIDPassesViewObject.CHILD_ID))
+                    , enumerable
+                    , $"");
+            }
+
+            {//Case Success nested childViewID
+                var childViewID = $"{ChildViewIDPassesViewObject.NEST_CHILD_ID}.{ChildViewIDPassesViewObject.NestChildView.CHILD_APPLE_ID}";
+                var queryViewID = $"{viewID}.{childViewID}";
+                var selector = new ModelViewSelector(ModelRelationShip.Self, "", queryViewID);
+                var enumerable = selector.Query<ChildViewIDPassesViewObject.NestChildView.Apple>(root, binderMapInstance);
+
+                var rootViewObjs = binderMapInstance[root].ViewObjects;
+                AssertionUtils.AssertEnumerableByUnordered(
+                    rootViewObjs.Select(_v => _v.QueryChild<ChildViewIDPassesViewObject.NestChildView.Apple>(childViewID.Split('.')))
+                    , enumerable
+                    , $"Failed to query '{queryViewID}'...");
+            }
+
+            {//Case Invalid childViewID
+                var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}.invalidID");
+                var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
+
+                Assert.IsFalse(enumerable.Any());
+            }
+            {//Case Invalid ViewID Selector Format
+                var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}#{ChildViewIDPassesViewObject.CHILD_ID}");
+
+                var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
+                Assert.IsFalse(enumerable.Any());
+            }
+        }
     }
 }

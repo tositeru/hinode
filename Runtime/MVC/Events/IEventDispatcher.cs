@@ -53,6 +53,7 @@ namespace Hinode
         {
             var dispatchStateMap = binderInstanceMap.UseEventDispatchStateMap;
             return binderInstanceMap.BindInstances.Values
+                .Where(_b => _b.IsValid)
                 .SelectMany(_b => _b.GetControllerInfos())
                 .Where(_c =>
                     EventInfos.ContainKeyword(_c.controllerInfo.Keyword)
