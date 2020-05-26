@@ -7,4 +7,9 @@ namespace Hinode
     public interface IEventHandler
     {
     }
+
+    public interface IEventData
+    {
+        IEventData Clone();
+    }
 }

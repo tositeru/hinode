@@ -11,7 +11,7 @@ namespace Hinode
         Touch,
     }
 
-    public interface IOnPointerEventData
+    public interface IOnPointerEventData : IEventData
     {
         PointerType PointerType { get; }
 

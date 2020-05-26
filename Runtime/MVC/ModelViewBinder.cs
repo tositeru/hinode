@@ -358,6 +358,8 @@ namespace Hinode
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IEventDispatcherHelper>> EventDispatcherHelpObjectsForView { get => _eventDispathcerHelpObjectListDict; }
+        public EventInterruptedData HoldedEventInterruptedData { get; set; }
+        public bool HasEventInterruptedData { get => HoldedEventInterruptedData != null; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
@@ -520,6 +522,7 @@ namespace Hinode
         #region IDisposabe interface
         public void Dispose()
         {
+            HoldedEventInterruptedData = null;
             if(ViewObjects.Any())
             {
                 foreach (var view in ViewObjects)

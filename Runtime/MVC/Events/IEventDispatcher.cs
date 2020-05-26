@@ -107,16 +107,66 @@ namespace Hinode
         public void SendTo(ModelViewBinderInstanceMap binderInstanceMap)
         {
             if (!DoEnabled) return;
+            var interruptedDataList = new List<EventInterruptedData>();
+
             var supportedControllerInfos = GetSupportedControllerInfos(binderInstanceMap);
             foreach (var (model, viewObj, controllerInfo) in supportedControllerInfos)
             {
-                var recieverType = EventInfos.GetEventHandlerType(controllerInfo.Keyword);
+                var eventType = EventInfos.GetEventHandlerType(controllerInfo.Keyword);
                 var eventData = GetEventData(model, viewObj, controllerInfo);
-                if (recieverType == null || eventData == null) continue;
+                if (eventType == null || eventData == null) continue;
 
-                foreach (var selector in controllerInfo.RecieverSelectors)
+                //イベントが割り込みされるかどうかチェック
+                bool doSend = true;
+                if (binderInstanceMap.UseEventDispatchStateMap != null
+                    && binderInstanceMap.UseEventInterrupter != null)
                 {
-                    selector.Send(recieverType, model, eventData, binderInstanceMap);
+                    var eventDispatchStateMap = binderInstanceMap.UseEventDispatchStateMap;
+
+                    if (eventDispatchStateMap.DoMatch(DispatchStateName.interrupt, model, viewObj, eventType))
+                    {
+                        //割り込み処理の中でModelがBinderInstanceMapに追加される可能性があるので、このループ外で割り込み処理を行うようにしています。
+                        var interruptedData = EventInterruptedData.Create(
+                            model,
+                            viewObj,
+                            eventType,
+                            eventData,
+                            controllerInfo);
+                        interruptedDataList.Add(interruptedData);
+                        doSend = false;
+                    }
+                }
+
+                if (doSend)
+                {
+                    foreach (var selector in controllerInfo.RecieverSelectors)
+                    {
+                        selector.Send(eventType, model, eventData, binderInstanceMap);
+                    }
+                }
+
+                if(controllerInfo.IsInterruptMode)
+                {
+                    var binderInstance = binderInstanceMap[model];
+                    if (binderInstance.HasEventInterruptedData)
+                    {
+                        binderInstance.HoldedEventInterruptedData.Send(binderInstanceMap);
+                    }
+                }
+            }
+
+            //割り込み処理の中でModelがBinderInstanceMapに追加される可能性があり、
+            // 上のイベント送信ループで割り込み処理を行うとforeach中のリスト内容の変更による例外が発生したので、
+            // 別ループで割り込み処理を行うようにしています。
+            if (binderInstanceMap.UseEventInterrupter != null)
+            {
+                foreach(var interruptedData in interruptedDataList)
+                {
+                    var doSendImmediate = binderInstanceMap.UseEventInterrupter.Interrupt(binderInstanceMap, interruptedData);
+                    if (doSendImmediate)
+                    {
+                        interruptedData.Send(binderInstanceMap);
+                    }
                 }
             }
         }

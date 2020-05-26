@@ -7,19 +7,17 @@ namespace Hinode
     public interface IOnMouseEventHandler : IEventHandler { }
 
     #region MouseCursorMove Sender/Reciever
-    public class OnMouseCursorMoveEventData
+    public class OnMouseCursorMoveEventData : IEventData
     {
         public Vector3 CursorPosition { get; private set; }
         public Vector3 PrevCursorPosition { get; private set; }
 
-        public ReplayableInput Input { get; }
+        public ReplayableInput Input { get => ReplayableInput.Instance; }
 
         public OnMouseCursorMoveEventData(Vector3 position, Vector3 prevPosition)
         {
             CursorPosition = position;
             PrevCursorPosition = prevPosition;
-
-            Input = ReplayableInput.Instance;
         }
 
         public void UpdatePos(Vector3 position)
@@ -27,6 +25,13 @@ namespace Hinode
             PrevCursorPosition = CursorPosition;
             CursorPosition = position;
         }
+
+        #region IEventData
+        public IEventData Clone()
+        {
+            return new OnMouseCursorMoveEventData(CursorPosition, PrevCursorPosition);
+        }
+        #endregion
     }
 
     [EnableKeywordForEventHandler("onMouseCursorMove")]
@@ -37,7 +42,7 @@ namespace Hinode
     #endregion
 
     #region MouseButton Events Sender/Reciever
-    public class OnMouseButtonEventData
+    public class OnMouseButtonEventData: IEventData
     {
         public InputDefines.MouseButton TargetButton { get; }
         public InputDefines.ButtonCondition Condition { get; private set; }
@@ -70,6 +75,17 @@ namespace Hinode
                     throw new System.NotFiniteNumberException();
             }
         }
+
+        #region IEventData
+        public IEventData Clone()
+        {
+            var clone = new OnMouseButtonEventData(TargetButton);
+            clone.Condition = Condition;
+            clone.PushFrame = PushFrame;
+            clone.PushSeconds = PushSeconds;
+            return clone;
+        }
+        #endregion
     }
 
     [EnableKeywordForEventHandler("onMouseLeftButton")]

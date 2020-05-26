@@ -11,6 +11,7 @@ namespace Hinode
     public class ControllerInfo
     {
         List<EventHandlerSelector> _recieverInfos = new List<EventHandlerSelector>();
+        public bool IsInterruptMode { get; private set; } = false;
         public string Keyword { get; set; }
         public IEnumerable<EventHandlerSelector> RecieverSelectors { get => _recieverInfos; }
 
@@ -31,9 +32,16 @@ namespace Hinode
             : this(keyword.ToString(), recieverInfos.AsEnumerable())
         { }
 
-        public void AddRecieverInfo(EventHandlerSelector selector)
+        public ControllerInfo AddRecieverInfo(EventHandlerSelector selector)
         {
             _recieverInfos.Add(selector);
+            return this;
+        }
+
+        public ControllerInfo SetInterrupt(bool enable)
+        {
+            IsInterruptMode = enable;
+            return this;
         }
     }
 

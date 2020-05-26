@@ -219,7 +219,8 @@ namespace Hinode.Tests.MVC.Events.Pointer
         [UnityTest, Description("オブジェクトが重なっている場合にイベントが発生される優先順位の確認")]
         public IEnumerator PointerPriorityOrderPasses()
         {
-            //NOTO: たまにテストに失敗するが、原因不明
+            //NOTO: たまにテストに失敗するが、原因不明 WorldCanvas周りで失敗していたので、単純にカーソルが当たり判定から外れていたからかもしれない。
+            //      それとも、以前のテストでシーンに残ったオブジェクトが当たり判定の邪魔をしているかもしれない。
 
             //var stackFrame = new System.Diagnostics.StackFrame();
             //TakeOrValid(100, stackFrame, 0, (_, __) => true, "This Snapshot is for Check Scene.");
@@ -306,7 +307,7 @@ namespace Hinode.Tests.MVC.Events.Pointer
                         WorldCamera = mainCamera,
                     })
                     .AddViewLayout(TransformViewLayoutName.pos, worldCanvasPos)
-                    .AddViewLayout(RectTransformViewLayoutName.size, new Vector2(20, 20))
+                    .AddViewLayout(RectTransformViewLayoutName.size, new Vector2(200, 200))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 

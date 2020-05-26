@@ -151,7 +151,7 @@ namespace Hinode.Tests.MVC
 
                 {//BindInstanceMap#Addのテスト
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
-                    bindInstanceMap.Add(false, apple, noneBinderModel);
+                    bindInstanceMap.Add(false, null, apple, noneBinderModel);
                     //grapeはQueryPathと一致しないので追加されない
                     AssertionUtils.AssertEnumerableByUnordered(new Model[] {
                             apple, orange
@@ -174,7 +174,7 @@ namespace Hinode.Tests.MVC
                     }
 
                     //既に追加されていたら追加しない
-                    bindInstanceMap.Add(false, apple, orange);
+                    bindInstanceMap.Add(false, null, apple, orange);
                     AssertionUtils.AssertEnumerableByUnordered(new Model[] {
                             apple, orange
                         }, bindInstanceMap.BindInstances.Select(_b => _b.Key), "同じModelが追加できないようにしてください");
@@ -231,7 +231,7 @@ namespace Hinode.Tests.MVC
                 }
 
                 {//BindInstanceMap#ClearBindInstancesのテスト
-                    bindInstanceMap.Add(false, apple, orange);
+                    bindInstanceMap.Add(false, null, apple, orange);
                     bindInstanceMap.ClearBindInstances();
                     Assert.AreEqual(0, bindInstanceMap.BindInstances.Count());
                 }
@@ -269,7 +269,7 @@ namespace Hinode.Tests.MVC
                 orangeBinder,
                 childOrangeBinder);
             var bindInstanceMap = binderMap.CreateBinderInstaceMap();
-            bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
+            bindInstanceMap.Add(false, null, root.GetHierarchyEnumerable());
 
             var rootBinderInstance = bindInstanceMap.BindInstances[root];
             Assert.AreSame(allBinder, rootBinderInstance.Binder);
@@ -309,7 +309,7 @@ namespace Hinode.Tests.MVC
             bindInstanceMap.EnabledDelayOperation = true;
 
             {//追加
-                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, null, root.GetHierarchyEnumerable());
                 Assert.IsFalse(bindInstanceMap.BindInstances.Any(), "遅延操作が有効になっている場合はBindInstanceMap#DoDelayOperation()を呼び出されるまで、追加処理を実行しないでください。");
 
                 bindInstanceMap.DoDelayOperations();
@@ -358,7 +358,7 @@ namespace Hinode.Tests.MVC
             }
 
             {//追加と削除が合わせて遅延処理に登録されていたら、何もしないようにする
-                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, null, root.GetHierarchyEnumerable());
                 bindInstanceMap.Remove(root.GetHierarchyEnumerable());
                 Assert.IsFalse(bindInstanceMap.BindInstances.Any(), "遅延操作が有効になっている場合はBindInstanceMap#DoDelayOperation()を呼び出されるまで、追加・削除処理を実行しないでください。");
 
@@ -390,7 +390,7 @@ namespace Hinode.Tests.MVC
             bindInstanceMap.EnabledDelayOperation = true;
 
             {//操作は対象になっているIModel分だけ生成されるようにする
-                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, null, root.GetHierarchyEnumerable());
                 bindInstanceMap.Remove(root.GetHierarchyEnumerable());
 
                 var correctOpCount = root.GetHierarchyEnumerable().Count();
@@ -404,7 +404,7 @@ namespace Hinode.Tests.MVC
 
                 Assert.AreEqual(correctOpCount, opCount, "登録された操作の個数が想定されたものになっていません。操作対象となっているIModelの数だけ操作を生成してくください。");
 
-                bindInstanceMap.Add(false, root.GetHierarchyEnumerable());
+                bindInstanceMap.Add(false, null, root.GetHierarchyEnumerable());
                 correctOpCount = root.GetHierarchyEnumerable().Count();
                 opCount = 0;
                 while (enumerator.MoveNext() && enumerator.Current != null)
@@ -792,6 +792,89 @@ namespace Hinode.Tests.MVC
 
                 var onCreatedViewObj = viewObj as TestOnCreatedViewObjClass;
                 Assert.AreSame(binderInstanceMap, onCreatedViewObj.UsedBinderInstanceMap, errorMessageUsedBinderInstanceMap);
+            }
+        }
+
+        [Test]
+        public void OnAddedCallbackPasses()
+        {
+            var allBinder = new ModelViewBinder("*", null,
+                new ModelViewBinder.BindInfo(typeof(TestOnCreatedViewObjClass)));
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(TestOnCreatedViewObjClass), new TestOnCreatedViewObjClass.ParamBinder())
+            );
+
+            {//ModeViewBinder#CreateViewObjectsのテスト
+                var counter = 0;
+                List<ModelViewBinderInstance> onAddedBinderInstanceList = new List<ModelViewBinderInstance>();
+                ModelViewBinderMap.OnAddedCallback onAddedCallback = (binderInstance) =>
+                {
+                    counter++;
+                    onAddedBinderInstanceList.Add(binderInstance);
+                };
+                var binderMap = new ModelViewBinderMap(viewInstanceCreator, allBinder)
+                {
+                    DefaultOnAddedCallback = onAddedCallback
+                };
+
+                Assert.AreSame(onAddedCallback, binderMap.DefaultOnAddedCallback);
+
+                var binderInstanceMap = new ModelViewBinderInstanceMap(binderMap);
+                var root = new Model() { Name = "root" };
+
+                {//
+                    counter = 0;
+                    onAddedBinderInstanceList.Clear();
+                    binderInstanceMap.RootModel = root;
+                    Assert.AreEqual(1, counter);
+                    AssertionUtils.AssertEnumerableByUnordered(
+                        new ModelViewBinderInstance[] { binderInstanceMap.BindInstances[root] }
+                        , onAddedBinderInstanceList
+                        , "");
+                }
+
+                {//親子階層を持つModelを追加した時のテスト
+                    var model = new Model() { Name = "model1" };
+                    var child = new Model() { Name = "child1" };
+                    child.Parent = model;
+
+                    counter = 0;
+                    onAddedBinderInstanceList.Clear();
+                    binderInstanceMap.Add(model, false, null);
+
+                    Assert.AreEqual(2, counter);
+                    AssertionUtils.AssertEnumerableByUnordered(
+                        new ModelViewBinderInstance[] {
+                            binderInstanceMap.BindInstances[model],
+                            binderInstanceMap.BindInstances[child],
+                        }
+                        , onAddedBinderInstanceList
+                        , "");
+                }
+
+                {//Default意外にもカールバックを設定した時のテスト.
+                    var model = new Model() { Name = "model1" };
+
+                    counter = 0;
+                    onAddedBinderInstanceList.Clear();
+
+                    var tmpCounter = 0;
+                    binderInstanceMap.Add(model, false, (binderInstance) => {
+                        tmpCounter += 100;
+                        onAddedBinderInstanceList.Add(binderInstance);
+                    });
+
+                    Assert.AreEqual(1, counter);
+                    Assert.AreEqual(100, tmpCounter);
+                    AssertionUtils.AssertEnumerableByUnordered(
+                        new ModelViewBinderInstance[] {
+                            binderInstanceMap.BindInstances[model],
+                            binderInstanceMap.BindInstances[model],
+                        }
+                        , onAddedBinderInstanceList
+                        , "引数に渡したコールバックとDefaultのコールバック両方とも呼び出すようにしてください");
+                }
+
             }
         }
     }

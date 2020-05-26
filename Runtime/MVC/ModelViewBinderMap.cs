@@ -15,10 +15,15 @@ namespace Hinode
     /// </summary>
     public class ModelViewBinderMap
     {
+        public delegate void OnAddedCallback(ModelViewBinderInstance binderInstance);
+
         public IViewInstanceCreator ViewInstanceCreator { get; }
         public ViewLayouter UseViewLayouter { get; set; }
         public EventDispatcherMap UseEventDispatcherMap { get; set; }
         public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
+        public EventInterrupter UseEventInterrupter { get; set; }
+
+        public OnAddedCallback DefaultOnAddedCallback { get; set; }
 
         public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
 
@@ -106,6 +111,7 @@ namespace Hinode
         public ModelViewBinderMap BinderMap { get; }
         public EventDispatcherMap UseEventDispatcherMap { get => BinderMap.UseEventDispatcherMap; }
         public EventDispatchStateMap UseEventDispatchStateMap {get => BinderMap.UseEventDispatchStateMap; }
+        public EventInterrupter UseEventInterrupter { get => BinderMap.UseEventInterrupter; }
         public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }
 
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances
@@ -126,13 +132,13 @@ namespace Hinode
 
                 if (_rootModel == null) return;
 
-                Add(true, _rootModel);
+                Add(true, null, _rootModel);
                 _rootModel.OnChangedHierarchy.Add((type, target, models) =>
                 {
                     switch (type)
                     {
                         case ChangedModelHierarchyType.ChildAdd:
-                            Add(true, models);
+                            Add(true, null, models);
                             break;
                         case ChangedModelHierarchyType.ChildRemove:
                             Remove(models);
@@ -144,7 +150,7 @@ namespace Hinode
                             var isCurParentInRootModel = curParent?.GetTraversedRootEnumerable().Any(_m => _m == RootModel) ?? false;
                             if (isCurParentInRootModel)
                             {
-                                Add(true, target);
+                                Add(true, null, target);
                             }
                             else if (isPrevParentInRootModel)
                             {
@@ -163,7 +169,7 @@ namespace Hinode
                     }
                     else
                     {
-                        Add(false, model);
+                        Add(false, null, model);
                     }
                 });
 
@@ -196,11 +202,11 @@ namespace Hinode
         }
 
         #region Add
-        public void AddImpl(Model model, bool doDelay, bool allowRebind)
+        public void AddImpl(Model model, bool doDelay, bool allowRebind, ModelViewBinderMap.OnAddedCallback onAddedCallback)
         {
             if (doDelay)
             {
-                var addInfo = new Operation.AddParam() { allowRebind = allowRebind };
+                var addInfo = new Operation.AddParam() { allowRebind = allowRebind, onAddedCallback = onAddedCallback };
                 if (OperationList.ContainsKey(model))
                 {
                     OperationList[model].OperationFlags |= Operation.OpType.Add;
@@ -226,7 +232,11 @@ namespace Hinode
                             {
                                 bindInst.UpdateViewObjects();
                                 _bindInstanceDict.Add(m, bindInst);
+
                                 Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.Query}");
+
+                                onAddedCallback?.Invoke(bindInst);
+                                BinderMap?.DefaultOnAddedCallback?.Invoke(bindInst);
                             }
                             else
                             {
@@ -243,19 +253,19 @@ namespace Hinode
             }
         }
 
-        public void Add(Model model, bool allowRebind = false)
+        public void Add(Model model, bool allowRebind = false, ModelViewBinderMap.OnAddedCallback onAddedCallback = null)
         {
-            AddImpl(model, EnabledDelayOperation, allowRebind);
+            AddImpl(model, EnabledDelayOperation, allowRebind, onAddedCallback);
         }
 
-        public void Add(bool allowRebind, params Model[] models)
-            => Add(allowRebind, models.AsEnumerable());
+        public void Add(bool allowRebind, ModelViewBinderMap.OnAddedCallback onAddedCallback, params Model[] models)
+            => Add(allowRebind, onAddedCallback, models.AsEnumerable());
 
-        public void Add(bool allowRebind, IEnumerable<Model> modelEnumerable)
+        public void Add(bool allowRebind, ModelViewBinderMap.OnAddedCallback onAddedCallback, IEnumerable<Model> modelEnumerable)
         {
             foreach (var model in modelEnumerable)
             {
-                Add(model, allowRebind);
+                Add(model, allowRebind, onAddedCallback);
             }
         }
 
@@ -291,7 +301,7 @@ namespace Hinode
                     // TODO BinderInstanceで同じBindInfoを使っていたらそれを使い回すようにする
                     RemoveImpl(model, false);
 
-                    var bindInst = matchBinder.CreateBindInstance(model, this);
+                    var bindInst = matchBinder?.CreateBindInstance(model, this) ?? null;
                     if (bindInst != null)
                     {
                         bindInst.UpdateViewObjects();
@@ -454,6 +464,7 @@ namespace Hinode
             public class AddParam
             {
                 public bool allowRebind;
+                public ModelViewBinderMap.OnAddedCallback onAddedCallback;
             }
 
             public Model Model { get; }
@@ -483,7 +494,8 @@ namespace Hinode
                 else if (0 != (OperationFlags & Operation.OpType.Add))
                 {
                     var allowRebind = UseAddParam?.allowRebind ?? false;
-                    instanceMap.AddImpl(Model, false, allowRebind);
+                    var onAddedCallback = UseAddParam?.onAddedCallback ?? null;
+                    instanceMap.AddImpl(Model, false, allowRebind, onAddedCallback);
                 }
                 else if (0 != (OperationFlags & Operation.OpType.Rebind))
                 {

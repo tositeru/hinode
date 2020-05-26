@@ -9,6 +9,7 @@ namespace Hinode
     public enum DispatchStateName
     {
         disable,
+        interrupt,
     }
 
     /// <summary>
@@ -52,9 +53,10 @@ namespace Hinode
 
         public bool DoMatch(string stateName, Model model, IViewObject viewObj, System.Type eventType)
         {
-            Assert.IsTrue(_states.ContainsKey(stateName));
             Assert.IsTrue(eventType.HasInterface<IEventHandler>());
-            return _states[stateName].Any(_s => _s.DoMatch(model, viewObj, eventType));
+
+            return _states.ContainsKey(stateName)
+                && _states[stateName].Any(_s => _s.DoMatch(model, viewObj, eventType));
         }
         public bool DoMatch(System.Enum stateName, Model model, IViewObject viewObj, System.Type eventType)
             => DoMatch(stateName.ToString(), model, viewObj, eventType);

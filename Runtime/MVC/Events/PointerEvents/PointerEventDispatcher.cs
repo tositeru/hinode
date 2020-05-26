@@ -100,6 +100,14 @@ namespace Hinode
             public abstract int FingerID { get; }
             #endregion
 
+            #region IEventData
+            public IEventData Clone()
+            {
+                var clone = new ClonePointerEventData(this);
+                return clone;
+            }
+            #endregion
+
             HashSet<SupportedModelInfo> _enterAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _stationaryAreaObjects = new HashSet<SupportedModelInfo>();
             HashSet<SupportedModelInfo> _exitAreaObjects = new HashSet<SupportedModelInfo>();
@@ -136,6 +144,23 @@ namespace Hinode
 
                 UpdatePointerPos();
                 PointerPrevPos = PointerPos;
+            }
+
+            protected OnPointerEventDataBase(OnPointerEventDataBase origin)
+            {
+                Dispatcher = origin.Dispatcher;
+                PointerPrevPos = origin.PointerPrevPos;
+                PointerDownViewObject = origin.PointerDownViewObject;
+                PressFrame = origin.PressFrame;
+                PressSeconds = origin.PressSeconds;
+
+                IsStationary = origin.IsStationary;
+                StationarySeconds = origin.StationarySeconds;
+                StationaryFrame = origin.StationaryFrame;
+
+                IsDrag = origin.IsDrag;
+                DragFrame = origin.DragFrame;
+                DragSeconds = origin.DragSeconds;
             }
 
             public void Update()
@@ -318,6 +343,28 @@ namespace Hinode
                     .OrderBy(_i => _i.ControllerObj, new IOnPointerEventControllerObjectComparer(Dispatcher.UseCamera))
                     .FirstOrDefault();
             }
+        }
+
+        class ClonePointerEventData : OnPointerEventDataBase
+        {
+            public ClonePointerEventData(OnPointerEventDataBase origin)
+                : base(origin)
+            {
+                PointerType = origin.PointerType;
+                PointerPos = origin.PointerPos;
+                FingerID = origin.FingerID;
+            }
+
+            #region override OnPointerEventDataBase
+            public override PointerType PointerType { get; }
+
+            public override Vector3 PointerPos { get; }
+
+            public override int FingerID { get; }
+
+            protected override void UpdatePointerPos()
+            { }
+            #endregion
         }
 
         class MousePointerEventData : OnPointerEventDataBase
