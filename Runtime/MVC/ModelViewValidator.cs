@@ -56,10 +56,11 @@ namespace Hinode
                     }
                 }
             }
-            catch(System.Exception _)
+            catch(System.Exception e)
             {
                 Logger.LogWarning(LogPriority, () =>
-                    $"!!Validate!! InstanceKey('{bindInfo.InstanceKey}') in BindInfo don't get IViewObject..."
+                    $"!!Validate!! InstanceKey('{bindInfo.InstanceKey}') in BindInfo don't get IViewObject..." +
+                    $"{System.Environment.NewLine }---{System.Environment.NewLine}{e}{System.Environment.NewLine}---"
                 );
                 return false;
             }
@@ -93,10 +94,11 @@ namespace Hinode
                     }
                 }
             }
-            catch(System.Exception _)
+            catch(System.Exception e)
             {
                 Logger.LogWarning(LogPriority, () =>
-                    $"!!Validate!! BinderKey('{bindInfo.BinderKey}') in BindInfo don't get IModelViewParamBinder..."
+                    $"!!Validate!! BinderKey('{bindInfo.BinderKey}') in BindInfo don't get IModelViewParamBinder..." +
+                    $"{System.Environment.NewLine}---{System.Environment.NewLine}{e}{System.Environment.NewLine}---"
                 );
                 return false;
             }

@@ -29,21 +29,23 @@ namespace Hinode.Tests.MVC.ViewLayout
         {
             var viewLayouter = new ViewLayouter()
                 .AddTransformKeywordsAndAutoCreator();
-            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "parent", new TransformParentViewLayoutAccessor() },
-                { "pos", new TransformPosViewLayoutAccessor()},
-                { "rotate", new TransformRotateViewLayoutAccessor()},
-                { "localPos", new TransformLocalPosViewLayoutAccessor()},
-                { "localRotate", new TransformLocalRotateViewLayoutAccessor()},
-                { "localScale", new TransformLocalScaleViewLayoutAccessor()},
+            var testData = new (string key, IViewLayoutAccessor accessor, ViewLayoutAccessorUpdateTiming updateTiming)[] {
+                ( "parent", new TransformParentViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.Always),
+                ( "pos", new TransformPosViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "rotate", new TransformRotateViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "localPos", new TransformLocalPosViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "localRotate", new TransformLocalRotateViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "localScale", new TransformLocalScaleViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
             };
-            foreach (var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
+            foreach (var (keyword, accessor, updateTiming) in testData)
             {
                 Assert.IsTrue(viewLayouter.ContainsKeyword(keyword), $"Don't exist {keyword}...");
                 Assert.AreSame(accessor.GetType(), viewLayouter.Accessors[keyword].GetType(), $"cur={accessor.GetType()}, got={viewLayouter.Accessors[keyword].GetType()}");
                 Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keyword), $"Don't exist autoLayoutCreator... keyword={keyword}");
+
+                Assert.AreEqual(accessor.UpdateTiming, updateTiming);
             }
-            Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keywords.Keys));
+            Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(testData.Select(_t => _t.key)));
         }
 
         class ViewObj : MonoBehaviourViewObject
@@ -164,7 +166,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 ),
                 new ModelViewBinder("child", null,
                     new ModelViewBinder.BindInfo(viewID, typeof(TestComponent))
-                        .AddViewLayout("parent", new ModelViewSelector(ModelRelationShip.Parent, "", viewID))
+                        .AddViewLayoutValue("parent", new ModelViewSelector(ModelRelationShip.Parent, "", viewID))
                 )
             );
             binderMap.UseViewLayouter = new ViewLayouter()
@@ -236,6 +238,57 @@ namespace Hinode.Tests.MVC.ViewLayout
 
                 Assert.AreSame(null, childViewObj.transform.parent);
             }
+        }
+
+        class SibilingOrderModel : Model
+            , ISiblingOrder
+        {
+            #region ISiblingOrder interface
+            public uint SiblingOrder { get; set; } = ISiblingOrderConst.INVALID_ORDER;
+            #endregion
+        }
+
+        [UnityTest]
+        public IEnumerator ParentViewLayoutOrderPasses()
+        {
+            #region Construct Enviroment
+            var viewID = "testComponent";
+            var binderMap = new ModelViewBinderMap(new ViewInstanceCreator(),
+                new ModelViewBinder("root", null,
+                    new ModelViewBinder.BindInfo(viewID, typeof(TestComponent))
+                ),
+                new ModelViewBinder("child", null,
+                    new ModelViewBinder.BindInfo(viewID, typeof(TestComponent))
+                        .AddViewLayoutValue(TransformViewLayoutName.parent, new ModelViewSelector(ModelRelationShip.Parent, "", viewID))
+                )
+            );
+            binderMap.UseViewLayouter = new ViewLayouter()
+                .AddTransformKeywordsAndAutoCreator();
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
+            var root = new Model() { Name = "root" };
+            var firstChild = new SibilingOrderModel() { Name = "child", Parent = root, SiblingOrder = 1000 };
+            var secondChild = new SibilingOrderModel() { Name = "child", Parent = root, SiblingOrder = 500 };
+            var thridChild = new SibilingOrderModel() { Name = "child", Parent = root, SiblingOrder = 100 };
+            root.AddChildren(secondChild, firstChild, thridChild);
+
+            binderInstanceMap.RootModel = root;
+            #endregion
+
+            yield return null;
+
+            var rootBindInstance = binderInstanceMap.BindInstances[root];
+            var rootViewObj = rootBindInstance.QueryViews(viewID).OfType<TestComponent>().First();
+
+            AssertionUtils.AssertEnumerable(
+                new Model[] {
+                    firstChild,
+                    secondChild,
+                    thridChild,
+                },
+                rootViewObj.transform.GetChildEnumerable()
+                    .Select(_c => _c.GetComponent<TestComponent>().UseModel),
+                "");
         }
     }
 }

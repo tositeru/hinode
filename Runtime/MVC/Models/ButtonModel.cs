@@ -11,8 +11,14 @@ namespace Hinode
     /// <seealso cref="ButtonViewObject"/>
     /// </summary>
     public class ButtonModel : Model
+        , ISiblingOrder
     {
         public string Text { get; set; }
         public object Value { get; set; }
+
+        #region ISiblingOrder interface
+        uint _siblingOrder = ISiblingOrderConst.INVALID_ORDER;
+        public uint SiblingOrder { get => _siblingOrder; set { _siblingOrder = value; DoneUpdate(); } }
+        #endregion
     }
 }

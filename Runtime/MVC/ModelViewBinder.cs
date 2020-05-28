@@ -103,7 +103,7 @@ namespace Hinode
             public IModelViewParamBinder UseParamBinder { get; set; }
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
-            public IReadOnlyDictionary<string, object> ViewLayouts { get => _viewLayouts; }
+            public IReadOnlyDictionary<string, object> ViewLayoutValues { get => _viewLayouts; }
 
             public BindInfo(string id, string instanceKey, string binderKey)
             {
@@ -133,7 +133,7 @@ namespace Hinode
                 return this;
             }
 
-            public BindInfo AddViewLayout(string keyword, object value)
+            public BindInfo AddViewLayoutValue(string keyword, object value)
             {
                 if(_viewLayouts.ContainsKey(keyword))
                 {
@@ -143,8 +143,13 @@ namespace Hinode
                 return this;
             }
 
-            public BindInfo AddViewLayout(System.Enum keyword, object value)
-                => AddViewLayout(keyword.ToString(), value);
+            public BindInfo AddViewLayoutValue(System.Enum keyword, object value)
+                => AddViewLayoutValue(keyword.ToString(), value);
+
+            public bool HasViewLayoutValue(string keyword)
+                => _viewLayouts.ContainsKey(keyword);
+            public bool HasViewLayoutValue(System.Enum keyword)
+                => _viewLayouts.ContainsKey(keyword.ToString());
 
             public object GetViewLayoutValue(string keyword)
             {
@@ -154,6 +159,8 @@ namespace Hinode
                 }
                 return _viewLayouts[keyword];
             }
+            public object GetViewLayoutValue(System.Enum keyword)
+                => GetViewLayoutValue(keyword.ToString());
         }
 
         public ModelViewBinder(string query, IViewInstanceCreator instanceCreator, params BindInfo[] bindInfos)
@@ -392,7 +399,7 @@ namespace Hinode
                     var bindInfo = viewObj.UseBindInfo;
 
                     var autoViewObjHash = new HashSet<IViewObject>();
-                    foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayouts.Keys))
+                    foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayoutValues.Keys))
                     {
                         var autoViewObj = creator.Create(viewObj);
                         autoViewObjHash.Add(autoViewObj);
@@ -455,21 +462,25 @@ namespace Hinode
             }
         }
 
-        public void ApplyViewLayout()
+        public void ApplyViewLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags)
         {
             if (UseInstanceMap == null || UseInstanceMap.UseViewLayouter == null)
                 return;
             var viewLayouter = UseInstanceMap.UseViewLayouter;
-            var allViewObjs = ViewObjects
+            var viewObjs = ViewObjects
                 .Concat(ViewObjects
                     .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
-                    .SelectMany(_v => AutoLayoutViewObjects[_v]));
-            foreach (var viewObj in allViewObjs
-                .Where(_v => _v.UseBindInfo != null && _v.UseBindInfo.ViewLayouts != null))
+                    .SelectMany(_v => AutoLayoutViewObjects[_v]))
+                .Where(_v => _v.UseBindInfo != null
+                    && _v.UseBindInfo.ViewLayoutValues != null)
+                ;
+            foreach (var viewObj in viewObjs
+                .Where(_v => viewLayouter.DoMatchAnyLayout(updateTimingFlags, _v, _v.UseBindInfo.ViewLayoutValues)))
             {
-                viewLayouter.SetAllMatchLayouts(viewObj, viewObj.UseBindInfo.ViewLayouts);
+                viewLayouter.SetAllMatchLayouts(updateTimingFlags, viewObj, viewObj.UseBindInfo.ViewLayoutValues);
+
                 Logger.Log(Logger.Priority.Low, () => {
-                    var log = viewObj.UseBindInfo.ViewLayouts
+                    var log = viewObj.UseBindInfo.ViewLayoutValues
                         .Select(_v => $"{_v}={viewLayouter.IsVaildViewObject(_v.Key, viewObj)}:{viewLayouter.IsVaildValue(_v.Key, _v.Value)}")
                         .Aggregate("layout=", (_s, _c) => _s + _c + ";");
                     return $"ModelViewBinderInstance#ApplyViewLayout -> {viewObj.GetModelAndTypeName()}: {log}";
@@ -477,7 +488,7 @@ namespace Hinode
             }
 
             //他のViewObjectの影響を受けるかもしれないので、ここで行っている。
-            foreach (var viewObj in allViewObjs)
+            foreach (var viewObj in viewObjs)
             {
                 viewObj.OnViewLayouted();
             }

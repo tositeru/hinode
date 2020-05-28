@@ -155,7 +155,7 @@ namespace Hinode.Tests.MVC.Events
                 var rootViewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
                 var parentViewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
                 Assert.AreEqual(2, enumerable.Count(), errorMessage);
-                AssertionUtils.AssertEnumerable(enumerable, new IViewObject[] { rootViewObj, parentViewObj }.OfType<IEventHandler>(), errorMessage);
+                AssertionUtils.AssertEnumerable(new IViewObject[] { rootViewObj, parentViewObj }.OfType<IEventHandler>(), enumerable, errorMessage);
 
             }
         }
@@ -220,7 +220,7 @@ namespace Hinode.Tests.MVC.Events
                 var selector = new EventHandlerSelector(ModelRelationShip.Child, "*", "");
                 var enumerable = selector.GetEventHandlerEnumerable(root, binderMapInstance);
                 var errorMessage = "QueryPathを指定した時はそれに一致するModel全て取得できるようにしてください";
-                AssertionUtils.AssertEnumerable(enumerable, new IEventHandler[] { recieverModel, recieverModel2 }, errorMessage);
+                AssertionUtils.AssertEnumerable(new IEventHandler[] { recieverModel, recieverModel2 }, enumerable, errorMessage);
             }
 
             {//一致しないQueryPathを指定した時のテスト
@@ -243,7 +243,7 @@ namespace Hinode.Tests.MVC.Events
                 var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
                 var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
                 var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                AssertionUtils.AssertEnumerable(enumerable, (new IViewObject[] { viewObj1, viewObj2 }).OfType<IEventHandler>(), errorMessage);
+                AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1, viewObj2 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
             {//IEventHandlerを継承しているViewを取得しようとした時のテスト(一致しないViewID)
@@ -266,7 +266,7 @@ namespace Hinode.Tests.MVC.Events
 
                 var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
                 var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                AssertionUtils.AssertEnumerable(enumerable, (new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), errorMessage);
+                AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
             {//IEventHandlerを継承しているViewを取得しようとした時のテスト(クエリパスを指定し、ViewIDが一致しない時)

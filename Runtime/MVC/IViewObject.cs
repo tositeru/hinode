@@ -44,6 +44,11 @@ namespace Hinode
 
     public static partial class IViewObjectExtensions
     {
+        public static string ToString(this IViewObject viewObject)
+        {
+            return $"{viewObject.GetType().FullName} in Model={(viewObject.UseModel != null ? viewObject.UseModel.GetPath(): "(none)")} BindInfo={(viewObject.UseBindInfo != null ? viewObject.UseBindInfo.ID : "(none)")}";
+        }
+
         /// <summary>
         /// 使用しているModelと自身の型の名前を返します。
         /// </summary>
@@ -109,5 +114,10 @@ namespace Hinode
 
         public virtual void OnViewLayouted()
         { }
+
+        public override string ToString()
+        {
+            return IViewObjectExtensions.ToString(this);
+        }
     }
 }

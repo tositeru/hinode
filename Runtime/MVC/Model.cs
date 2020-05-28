@@ -222,27 +222,27 @@ namespace Hinode
             }
         }
 
-        public void AddLogicalID(params string[] idList)
+        public Model AddLogicalID(params string[] idList)
             => AddIDs(_logicalIDs, idList.AsEnumerable());
-        public void AddLogicalID(IEnumerable<string> idList)
+        public Model AddLogicalID(IEnumerable<string> idList)
             => AddIDs(_logicalIDs, idList.AsEnumerable());
 
-        public void RemoveLogicalID(params string[] idList)
+        public Model RemoveLogicalID(params string[] idList)
             => RemoveIDs(_logicalIDs, idList.AsEnumerable());
-        public void RemoveLogicalID(IEnumerable<string> idList)
+        public Model RemoveLogicalID(IEnumerable<string> idList)
             => RemoveIDs(_logicalIDs, idList.AsEnumerable());
 
-        public void AddStylingID(params string[] idList)
+        public Model AddStylingID(params string[] idList)
             => AddIDs(_stylingIDs, idList.AsEnumerable());
-        public void AddStylingID(IEnumerable<string> idList)
+        public Model AddStylingID(IEnumerable<string> idList)
             => AddIDs(_stylingIDs, idList.AsEnumerable());
 
-        public void RemoveStylingID(params string[] idList)
+        public Model RemoveStylingID(params string[] idList)
             => RemoveIDs(_stylingIDs, idList.AsEnumerable());
-        public void RemoveStylingID(IEnumerable<string> idList)
+        public Model RemoveStylingID(IEnumerable<string> idList)
             => RemoveIDs(_stylingIDs, idList.AsEnumerable());
 
-        void AddIDs(HashSet<string> list, IEnumerable<string> idList)
+        Model AddIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
             foreach (var id in TrimStart(idList, '#', '.')
@@ -252,9 +252,10 @@ namespace Hinode
                 doCallEvent = true;
             }
             if (doCallEvent) InvokeChangedIdentities(this);
+            return this;
         }
 
-        void RemoveIDs(HashSet<string> list, IEnumerable<string> idList)
+        Model RemoveIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
             foreach (var id in TrimStart(idList, '#', '.')
@@ -264,6 +265,7 @@ namespace Hinode
                 doCallEvent = true;
             }
             if (doCallEvent) InvokeChangedIdentities(this);
+            return this;
         }
 
         IEnumerable<string> TrimStart(IEnumerable<string> idList, params char[] charList)

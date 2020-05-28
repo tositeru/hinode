@@ -29,21 +29,23 @@ namespace Hinode.Tests.MVC.ViewLayout
         {
             var viewLayouter = new ViewLayouter()
                 .AddRectTransformKeywordsAndAutoCreator();
-            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { "anchorX", new RectTransformAnchorXViewLayoutAccessor() },
-                { "anchorY", new RectTransformAnchorYViewLayoutAccessor()},
-                { "anchorMin", new RectTransformAnchorMinViewLayoutAccessor()},
-                { "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor()},
-                { "pivot", new RectTransformPivotViewLayoutAccessor()},
-                { "size", new RectTransformSizeViewLayoutAccessor()},
+            var testData = new (string key, IViewLayoutAccessor accessor, ViewLayoutAccessorUpdateTiming updateTiming)[] {
+                ( "anchorX", new RectTransformAnchorXViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "anchorY", new RectTransformAnchorYViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "anchorMin", new RectTransformAnchorMinViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "anchorMax", new RectTransformAnchorMaxViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "pivot", new RectTransformPivotViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
+                ( "size", new RectTransformSizeViewLayoutAccessor(), ViewLayoutAccessorUpdateTiming.AtOnlyModel),
             };
-            foreach (var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
+            foreach (var (keyword, accessor, updateTiming) in testData)
             {
                 Assert.IsTrue(viewLayouter.ContainsKeyword(keyword), $"Don't exist {keyword}...");
                 Assert.AreSame(accessor.GetType(), viewLayouter.Accessors[keyword].GetType(), $"cur={accessor.GetType()}, got={viewLayouter.Accessors[keyword].GetType()}");
                 Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keyword), $"Don't exist autoLayoutCreator... keyword={keyword}");
+
+                Assert.AreEqual(accessor.UpdateTiming, updateTiming);
             }
-            Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(keywords.Keys));
+            Assert.IsTrue(viewLayouter.ContainAutoViewObjectCreator(testData.Select(_t => _t.key)));
         }
 
         class ViewObj : MonoBehaviourViewObject

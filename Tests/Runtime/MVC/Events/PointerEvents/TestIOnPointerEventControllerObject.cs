@@ -96,7 +96,7 @@ namespace Hinode.Tests.MVC.Events.Pointer
             var comparer = new IOnPointerEventControllerObjectComparer(mainCamera);
             var sortedList = list.OrderBy(_c => _c, comparer);
             Debug.Log($"sorted result -> {sortedList.Select(_o => _o.name).Aggregate("", (_s, _c) => _s + _c + " : ")}");
-            AssertionUtils.AssertEnumerable(sortedList,
+            AssertionUtils.AssertEnumerable(
                 new OnPointerEventControllerMonoBehaivour[]{
                 nearestOverlayCanvas,
                 child2InOverlayCanvas,
@@ -107,7 +107,7 @@ namespace Hinode.Tests.MVC.Events.Pointer
                 childInWorldCanvas,
                 worldCanvas,
                 cubeObj3D,
-                }, "");
+                }, sortedList, "");
 
         }
     }

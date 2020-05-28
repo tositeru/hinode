@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -379,8 +380,29 @@ namespace Hinode.Tests.MVC
 
         }
 
-        class OnViewLayoutViewObj : EmptyViewObject
+        interface ITestViewLayout : IViewLayout
         {
+            int TestViewLayout { get; set; }
+        }
+
+        class TestViewLayoutAccessor : IViewLayoutAccessor
+        {
+            public override Type ViewLayoutType { get => typeof(ITestViewLayout); }
+            public override Type ValueType { get => typeof(int); }
+            public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
+
+            protected override object GetImpl(IViewObject viewObj)
+                => (viewObj as ITestViewLayout).TestViewLayout;
+
+            protected override void SetImpl(object value, IViewObject viewObj)
+                => (viewObj as ITestViewLayout).TestViewLayout = (int)value;
+        }
+
+        class OnViewLayoutViewObj : EmptyViewObject
+            , ITestViewLayout
+        {
+            public int TestViewLayout { get; set; }
+
             public int OnViewLayoutValue { get; set; }
             public override void OnViewLayouted()
             {
@@ -398,16 +420,37 @@ namespace Hinode.Tests.MVC
             );
             var binder = new ModelViewBinder("*", viewInstanceCreator,
                 new ModelViewBinder.BindInfo(typeof(OnViewLayoutViewObj))
+                    .AddViewLayoutValue("testLayout", 5)
             );
             var binderMap = new ModelViewBinderMap(viewInstanceCreator, binder);
-            binderMap.UseViewLayouter = new ViewLayouter();
+            binderMap.UseViewLayouter = new ViewLayouter()
+                .AddKeywords(("testLayout", new TestViewLayoutAccessor()));
+
+
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
             binderInstanceMap.Add(model);
 
-            binderInstanceMap[model].ApplyViewLayout();
+            //Layoutの更新が行われたものだけにIViewObject#OnViewLayoutが呼び出されるようにしています。
             var viewObj = binderInstanceMap[model].ViewObjects.First(_v => _v is OnViewLayoutViewObj)
                 as OnViewLayoutViewObj;
-            Assert.AreEqual(100, viewObj.OnViewLayoutValue);
+            {
+                viewObj.OnViewLayoutValue = 0;
+                binderInstanceMap[model].ApplyViewLayout(ViewLayoutAccessorUpdateTiming.All);
+                Assert.AreEqual(100, viewObj.OnViewLayoutValue);
+            }
+            Debug.Log($"Success at ViewLayoutAccessorUpdateTiming.All!(Call OnViewLayout)");
+            {
+                viewObj.OnViewLayoutValue = 0;
+                binderInstanceMap[model].ApplyViewLayout(ViewLayoutAccessorUpdateTiming.Always);
+                Assert.AreEqual(100, viewObj.OnViewLayoutValue);
+            }
+            Debug.Log($"Success at ViewLayoutAccessorUpdateTiming.Always!(Not Call OnViewLayout)");
+            {
+                viewObj.OnViewLayoutValue = 0;
+                binderInstanceMap[model].ApplyViewLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel);
+                Assert.AreEqual(100, viewObj.OnViewLayoutValue);
+            }
+            Debug.Log($"Success at ViewLayoutAccessorUpdateTiming.AtOnlyModel!(Call OnViewLayout)");
         }
     }
 }

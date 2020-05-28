@@ -13,8 +13,8 @@ namespace Hinode
     public class DepthViewLayoutAccessor : IViewLayoutAccessor
     {
         public override Type ViewLayoutType { get => typeof(IDepthViewLayout); }
-
         public override Type ValueType { get => typeof(float); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {

@@ -37,9 +37,9 @@ namespace Hinode.Tests.CSharp.Extensions
             }
 
             AssertionUtils.AssertEnumerable<(string, int)>(
-                serializationInfo.GetEnumerable()
+                corrects.AsEnumerable()
+                , serializationInfo.GetEnumerable()
                     .Select(_e => (name: _e.Name, value: (int)_e.Value)),
-                corrects.AsEnumerable(),
                 "");
         }
     }

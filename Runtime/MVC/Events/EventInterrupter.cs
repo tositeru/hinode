@@ -47,11 +47,12 @@ namespace Hinode
     {
         Dictionary<EventDispatchQuery, OnEventInterruptCallback> _interrupterDict = new Dictionary<EventDispatchQuery, OnEventInterruptCallback>();
 
-        public void Add(EventDispatchQuery eventDispatchQuery, OnEventInterruptCallback onInterruptPredicate)
+        public EventInterrupter Add(EventDispatchQuery eventDispatchQuery, OnEventInterruptCallback onInterruptPredicate)
         {
             Assert.IsFalse(_interrupterDict.ContainsKey(eventDispatchQuery));
 
             _interrupterDict.Add(eventDispatchQuery, onInterruptPredicate);
+            return this;
         }
 
         OnEventInterruptCallback GetInterruptCallback(EventInterruptedData eventInterruptedData)

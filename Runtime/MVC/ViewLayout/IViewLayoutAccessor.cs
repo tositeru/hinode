@@ -4,10 +4,19 @@ using UnityEngine;
 
 namespace Hinode
 {
+    [System.Flags()]
+    public enum ViewLayoutAccessorUpdateTiming : uint
+    {
+        AtOnlyModel = 0x1 << 0,
+        Always = 0x1 << 1,
+        All = 0xffffffff,
+    }
+
     public abstract class IViewLayoutAccessor
     {
         public abstract System.Type ViewLayoutType { get; }
         public abstract System.Type ValueType { get; }
+        public abstract ViewLayoutAccessorUpdateTiming UpdateTiming { get; }
 
         public ViewLayouter.IAutoViewObjectCreator UseAutoCreator { get; set; }
 

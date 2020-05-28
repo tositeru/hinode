@@ -41,7 +41,7 @@ namespace Hinode.Tests.Extensions
                 }),
                 corrects);
 
-            AssertionUtils.AssertEnumerable(scene.GetGameObjectEnumerable(), corrects, "SceneExtensions#GetGameObjectEnumerableの探索順が想定したものになっていません。");
+            AssertionUtils.AssertEnumerable(corrects, scene.GetGameObjectEnumerable(), "SceneExtensions#GetGameObjectEnumerableの探索順が想定したものになっていません。");
         }
     }
 }

@@ -85,7 +85,8 @@ namespace Hinode.Tests.MVC.Events
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
 
             eventInterrupter.Add(new EventDispatchQuery(modelID, ""),
-                (_binderInstanceMap, _interruptedData) => {
+                (_binderInstanceMap, _interruptedData) =>
+                {
                     senderModel = _interruptedData.SenderModel;
                     senderViewObject = _interruptedData.SenderViewObj;
                     recieverEventType = _interruptedData.EventType;
@@ -156,7 +157,8 @@ namespace Hinode.Tests.MVC.Events
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
 
             eventInterrupter.Add(new EventDispatchQuery(modelID, ""),
-                (_binderInstanceMap, _interruptedData) => {
+                (_binderInstanceMap, _interruptedData) =>
+                {
                     senderModel = _interruptedData.SenderModel;
                     senderViewObject = _interruptedData.SenderViewObj;
                     recieverEventType = _interruptedData.EventType;
@@ -176,7 +178,8 @@ namespace Hinode.Tests.MVC.Events
                 }
                 , 100
                 , new ControllerInfo(TestEventName.Test));
-            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() =>
+            {
                 eventInterrupter.Interrupt(binderInstanceMap, interruptedData);
             }, "OnEventInterruptCallbackでModelを返した時、ModelViewBinderInstanceMapへ登録が失敗した時は例外を投げるようにしてください");
         }
@@ -186,7 +189,8 @@ namespace Hinode.Tests.MVC.Events
         public void UsageModelViewBinderMapPasses()
         {
             #region Construct Enviroment
-            EventHandlerTypeManager.Instance.EntryEventHandlerExecuter<ITestEventHandler, int>((reciever, sender, eventData) => {
+            EventHandlerTypeManager.Instance.EntryEventHandlerExecuter<ITestEventHandler, int>((reciever, sender, eventData) =>
+            {
                 reciever.Test(sender, eventData);
             });
             var eventDispatcher = new TestEventDispatcher()
@@ -218,7 +222,7 @@ namespace Hinode.Tests.MVC.Events
                     eventDispatcher
                 ),
                 UseEventDispatchStateMap = new EventDispatchStateMap()
-                    .AddState(DispatchStateName.interrupt, interruptedTargetQuery),
+                    .AddState(EventDispatchStateName.interrupt, interruptedTargetQuery),
             };
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
             var root = new TestModel() { Name = modelID };
@@ -228,7 +232,8 @@ namespace Hinode.Tests.MVC.Events
 
             var eventInterrupter = new EventInterrupter();
             eventInterrupter.Add(interruptedTargetQuery,
-                (_binderInstanceMap, interruptedData) => {
+                (_binderInstanceMap, interruptedData) =>
+                {
                     var interruptModel = new Model() { Name = interruptModelName };
                     return (interruptModel, true);
                 }
@@ -238,7 +243,7 @@ namespace Hinode.Tests.MVC.Events
 
             Assert.IsNotNull(binderInstanceMap.UseEventDispatchStateMap);
             Assert.IsNotNull(binderInstanceMap.UseEventInterrupter);
-            Assert.IsTrue(binderInstanceMap.UseEventDispatchStateMap.DoMatch<ITestEventHandler>(DispatchStateName.interrupt, root, null), $"イベントの割り込みテストに使用するモデル({root})が割り込み対象になっていません。EventDispatchStateMapの設定を見直してください");
+            Assert.IsTrue(binderInstanceMap.UseEventDispatchStateMap.DoMatch<ITestEventHandler>(EventDispatchStateName.interrupt, root, null), $"イベントの割り込みテストに使用するモデル({root})が割り込み対象になっていません。EventDispatchStateMapの設定を見直してください");
 
             eventDispatcher.SendTo(binderInstanceMap);
 

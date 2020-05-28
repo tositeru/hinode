@@ -222,7 +222,7 @@ namespace Hinode.Tests.MVC
                     var model = new ModelClass() { Name = "Tmp" };
                     var isSuccess = bindInstanceMap.Rebind(model);
                     Assert.IsFalse(isSuccess, "登録されていないModelの場合はRebindしないようにしてください");
-                    AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, recordedBindInstances, "ModelViewBinderInstanceMapに追加されていないModelをRebindした時は何もしないようにしてください。");
+                    AssertionUtils.AssertEnumerable(recordedBindInstances, bindInstanceMap.BindInstances, "ModelViewBinderInstanceMapに追加されていないModelをRebindした時は何もしないようにしてください。");
                 }
 
                 {//BindInstanceMap#Removeのテスト
@@ -560,7 +560,7 @@ namespace Hinode.Tests.MVC
                 var rootParent = new Model() { Name = "rootParent" };
                 root.Parent = rootParent;
                 Assert.AreEqual(count, bindInstanceMap.BindInstances.Count, errorMessage);
-                AssertionUtils.AssertEnumerable(bindInstanceMap.BindInstances, saveBindInstances, errorMessage);
+                AssertionUtils.AssertEnumerable(saveBindInstances, bindInstanceMap.BindInstances, errorMessage);
             }
         }
 

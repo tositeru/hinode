@@ -98,21 +98,28 @@ namespace Hinode
             return accessor.Get(viewObj);
         }
 
-        public void SetAllMatchLayouts(IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
         {
-            foreach (var (value, layoutAccessor) in keyAndValues
-                .Where(_t =>
-                {
-                    if (!ContainsKeyword(_t.Key)) return false;
-                    var layout = Accessors[_t.Key];
-                    return layout.IsVaildViewObject(target) && layout.IsVaildValue(_t.Value);
-                })
+            return GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues).Any();
+        }
+
+        public void SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+        {
+            foreach (var (value, layoutAccessor) in GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues)
                 .Select(_t => (value: _t.Value, layout: Accessors[_t.Key])))
             {
                 layoutAccessor.Set(value, target);
             }
-
         }
+
+        IEnumerable<KeyValuePair<string, object>> GetMatchKeyAndValues(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+            => keyAndValues.Where(_t => {
+                if (!ContainsKeyword(_t.Key)) return false;
+                var layout = Accessors[_t.Key];
+                return layout.IsVaildViewObject(target)
+                    && layout.IsVaildValue(_t.Value)
+                    && 0 != (updateTimingFlags & layout.UpdateTiming);
+            });
 
         #region AutoViewObject
         public void AddAutoCreateViewObject(IAutoViewObjectCreator creator, params string[] keywords)

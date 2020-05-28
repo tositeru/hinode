@@ -60,7 +60,7 @@ namespace Hinode.Tests.Extensions
                 C,
                 C.transform.GetChild(0).gameObject,
             };
-            AssertionUtils.AssertEnumerable(createdList, correctList, "想定した順にリストへ追加されていません");
+            AssertionUtils.AssertEnumerable(correctList, createdList, "想定した順にリストへ追加されていません");
 
             AssertGameObject(root, "root", new GameObject[]{ A, B, C }, "invalid root...");
             AssertGameObject(A, "A", new GameObject[] { A.transform.GetChild(0).gameObject, A.transform.GetChild(1).gameObject, A.transform.GetChild(2).gameObject }, "invalid A");
@@ -95,8 +95,9 @@ namespace Hinode.Tests.Extensions
             System.Action<GameObject> validateChildren = (obj) => {
                 onCreated(obj);
                 AssertionUtils.AssertEnumerable(
-                    obj.transform.GetHierarchyEnumerable().Select(_o => _o.name),
-                    new string[]{ "root", "A", "B", "C" }, "onCreatedが子要素の生成後に呼び出されていません。");
+                    new string[] { "root", "A", "B", "C" }
+                    , obj.transform.GetHierarchyEnumerable().Select(_o => _o.name)
+                    , "onCreatedが子要素の生成後に呼び出されていません。");
             };
             var createdList = new List<GameObject>();
             var root = GameObjectExtensions.Create(

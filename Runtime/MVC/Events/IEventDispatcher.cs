@@ -59,7 +59,7 @@ namespace Hinode
                     EventInfos.ContainKeyword(_c.controllerInfo.Keyword)
                     && EventInfos.DoEnabledEvent(_c.controllerInfo.Keyword)
                     && (!dispatchStateMap?.DoMatch(
-                            DispatchStateName.disable,
+                            EventDispatchStateName.disable,
                             _c.model,
                             _c.viewObj,
                             EventInfos.GetEventHandlerType(_c.controllerInfo.Keyword))
@@ -123,7 +123,7 @@ namespace Hinode
                 {
                     var eventDispatchStateMap = binderInstanceMap.UseEventDispatchStateMap;
 
-                    if (eventDispatchStateMap.DoMatch(DispatchStateName.interrupt, model, viewObj, eventType))
+                    if (eventDispatchStateMap.DoMatch(EventDispatchStateName.interrupt, model, viewObj, eventType))
                     {
                         //割り込み処理の中でModelがBinderInstanceMapに追加される可能性があるので、このループ外で割り込み処理を行うようにしています。
                         var interruptedData = EventInterruptedData.Create(

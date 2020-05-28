@@ -34,5 +34,10 @@ namespace Hinode
 
         public virtual void OnViewLayouted()
         { }
+
+        public override string ToString()
+        {
+            return IViewObjectExtensions.ToString(this);
+        }
     }
 }

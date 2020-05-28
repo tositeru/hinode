@@ -289,7 +289,7 @@ namespace Hinode.Tests.MVC
 
                 var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
                 var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                AssertionUtils.AssertEnumerable(enumerable, (new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), errorMessage);
+                AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
             {//Viewを取得しようとした時のテスト(クエリパスを指定し、ViewIDが一致しない時)

@@ -30,6 +30,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformAnchorXViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -53,6 +54,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformAnchorYViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -76,6 +78,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformPivotViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -99,6 +102,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformSizeViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -122,6 +126,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformAnchorMinViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -145,6 +150,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformAnchorMaxViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -168,6 +174,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformOffsetMinViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -191,6 +198,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(IRectTransformOffsetMaxViewLayout); }
         public override System.Type ValueType { get => typeof(Vector2); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {

@@ -18,7 +18,7 @@ namespace Hinode.Tests.CSharp.Extensions
         {
             System.Array arr = Enumerable.Range(0, 5).ToArray();
 
-            AssertionUtils.AssertEnumerable(arr.GetEnumerable().Select(_o => (int)_o), Enumerable.Range(0, 5), "");
+            AssertionUtils.AssertEnumerable(Enumerable.Range(0, 5), arr.GetEnumerable().Select(_o => (int)_o), "");
         }
     }
 }

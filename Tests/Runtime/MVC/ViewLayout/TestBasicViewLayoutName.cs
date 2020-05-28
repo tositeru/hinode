@@ -19,6 +19,7 @@ namespace Hinode.Tests.MVC.ViewLayout
                 .AddBasicViewLayouter();
             var keywords = new Dictionary<string, IViewLayoutAccessor>() {
                 { BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor() },
+                { BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor() }
             };
             foreach (var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
             {

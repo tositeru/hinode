@@ -56,7 +56,7 @@ namespace Hinode.Tests.Editors
 
             Assert.IsTrue(Hinode.Editors.EditorFileUtils.IsExistAsset(snapshotFilepath), $"don't exist snapshot file... filepath='{snapshotFilepath}'");
             var savedSnapshot = AssetDatabase.LoadAssetAtPath<Snapshot>(snapshotFilepath);
-            AssertionUtils.AssertEnumerable(AssetDatabase.GetLabels(savedSnapshot), new[] { "snapshot" }, "想定したラベルが付けられていません。");
+            AssertionUtils.AssertEnumerable(new[] { "snapshot" }, AssetDatabase.GetLabels(savedSnapshot), "想定したラベルが付けられていません。");
 
             //Snapshotによる検証のテスト
             DoTakeSnapshot = false;
@@ -91,7 +91,7 @@ namespace Hinode.Tests.Editors
             Assert.IsTrue(Hinode.Editors.EditorFileUtils.IsExistAsset(snapshotFilepath));
             var savedSnapshot = AssetDatabase.LoadAssetAtPath<Snapshot>(snapshotFilepath);
             Assert.AreEqual(savedSnapshot, LastSnapshot);
-            AssertionUtils.AssertEnumerable(AssetDatabase.GetLabels(savedSnapshot), new[] { "snapshot" }, "想定したラベルが付けられていません。");
+            AssertionUtils.AssertEnumerable(new[] { "snapshot" }, AssetDatabase.GetLabels(savedSnapshot), "想定したラベルが付けられていません。");
 
             //Snapshotによる検証のテスト
             DoTakeSnapshot = false;

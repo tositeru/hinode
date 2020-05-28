@@ -176,7 +176,7 @@ namespace Hinode
                 //ViewLayoutの適応
                 if (!EnabledDelayOperation)
                 {
-                    ApplyViewLayouts();
+                    ApplyViewLayouts(ViewLayoutAccessorUpdateTiming.All);
                 }
             }
         }
@@ -417,15 +417,15 @@ namespace Hinode
         ///  - 他のModelを参照する必要があるIViewLayout -> TransformParentViewLayoutAccessorの値にModelViewSelectorを指定した時
         /// 
         /// </summary>
-        public void ApplyViewLayouts()
+        public void ApplyViewLayouts(ViewLayoutAccessorUpdateTiming updateTiming)
         {
             foreach (var bindInstance in BindInstances.Values)
             {
-                bindInstance.ApplyViewLayout();
+                bindInstance.ApplyViewLayout(updateTiming);
             }
         }
 
-        public void Update(Model model)
+        public void Update(Model model, ViewLayoutAccessorUpdateTiming updateTiming = ViewLayoutAccessorUpdateTiming.AtOnlyModel)
         {
             Assert.IsTrue(BindInstances.ContainsKey(model), $"This BindInstaneMap don't have model({model.GetPath()})...");
 
@@ -441,7 +441,7 @@ namespace Hinode
             else
             {
                 BindInstances[model].UpdateViewObjects();
-                BindInstances[model].ApplyViewLayout();
+                BindInstances[model].ApplyViewLayout(updateTiming);
             }
         }
 
@@ -527,15 +527,21 @@ namespace Hinode
         {
             bool doApplyViewLayout = false;
 
-            //TODO ループ途中でOperationListに要素が追加・削除された時に対応できるようにする(=> ToArray()を呼び出さなくてもいいようにする)
+            //TODO? ループ途中でOperationListに要素が追加・削除された時に対応できるようにする(=> ToArray()を呼び出さなくてもいいようにする)
             foreach (var op in OperationList.Values.ToArray())
             {
                 try
                 {
                     op.Done(this);
-                    doApplyViewLayout |= 0 != (op.OperationFlags & Operation.OpType.Rebind)
+                    var doApply = 0 != (op.OperationFlags & Operation.OpType.Rebind)
                         || 0 != (op.OperationFlags & Operation.OpType.Add)
                         || 0 != (op.OperationFlags & Operation.OpType.Remove);
+                    doApplyViewLayout |= doApply;
+
+                    if (doApply && UseViewLayouter != null && BindInstances.ContainsKey(op.Model))
+                    {
+                        BindInstances[op.Model].ApplyViewLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel);
+                    }
                 }
                 catch (System.Exception e)
                 {
@@ -544,26 +550,18 @@ namespace Hinode
             }
             Model.DestoryMarkedModels();
 
-            if (doApplyViewLayout)
+            if (doApplyViewLayout && UseViewLayouter != null)
             {
-                //Apply ViewLayout
-                var addOrRemoveModels = OperationList.Values
-                    .Where(_o => 0 != (_o.OperationFlags & Operation.OpType.Add) || 0 != (_o.OperationFlags & Operation.OpType.Remove))
-                    .SelectMany(_o => _o.Model.GetHierarchyEnumerable().Select(_m => (op: _o, model: _m)));
-                var rebindOnlyModels = OperationList.Values
-                    .Where(_o => _o.OperationFlags == Operation.OpType.Remove)
-                    .Select(_o => (op: _o, model: _o.Model));
-                foreach (var (op, model) in addOrRemoveModels
-                    .Concat(rebindOnlyModels)
-                    .Where(_t => BindInstances.ContainsKey(_t.model)))
+                //Apply ViewLayout(Only UpdateTiming#Alyways)
+                foreach(var bindInstance in BindInstances.Values)
                 {
                     try
                     {
-                        BindInstances[model].ApplyViewLayout();
+                        bindInstance.ApplyViewLayout(ViewLayoutAccessorUpdateTiming.All);
                     }
                     catch (System.Exception e)
                     {
-                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout!! model={model}, op={op.OperationFlags}, opRootModel={op.Model}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
+                        Logger.LogError(Logger.Priority.High, () => $"ModelViewBinderInstanceMap#DoDelayOperation: !!Catch Exception at Apply ViewLayout(Always)!! model={bindInstance.Model}...{System.Environment.NewLine}+++{System.Environment.NewLine}{e}{System.Environment.NewLine}+++");
                     }
                 }
             }

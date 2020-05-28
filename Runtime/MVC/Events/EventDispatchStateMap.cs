@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
-    public enum DispatchStateName
+    public enum EventDispatchStateName
     {
         disable,
         interrupt,

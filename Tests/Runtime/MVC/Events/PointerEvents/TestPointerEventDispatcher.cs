@@ -278,11 +278,11 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var sameCanvasScreenOverlayBinder = new ModelViewBinder(sameCanvasScreenOverlayQuery, null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
-                    .AddViewLayout(TransformViewLayoutName.parent, new ModelViewSelector(ModelRelationShip.Parent, "", canvasViewID))
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.08f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.08f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue(TransformViewLayoutName.parent, new ModelViewSelector(ModelRelationShip.Parent, "", canvasViewID))
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.08f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.08f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
                         new EventHandlerSelector(ModelRelationShip.Parent, "Root", "")))
                 );
@@ -306,16 +306,16 @@ namespace Hinode.Tests.MVC.Events.Pointer
                         RenderMode = RenderMode.WorldSpace,
                         WorldCamera = mainCamera,
                     })
-                    .AddViewLayout(TransformViewLayoutName.pos, worldCanvasPos)
-                    .AddViewLayout(RectTransformViewLayoutName.size, new Vector2(200, 200))
+                    .AddViewLayoutValue(TransformViewLayoutName.pos, worldCanvasPos)
+                    .AddViewLayoutValue(RectTransformViewLayoutName.size, new Vector2(200, 200))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
             var object3DPos = mainCamera.transform.position + mainCamera.transform.forward * farestCameraDistance;
             var obj3DBinder = new ModelViewBinder(object3DQuery, null
                 , new ModelViewBinder.BindInfo(typeof(CubeViewObject))
-                    .AddViewLayout(TransformViewLayoutName.pos, object3DPos)
-                    .AddViewLayout(TransformViewLayoutName.localScale, new Vector3(40f, 40f, 1))
+                    .AddViewLayoutValue(TransformViewLayoutName.pos, object3DPos)
+                    .AddViewLayoutValue(TransformViewLayoutName.localScale, new Vector3(40f, 40f, 1))
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown, parentSelector))
                 );
 
@@ -336,7 +336,7 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     new PointerEventDispatcher()
                 ),
                 UseEventDispatchStateMap = new EventDispatchStateMap()
-                    .AddState(DispatchStateName.disable, new EventDispatchQuery(disableEventID, ""))
+                    .AddState(EventDispatchStateName.disable, new EventDispatchQuery(disableEventID, ""))
             };
             var root = new PointerPriorityOrderPassesModel() { Name = "Root" };
             var nearestScreenOverlay = new Model() { Name = nearestScreenOverlayQuery };
@@ -494,10 +494,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerDown,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -651,10 +651,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerUp,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -803,10 +803,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerClick,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -976,10 +976,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerEnter,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -1134,10 +1134,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerInArea,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -1305,10 +1305,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerExit,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))
@@ -1477,10 +1477,10 @@ namespace Hinode.Tests.MVC.Events.Pointer
                     {
                         RenderMode = RenderMode.ScreenSpaceOverlay
                     })
-                    .AddViewLayout("anchorMin", Vector2.one * (0.5f - 0.1f))
-                    .AddViewLayout("anchorMax", Vector2.one * (0.5f + 0.1f))
-                    .AddViewLayout("offsetMin", Vector2.zero)
-                    .AddViewLayout("offsetMax", Vector2.zero)
+                    .AddViewLayoutValue("anchorMin", Vector2.one * (0.5f - 0.1f))
+                    .AddViewLayoutValue("anchorMax", Vector2.one * (0.5f + 0.1f))
+                    .AddViewLayoutValue("offsetMin", Vector2.zero)
+                    .AddViewLayoutValue("offsetMax", Vector2.zero)
                     .AddControllerInfo(new ControllerInfo(PointerEventName.onPointerBeginDrag,
                         new EventHandlerSelector(ModelRelationShip.Self, "", "")
                     ))

@@ -10,7 +10,7 @@ namespace Hinode.Tests
 {
     public static class AssertionUtils
     {
-        public static void AssertEnumerable<T>(IEnumerable<T> gots, IEnumerable<T> corrects, string message)
+        public static void AssertEnumerable<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message)
         {
             if (gots == null && corrects == null) return;
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots !=null}");

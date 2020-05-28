@@ -285,7 +285,7 @@ namespace Hinode.Tests.MVC
                 //string modelsLog = "";
                 //if(models != null) foreach (var c in models) { modelsLog += (c?.GetPath() ?? "(null)") + ","; }
                 //Debug.Log($"correct=>{modelsLog}{System.Environment.NewLine}    gots=>{changedModelsLog}");
-                AssertionUtils.AssertEnumerable(_changedModels, models, $"想定されたModelsが設定されていません... {message}");
+                AssertionUtils.AssertEnumerable(models, _changedModels, $"想定されたModelsが設定されていません... {message}");
             }
 
             public void Reset()
@@ -587,12 +587,12 @@ namespace Hinode.Tests.MVC
             var grape = new Model() { Name = "grape" };
 
             root.AddChildren(apple, grape, null);
-            AssertionUtils.AssertEnumerable(root.Children, new Model[] { apple, grape }, "nullを追加しようとした時は、それを除外してください。");
+            AssertionUtils.AssertEnumerable(new Model[] { apple, grape }, root.Children, "nullを追加しようとした時は、それを除外してください。");
             Assert.AreSame(root, apple.Parent);
             Assert.AreSame(root, grape.Parent);
 
             root.RemoveChildren(apple, grape, null);
-            AssertionUtils.AssertEnumerable(root.Children, new Model[] { }, "nullを削除しようとした時は、それを除外してください。");
+            AssertionUtils.AssertEnumerable(new Model[] { }, root.Children, "nullを削除しようとした時は、それを除外してください。");
             Assert.AreSame(null, apple.Parent);
             Assert.AreSame(null, grape.Parent);
         }
@@ -607,7 +607,7 @@ namespace Hinode.Tests.MVC
             root.AddChildren(apple, grape, null);
 
             root.ClearChildren();
-            AssertionUtils.AssertEnumerable(root.Children, new Model[] { }, "");
+            AssertionUtils.AssertEnumerable(new Model[] { }, root.Children, "");
             Assert.AreSame(null, apple.Parent);
             Assert.AreSame(null, grape.Parent);
         }

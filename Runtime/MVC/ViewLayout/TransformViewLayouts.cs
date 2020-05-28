@@ -21,12 +21,17 @@ namespace Hinode
     {
         Transform TransformParentLayout { get; set; }
         Transform SelfTransform { get; }
+
+        //#region IViewLayout interface
+        //public ViewLayoutUpdateTimeing UpdateTiming { get => ViewLayoutUpdateTimeing.Always; }
+        //#endregion
     }
 
     public class TransformParentViewLayoutAccessor : IViewLayoutAccessor
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformParentViewLayout); }
         public override System.Type ValueType { get => typeof(Transform); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.Always; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -65,6 +70,8 @@ namespace Hinode
                         Logger.LogWarning(Logger.Priority.High, () => 
                             $"複数のModelViewがマッチしました。初めに見つかったものを使用します。 model={viewObj.UseModel}, viewObj={viewObj.GetType()}");
                     }
+
+                    SiblingOrderViewLayoutAccessor.Insert(parent, viewObj);
                 }
                 else
                 {
@@ -98,6 +105,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformPosViewLayout); }
         public override System.Type ValueType { get => typeof(Vector3); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -120,6 +128,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformRotateViewLayout); }
         public override System.Type ValueType { get => typeof(Vector3); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -142,6 +151,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformLocalPosViewLayout); }
         public override System.Type ValueType { get => typeof(Vector3); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -164,6 +174,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformLocalRotateViewLayout); }
         public override System.Type ValueType { get => typeof(Vector3); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {
@@ -186,6 +197,7 @@ namespace Hinode
     {
         public override System.Type ViewLayoutType { get => typeof(ITransformLocalScaleViewLayout); }
         public override System.Type ValueType { get => typeof(Vector3); }
+        public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
         protected override object GetImpl(IViewObject viewObj)
         {

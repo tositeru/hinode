@@ -6,7 +6,8 @@ namespace Hinode
 {
     public enum BasicViewLayoutName
     {
-        depth
+        depth,
+        siblingOrder,
     }
 
     public static partial class ViewLayouterExtensions
@@ -14,7 +15,9 @@ namespace Hinode
         public static ViewLayouter AddBasicViewLayouter(this ViewLayouter viewLayouter)
         {
             return viewLayouter
-                .AddKeywords((BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor()));
+                .AddKeywords(
+                    (BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor()),
+                    (BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor()));
         }
     }
 }

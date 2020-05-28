@@ -90,11 +90,11 @@ namespace Hinode.Tests.MVC
             bananaModelHome.RootModel = banana;
 
             var errorMessage = "想定した結果ではありません。";
-            AssertionUtils.AssertEnumerable(IModelHome.GetJoinHomes(root), new IModelHome[] { rootModelHome }, errorMessage);
-            AssertionUtils.AssertEnumerable(IModelHome.GetJoinHomes(apple), new IModelHome[] { rootModelHome }, errorMessage);
-            AssertionUtils.AssertEnumerable(IModelHome.GetJoinHomes(orange), new IModelHome[] { orangeModelHome, rootModelHome }, errorMessage);
-            AssertionUtils.AssertEnumerable(IModelHome.GetJoinHomes(grape), new IModelHome[] { orangeModelHome, rootModelHome }, errorMessage);
-            AssertionUtils.AssertEnumerable(IModelHome.GetJoinHomes(empty), new IModelHome[] { }, errorMessage);
+            AssertionUtils.AssertEnumerable(new IModelHome[] { rootModelHome }, IModelHome.GetJoinHomes(root), errorMessage);
+            AssertionUtils.AssertEnumerable(new IModelHome[] { rootModelHome }, IModelHome.GetJoinHomes(apple), errorMessage);
+            AssertionUtils.AssertEnumerable(new IModelHome[] { orangeModelHome, rootModelHome }, IModelHome.GetJoinHomes(orange), errorMessage);
+            AssertionUtils.AssertEnumerable(new IModelHome[] { orangeModelHome, rootModelHome }, IModelHome.GetJoinHomes(grape), errorMessage);
+            AssertionUtils.AssertEnumerable(new IModelHome[] { }, IModelHome.GetJoinHomes(empty), errorMessage);
         }
 
         [UnityTest]

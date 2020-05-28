@@ -24,7 +24,7 @@ namespace Hinode.Tests.Extensions
             ).transform;
 
             corrects.RemoveAt(0);
-            AssertionUtils.AssertEnumerable(root.GetChildEnumerable(), corrects.Select(_g => _g.transform), "TransformExtensions#GetChildEnumerableの探索順が想定したものになっていません。");
+            AssertionUtils.AssertEnumerable(corrects.Select(_g => _g.transform), root.GetChildEnumerable(), "TransformExtensions#GetChildEnumerableの探索順が想定したものになっていません。");
         }
 
         // A Test behaves as an ordinary method
@@ -47,7 +47,7 @@ namespace Hinode.Tests.Extensions
                 corrects
             ).transform;
 
-            AssertionUtils.AssertEnumerable(root.transform.GetHierarchyEnumerable(), corrects.Select(_g => _g.transform), "TransformExtensions#GetHierarchyEnumerableの探索順が想定したものになっていません。");
+            AssertionUtils.AssertEnumerable(corrects.Select(_g => _g.transform), root.transform.GetHierarchyEnumerable(), "TransformExtensions#GetHierarchyEnumerableの探索順が想定したものになっていません。");
         }
 
         [Test]
@@ -73,8 +73,8 @@ namespace Hinode.Tests.Extensions
             var A = root.Find("A");
             var errorMessage = $"'root/A/A Child0'の親Transformを正しく取得できていません";
             AssertionUtils.AssertEnumerable(
-                child.GetParentEnumerable()
-                , new Transform[] { A, root }
+                new Transform[] { A, root }
+                , child.GetParentEnumerable()
                 , errorMessage);
         }
     }
