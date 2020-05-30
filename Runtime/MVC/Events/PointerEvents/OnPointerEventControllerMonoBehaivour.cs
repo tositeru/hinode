@@ -78,6 +78,10 @@ namespace Hinode
             }
         }
 
+        #region IViewObject
+        
+        #endregion
+
         #region IOnPointerEventControllerObject interface
         public bool IsScreenOverlay
         {

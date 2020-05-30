@@ -706,9 +706,8 @@ namespace Hinode.Tests.MVC
         {
             public ModelViewBinderInstanceMap UsedBinderInstanceMap { get; set; }
 
-            public override void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+            protected override void OnBind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
             {
-                base.Bind(targetModel, bindInfo, binderInstanceMap);
                 UsedBinderInstanceMap = binderInstanceMap;
             }
 
@@ -877,5 +876,41 @@ namespace Hinode.Tests.MVC
 
             }
         }
+
+        [Test]
+        public void ContainsPasses()
+        {
+            var binderMap = new ModelViewBinderMap(new DefaultViewInstanceCreator(),
+                new ModelViewBinder("*", null)
+                );
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
+            var model = new Model();
+            Assert.IsFalse(binderInstanceMap.Contains(model));
+            binderInstanceMap.Add(model);
+            Assert.IsTrue(binderInstanceMap.Contains(model));
+        }
+
+        [Test]
+        public void ContainsAtDelayPasses()
+        {
+            var binderMap = new ModelViewBinderMap(new DefaultViewInstanceCreator(),
+                new ModelViewBinder("*", null)
+                );
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+            binderInstanceMap.EnabledDelayOperation = true;
+
+            var model = new Model();
+            Assert.IsFalse(binderInstanceMap.Contains(model));
+            binderInstanceMap.Add(model);
+            Assert.IsFalse(binderInstanceMap.Contains(model));
+
+            binderInstanceMap.DoDelayOperations();
+            Assert.IsTrue(binderInstanceMap.Contains(model));
+
+        }
+
     }
 }

@@ -231,7 +231,7 @@ namespace Hinode
                 }
             }
 
-            public void UpdateInAreaObjects(Camera useCamera, IEnumerable<SupportedModelInfo> infos)
+            public void UpdateInAreaObjects(ModelViewBinderInstanceMap binderInstanceMap, Camera useCamera, IEnumerable<SupportedModelInfo> infos)
             {
                 var ray = useCamera.ScreenPointToRay(PointerPos);
                 var raycastResults = Physics.RaycastAll(ray).Select(_r => _r.transform);
@@ -251,20 +251,26 @@ namespace Hinode
                 _exitAreaObjects.Clear();
                 //move enter to stationary
                 foreach (var enterObj in EnterAreaObjects
-                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
+                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)
+                        && binderInstanceMap.Contains(_c.Model)
+                    ))
                 {
                     _stationaryAreaObjects.Add(enterObj);
                 }
                 //enter new obj
                 _enterAreaObjects.Clear();
                 foreach (var curInAreaObj in currentInAreaObjs
-                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)))
+                    .Where(_c => !StationaryAreaObjects.Contains(_c, SupportedModelInfoEquality.DefaultInstance)
+                        && binderInstanceMap.Contains(_c.Model)
+                    ))
                 {
                     _enterAreaObjects.Add(curInAreaObj);
                 }
                 //move stationary to exit
                 foreach (var delInAreaObj in StationaryAreaObjects
-                    .Where(_o => !currentInAreaObjs.Contains(_o, SupportedModelInfoEquality.DefaultInstance)))
+                    .Where(_c => !currentInAreaObjs.Contains(_c, SupportedModelInfoEquality.DefaultInstance)
+                        && binderInstanceMap.Contains(_c.Model)
+                    ))
                 {
                     _exitAreaObjects.Add(delInAreaObj);
                 }
@@ -454,7 +460,9 @@ namespace Hinode
             Assert.IsTrue(IsCreatableControllerObject(model, viewObject));
 
             var behaviour = viewObject as MonoBehaviour;
-            return behaviour.gameObject.GetOrAddComponent<OnPointerEventControllerMonoBehaivour>();
+            return behaviour.gameObject.AddComponent<OnPointerEventControllerMonoBehaivour>();
+            //既にDestroyされているものをGetできてしまうので、タイミングによっては取得された後すぐに破棄される可能性があったので、コメントアウト
+            //return behaviour.gameObject.GetOrAddComponent<OnPointerEventControllerMonoBehaivour>();
         }
 
         protected override IEnumerable<(Model model, IViewObject viewObj, ControllerInfo controllerInfo)> GetSupportedControllerInfos(ModelViewBinderInstanceMap binderInstanceMap)
@@ -485,7 +493,7 @@ namespace Hinode
                 return $"PointerEventDispatcher -- current supported infos=>{log}";
             });
             _mousePointerEventData.Update();
-            _mousePointerEventData.UpdateInAreaObjects(UseCamera, supportedControllerInfos);
+            _mousePointerEventData.UpdateInAreaObjects(binderInstanceMap, UseCamera, supportedControllerInfos);
             {//Touch
                 var input = ReplayableInput.Instance;
                 //タッチされなくなったものを削除する
@@ -501,7 +509,7 @@ namespace Hinode
                     }
 
                     e.Update();
-                    e.UpdateInAreaObjects(UseCamera, supportedControllerInfos);
+                    e.UpdateInAreaObjects(binderInstanceMap, UseCamera, supportedControllerInfos);
                 }
             }
         }

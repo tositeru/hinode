@@ -44,6 +44,8 @@ namespace Hinode
             if (value is Transform)
             {
                 layout.TransformParentLayout = (Transform)value;
+
+                SiblingOrderViewLayoutAccessor.Insert(layout.TransformParentLayout, viewObj);
             }
             else if(value is ModelViewSelector)
             {

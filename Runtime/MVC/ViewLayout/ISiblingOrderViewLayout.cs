@@ -41,9 +41,12 @@ namespace Hinode
 
         public static void Insert(Transform parent, IViewObject target)
         {
-            if (!(target.UseModel is ISiblingOrder)
+            if (!(target is MonoBehaviour)) return;
+
+            if(!(target.UseModel is ISiblingOrder)
                 && !(target.UseBindInfo?.ViewLayoutValues.OfType<ISiblingOrderViewLayout>().Any() ?? false))
                 return;
+
             var comparer = new SiblingOrderViewObjectCompare();
             var lowerChild = parent.GetChildEnumerable()
                 .Where(_c =>
@@ -58,11 +61,29 @@ namespace Hinode
                     }
                 })
                 .FirstOrDefault();
+
+            var t = (target as MonoBehaviour).transform;
+            if (t.parent != parent)
+            {
+                t.SetParent(parent);
+            }
+
             if (lowerChild != null)
             {
-                var layout = (target as ITransformParentViewLayout);
-                layout.SelfTransform.SetSiblingIndex(lowerChild.GetSiblingIndex());
+                t.SetSiblingIndex(lowerChild.GetSiblingIndex());
             }
+            else
+            {
+                t.SetSiblingIndex(parent.childCount-1);
+            }
+
+            if (target.UseModel is ButtonModel)
+            {
+                var btn = target.UseModel as ButtonModel;
+                var insertIndex = lowerChild != null ? lowerChild.GetSiblingIndex() : -1;
+                Debug.Log($"{btn.Text} insert to parent({parent.name}) index={insertIndex}");
+            }
+            //Debug.Log($"debug - {(lowerChild != null ? lowerChild.name : "(null)")}");
         }
     }
 

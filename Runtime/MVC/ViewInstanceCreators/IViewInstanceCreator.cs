@@ -6,11 +6,26 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    public enum ViewObjectCreateType
+    {
+        Default,
+        Cache,
+    }
+
     /// <summary>
     /// IViewObjectとIModelViewParamBinderを作成する抽象クラス
     /// </summary>
     public abstract class IViewInstanceCreator
     {
+        protected virtual ViewInstanceCreatorObjectPool CreateObjectPool()
+            => new ViewInstanceCreatorObjectPool(this);
+
+        ViewInstanceCreatorObjectPool _objectPool;
+        protected ViewInstanceCreatorObjectPool ObjectPool
+        {
+            get => _objectPool != null ? _objectPool : _objectPool = CreateObjectPool();
+        }
+
         public System.Type GetViewObjType(ModelViewBinder.BindInfo bindInfo)
         {
             var type = GetViewObjTypeImpl(bindInfo.InstanceKey);
@@ -23,9 +38,27 @@ namespace Hinode
             return GetParamBinder(bindInfo).GetType();
         }
 
-        public IViewObject CreateViewObj(ModelViewBinder.BindInfo bindInfo)
+        public IViewObject CreateViewObj(ModelViewBinder.BindInfo bindInfo, bool doForceCreate = false)
         {
-            var viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
+            IViewObject viewObj = null;
+            if(doForceCreate)
+            {
+                viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
+            }
+            else
+            {
+                switch(bindInfo.ViewObjectCreateType)
+                {
+                    case ViewObjectCreateType.Default:
+                        viewObj = CreateViewObjImpl(bindInfo.InstanceKey);
+                        break;
+                    case ViewObjectCreateType.Cache:
+                        viewObj = ObjectPool.PopOrCreate(bindInfo);
+                        break;
+                    default:
+                        throw new System.NotImplementedException($"CreateType=>{bindInfo.ViewObjectCreateType}");
+                }
+            }
             Assert.IsNotNull(viewObj, $"Failed to create ViewObject because don't match ViewObject Key({bindInfo.InstanceKey})...");
             viewObj.UseBindInfo = bindInfo;
             return viewObj;

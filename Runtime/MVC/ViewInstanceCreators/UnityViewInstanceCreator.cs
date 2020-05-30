@@ -19,6 +19,11 @@ namespace Hinode
         Dictionary<string, IInstanceCreator> _viewObjectDict = new Dictionary<string, IInstanceCreator>();
         Dictionary<string, IModelViewParamBinder> _paramBinderDict = new Dictionary<string, IModelViewParamBinder>();
 
+        public Transform PoolingViewObjParent
+        {
+            get => (ObjectPool as UnityViewInstanceCreatorObjectPool).PoolingObjParent;
+        }
+
         public UnityViewInstanceCreator() { }
 
         public UnityViewInstanceCreator AddPrefab<T>(T prefab, IModelViewParamBinder paramBinder)
@@ -67,6 +72,9 @@ namespace Hinode
         }
 
         #region IViewInstanceCreator
+        protected override ViewInstanceCreatorObjectPool CreateObjectPool()
+            => new UnityViewInstanceCreatorObjectPool(this);
+
         protected override System.Type GetViewObjTypeImpl(string instanceKey)
         {
             if (_viewObjectDict.ContainsKey(instanceKey))
@@ -158,6 +166,10 @@ namespace Hinode
         public static UnityViewInstanceCreator AddUnityViewObjects(this UnityViewInstanceCreator target)
         {
             target
+                .AddPredicate(typeof(MonoBehaviourViewObject), () => MonoBehaviourViewObject.Create(), new EmptyModelViewParamBinder())
+                //Primitive
+                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
+                //UI
                 .AddPredicate(typeof(RectTransformViewObject), () => RectTransformViewObject.Create("__rectTransform"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(CanvasViewObject), () => CanvasViewObject.Create("__canvas"), new EmptyModelViewParamBinder())
                 .AddPredicate(typeof(HVLayoutGroupViewObject), () => HVLayoutGroupViewObject.Create("__HVLayoutGroup"), new EmptyModelViewParamBinder())

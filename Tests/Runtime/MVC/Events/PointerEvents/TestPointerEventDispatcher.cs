@@ -249,9 +249,7 @@ namespace Hinode.Tests.MVC.Events.Pointer
             //   - world
             // - Transform (3DObject)
             var viewCreator = new UnityViewInstanceCreator()
-                .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
-            ;
+                .AddUnityViewObjects();
 
             var nearestCameraDistance = 10f;
             var middleCameraDistance = 20f;
@@ -486,7 +484,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -643,7 +640,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -795,7 +791,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -968,7 +963,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -1126,7 +1120,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -1297,7 +1290,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))
@@ -1469,7 +1461,6 @@ namespace Hinode.Tests.MVC.Events.Pointer
 
             var viewCreator = new UnityViewInstanceCreator()
                 .AddUnityViewObjects()
-                .AddPredicate(typeof(CubeViewObject), () => CubeViewObject.CreateInstance(), new EmptyModelViewParamBinder())
             ;
             var screenOverlayBinder = new ModelViewBinder("*", null
                 , new ModelViewBinder.BindInfo(canvasViewID, typeof(CanvasViewObject))

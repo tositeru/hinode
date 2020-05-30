@@ -14,9 +14,41 @@ namespace Hinode
     /// </summary>
     public class MonoBehaviourViewObject : MonoBehaviour, IViewObject
     {
+        public static MonoBehaviourViewObject Create(string name="__monoBehaviourViewObj")
+        {
+            var gameObj = new GameObject(name);
+            return gameObj.AddComponent<MonoBehaviourViewObject>();
+        }
+
+        protected virtual void OnDestroyViewObj() { }
+        protected virtual void OnBind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap) { }
+        protected virtual void OnUnbind() { }
+
+        SmartDelegate<OnViewObjectDestroyed> _onDestroyed = new SmartDelegate<OnViewObjectDestroyed>();
+        SmartDelegate<OnViewObjectBinded> _onBinded = new SmartDelegate<OnViewObjectBinded>();
+        SmartDelegate<OnViewObjectUnbinded> _onUnbinded = new SmartDelegate<OnViewObjectUnbinded>();
+
+        public bool IsVisibility { get => gameObject.activeInHierarchy; set => gameObject.SetActive(value); }
+
         public virtual Model UseModel { get; set; }
         public virtual ModelViewBinder.BindInfo UseBindInfo { get; set; }
         public virtual ModelViewBinderInstance UseBinderInstance { get; set; }
+
+        public NotInvokableDelegate<OnViewObjectDestroyed> OnDestroyed { get => _onDestroyed; }
+        public NotInvokableDelegate<OnViewObjectBinded> OnBinded { get => _onBinded; }
+        public NotInvokableDelegate<OnViewObjectUnbinded> OnUnbinded { get => _onUnbinded; }
+
+        /// <summary>
+        /// ModelのBindを解除したい時はUnbind()を使用してください。
+        /// </summary>
+        public void Destroy()
+        {
+            Unbind();
+            _onDestroyed.Instance?.Invoke(this);
+            _onDestroyed.Clear();
+            OnDestroyViewObj();
+            Destroy(this.gameObject);
+        }
 
         public virtual object QueryChild(string childID)
         {
@@ -24,12 +56,33 @@ namespace Hinode
             return null;
         }
 
-        public virtual void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+        public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
         {
+            Unbind();
+
+            UseModel = targetModel;
+            UseBindInfo = bindInfo;
+            UseBinderInstance = (binderInstanceMap?.Contains(UseModel) ?? false)
+                ? binderInstanceMap[UseModel]
+                : null;
+            OnBind(targetModel, bindInfo, binderInstanceMap);
+            _onBinded.Instance?.Invoke(this);
         }
-        public virtual void Unbind()
+
+        /// <summary>
+        /// GameObjectを破棄したい時はDestroyを呼び出してください。
+        /// </summary>
+        public void Unbind()
         {
-            Destroy(this.gameObject);
+            if (this.DoBinding())
+            {
+                _onUnbinded.Instance?.Invoke(this);
+                OnUnbind();
+            }
+
+            UseModel = null;
+            UseBindInfo = null;
+            UseBinderInstance = null;
         }
 
         public virtual void OnViewLayouted()

@@ -71,9 +71,15 @@ namespace Hinode
                 .Select(_c => _dispatchers.FirstOrDefault(_d => _d.EventInfos.ContainKeyword(_c.Keyword)))
                 .Where(_d => _d != null && _d.IsCreatableControllerObject(model, viewObject))
                 .Distinct()
-                .Select(_d => _d.CreateEventDispatcherHelpObject(model, viewObject))
                 ;
-            return objs.Any() ? new HashSet<IEventDispatcherHelper>(objs) : null;
+            if (objs.Any())
+            {
+                return new HashSet<IEventDispatcherHelper>(objs.Select(_d => _d.CreateEventDispatcherHelpObject(model, viewObject)));
+            }
+            else
+            {
+                return null;
+            }
         }
 
     }

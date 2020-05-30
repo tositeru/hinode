@@ -101,10 +101,10 @@ namespace Hinode
             public string InstanceKey { get; }
             public string BinderKey { get; }
             public IModelViewParamBinder UseParamBinder { get; set; }
+            public ViewObjectCreateType ViewObjectCreateType { get; set; } = ViewObjectCreateType.Default;
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
             public IReadOnlyDictionary<string, object> ViewLayoutValues { get => _viewLayouts; }
-
             public BindInfo(string id, string instanceKey, string binderKey)
             {
                 ID = id;
@@ -119,6 +119,12 @@ namespace Hinode
             public BindInfo(System.Type viewType)
                 : this(viewType.FullName, viewType.FullName, viewType.FullName)
             { }
+
+            public BindInfo SetViewCreateType(ViewObjectCreateType type)
+            {
+                ViewObjectCreateType = type;
+                return this;
+            }
 
             public BindInfo SetUseParamBinder(IModelViewParamBinder paramBinder)
             {
@@ -173,7 +179,7 @@ namespace Hinode
             ViewInstaceCreator = instanceCreator;
             foreach (var i in bindInfos)
             {
-                _bindInfoDict.Add(i.ID, i);
+                AddBindInfo(i);
             }
         }
 
@@ -198,6 +204,25 @@ namespace Hinode
         {
             return $"Binder({Query}:{EnabledModelTypes.Select(_t => _t.FullName).Aggregate("", (_s, _c) => _s+_c+";")})";
         }
+
+        #region BindInfo
+        public ModelViewBinder AddBindInfo(BindInfo bindInfo)
+        {
+            Assert.IsFalse(_bindInfoDict.ContainsKey(bindInfo.ID), $"BindInfo(ID={bindInfo.ID}) already exist in this Binder...");
+            _bindInfoDict.Add(bindInfo.ID, bindInfo);
+            return this;
+        }
+        public ModelViewBinder RemoveBindInfo(string ID)
+        {
+            if (_bindInfoDict.ContainsKey(ID))
+            {
+                _bindInfoDict.Remove(ID);
+            }
+            return this;
+        }
+        public ModelViewBinder RemoveBindInfo(BindInfo bindInfo)
+            => RemoveBindInfo(bindInfo.ID);
+        #endregion
 
         #region Enabled Model Type
         public bool ContainEnabledModelType(System.Type modelType)
@@ -329,8 +354,6 @@ namespace Hinode
                 ModelViewValidator.ValidateBindInfo(model, _i, ViewInstaceCreator);
 
                 var view = ViewInstaceCreator.CreateViewObj(_i);
-                view.UseModel = model;
-                view.UseBinderInstance = binderInstance;
                 view.Bind(model, _i, binderInstanceMap);
                 Logger.Log(Logger.Priority.Low, () => $"ModelViewBinder#CreateViewObjects: Create View Obj {view.GetModelAndTypeName()}!!");
 
@@ -386,7 +409,7 @@ namespace Hinode
                     .Where(_v => eventDispatcherMap.IsCreatableControllerObjects(Model, _v, _v.UseBindInfo.Controllers.Values)))
                 {
                     var controllerObjects = eventDispatcherMap.CreateEventDispatcherHelpObjects(Model, view, view.UseBindInfo.Controllers.Values);
-                    var objsTypes = controllerObjects.Select(_o => _o.GetType().FullName).Aggregate((_s, _c) => _s + ";" + _c);
+                    //var objsTypes = controllerObjects.Select(_o => _o.GetType().FullName).Aggregate((_s, _c) => _s + ";" + _c);
                     _eventDispathcerHelpObjectListDict.Add(view, controllerObjects);
                 }
             }
@@ -550,13 +573,17 @@ namespace Hinode
                         foreach(var autoView in _autoLayoutViewObjects[view])
                         {
                             autoView.Unbind();
-                            autoView.UseModel = null;
-                            autoView.UseBinderInstance = null;
                         }
                     }
-                    view.Unbind();
-                    view.UseModel = null;
-                    view.UseBinderInstance = null;
+                    if(view.UseBindInfo.ViewObjectCreateType == ViewObjectCreateType.Default)
+                    {
+                        view.Unbind();
+                        view.Destroy();
+                    }
+                    else
+                    {
+                        view.Unbind();
+                    }
                 }
                 _autoLayoutViewObjects.Clear();
                 _eventDispathcerHelpObjectListDict.Clear();

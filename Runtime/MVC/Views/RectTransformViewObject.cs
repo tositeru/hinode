@@ -29,11 +29,9 @@ namespace Hinode
         }
         #endregion
 
-        #region IViewObject
-        public override void Unbind()
+        #region IViewObject interface
+        protected override void OnUnbind()
         {
-            base.Unbind();
-
             foreach (var optionalViewObj in _optionalViewObjects.Values)
             {
                 optionalViewObj.Unbind();

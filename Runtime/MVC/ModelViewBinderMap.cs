@@ -17,7 +17,23 @@ namespace Hinode
     {
         public delegate void OnAddedCallback(ModelViewBinderInstance binderInstance);
 
-        public IViewInstanceCreator ViewInstanceCreator { get; }
+        IViewInstanceCreator _viewInstanceCreator = null;
+        HashSet<ModelViewBinder> _binders = new HashSet<ModelViewBinder>();
+
+        public IViewInstanceCreator ViewInstanceCreator
+        {
+            get => _viewInstanceCreator;
+            set
+            {
+                _viewInstanceCreator = value;
+
+                foreach(var b in Binders)
+                {
+                    b.ViewInstaceCreator = _viewInstanceCreator;
+                }
+            }
+        }
+
         public ViewLayouter UseViewLayouter { get; set; }
         public EventDispatcherMap UseEventDispatcherMap { get; set; }
         public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
@@ -25,7 +41,7 @@ namespace Hinode
 
         public OnAddedCallback DefaultOnAddedCallback { get; set; }
 
-        public List<ModelViewBinder> Binders { get; } = new List<ModelViewBinder>();
+        public IReadOnlyCollection<ModelViewBinder> Binders { get => _binders; }
 
         public ModelViewBinderMap() { }
 
@@ -36,11 +52,9 @@ namespace Hinode
         public ModelViewBinderMap(IViewInstanceCreator creator, IEnumerable<ModelViewBinder> binders)
         {
             ViewInstanceCreator = creator;
-            Binders = binders.ToList();
-
-            foreach (var binder in Binders)
+            foreach(var b in binders)
             {
-                binder.ViewInstaceCreator = ViewInstanceCreator;
+                AddBinder(b);
             }
         }
 
@@ -61,6 +75,26 @@ namespace Hinode
         {
 
         }
+
+        #region ModelViewBinder
+        public ModelViewBinderMap AddBinder(ModelViewBinder binder)
+        {
+            Assert.IsFalse(_binders.Contains(binder));
+
+            binder.ViewInstaceCreator = ViewInstanceCreator;
+            _binders.Add(binder);
+            return this;
+        }
+
+        public ModelViewBinderMap RemoveBinder(ModelViewBinder binder)
+        {
+            if (_binders.Contains(binder))
+            {
+                _binders.Remove(binder);
+            }
+            return this;
+        }
+        #endregion
 
         public ModelViewBinderInstanceMap CreateBinderInstaceMap()
         {
@@ -200,6 +234,9 @@ namespace Hinode
         {
             get => BindInstances[model];
         }
+
+        public bool Contains(Model model)
+            => BindInstances.ContainsKey(model);
 
         #region Add
         public void AddImpl(Model model, bool doDelay, bool allowRebind, ModelViewBinderMap.OnAddedCallback onAddedCallback)

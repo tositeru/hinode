@@ -79,9 +79,8 @@ namespace Hinode.Tests.MVC.Events
 
     class TestView : EmptyViewObject
     {
-        public override void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+        protected override void OnBind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
         {
-            base.Bind(targetModel, bindInfo, binderInstanceMap);
             UseModel = targetModel;
             UseBindInfo = bindInfo;
         }

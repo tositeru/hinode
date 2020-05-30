@@ -64,6 +64,8 @@ namespace Hinode
                             _c.viewObj,
                             EventInfos.GetEventHandlerType(_c.controllerInfo.Keyword))
                         ?? true)
+                    && (_c.viewObj?.IsVisibility ?? true)
+                    && (_c.viewObj?.DoBinding() ?? true)
                 );
         }
 

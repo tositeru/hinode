@@ -68,5 +68,42 @@ namespace Hinode.Tests.ObjectPool
             }
             Assert.AreEqual(0, objs.Count);
         }
+
+        [Test, Description("")]
+        public void RemovePasses()
+        {
+            var pool = new ObjectPool<TestClass>(new TestInstanceCreator());
+
+            var obj = pool.PopOrCreate();
+            pool.Push(obj);
+            Assert.AreEqual(1, pool.Count);
+
+            pool.Remove(obj);
+            Assert.AreEqual(0, pool.Count);
+
+            var obj2 = pool.PopOrCreate();
+            Assert.AreNotSame(obj, obj2);
+
+            Assert.DoesNotThrow(() => {
+                pool.Remove(obj);
+            });
+        }
+
+        [Test, Description("")]
+        public void ClearPasses()
+        {
+            var pool = new ObjectPool<TestClass>(new TestInstanceCreator());
+
+            var count = 5;
+            for(var i=0; i<count; ++i)
+            {
+                pool.Push(new TestClass());
+            }
+            Assert.AreEqual(count, pool.Count);
+
+            pool.Clear();
+            Assert.AreEqual(0, pool.Count);
+        }
+
     }
 }

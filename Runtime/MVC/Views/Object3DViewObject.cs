@@ -11,7 +11,7 @@ namespace Hinode
         public static IViewObject CreateInstance()
         {
             var obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            return obj.AddComponent<MonoBehaviourViewObject>();
+            return obj.AddComponent<CubeViewObject>();
         }
     }
     #endregion

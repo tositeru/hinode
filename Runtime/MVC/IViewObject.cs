@@ -5,6 +5,10 @@ using UnityEngine;
 
 namespace Hinode
 {
+    public delegate void OnViewObjectDestroyed(IViewObject viewObject);
+    public delegate void OnViewObjectBinded(IViewObject viewObject);
+    public delegate void OnViewObjectUnbinded(IViewObject viewObject);
+
     /// <summary>
     /// Viewに当たるオブジェクトを表すinterface
     ///
@@ -14,9 +18,20 @@ namespace Hinode
     /// </summary>
     public interface IViewObject
     {
+        bool IsVisibility { get; set; }
+
         Model UseModel { get; set; }
         ModelViewBinder.BindInfo UseBindInfo { get; set; }
         ModelViewBinderInstance UseBinderInstance { get; set; }
+
+        NotInvokableDelegate<OnViewObjectDestroyed> OnDestroyed { get; }
+        NotInvokableDelegate<OnViewObjectBinded> OnBinded { get; }
+        NotInvokableDelegate<OnViewObjectUnbinded> OnUnbinded { get; }
+
+        /// <summary>
+        /// 破棄する
+        /// </summary>
+        void Destroy();
 
         /// <summary>
         /// 
@@ -25,14 +40,14 @@ namespace Hinode
         object QueryChild(string childID);
 
         /// <summary>
-        /// 
+        /// Modelとバインドする
         /// </summary>
         /// <param name="targetModel"></param>
         /// <param name="binderInstanceMap"></param>
         void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap);
 
         /// <summary>
-        /// 削除
+        /// Modelとのバインドを解除する
         /// </summary>
         void Unbind();
 
@@ -48,6 +63,9 @@ namespace Hinode
         {
             return $"{viewObject.GetType().FullName} in Model={(viewObject.UseModel != null ? viewObject.UseModel.GetPath(): "(none)")} BindInfo={(viewObject.UseBindInfo != null ? viewObject.UseBindInfo.ID : "(none)")}";
         }
+
+        public static bool DoBinding(this IViewObject target)
+            => target.UseModel != null && target.UseBindInfo != null;
 
         /// <summary>
         /// 使用しているModelと自身の型の名前を返します。
@@ -96,9 +114,34 @@ namespace Hinode
     /// </summary>
     public class EmptyViewObject : IViewObject
     {
+        protected virtual void OnDestroy() { }
+        protected virtual void OnBind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap) { }
+        protected virtual void OnUnbind() { }
+
+        SmartDelegate<OnViewObjectDestroyed> _onDestroyed = new SmartDelegate<OnViewObjectDestroyed>();
+        SmartDelegate<OnViewObjectBinded> _onBinded = new SmartDelegate<OnViewObjectBinded>();
+        SmartDelegate<OnViewObjectUnbinded> _onUnbinded = new SmartDelegate<OnViewObjectUnbinded>();
+
+        public bool IsVisibility { get; set; } = true;
+
         public Model UseModel { get; set; }
         public ModelViewBinder.BindInfo UseBindInfo { get; set; }
         public ModelViewBinderInstance UseBinderInstance { get; set; }
+
+        public NotInvokableDelegate<OnViewObjectDestroyed> OnDestroyed { get => _onDestroyed; }
+        public NotInvokableDelegate<OnViewObjectBinded> OnBinded { get => _onBinded; }
+        public NotInvokableDelegate<OnViewObjectUnbinded> OnUnbinded { get => _onUnbinded; }
+
+        public void Destroy()
+        {
+            Unbind();
+            OnDestroy();
+            _onDestroyed.Instance?.Invoke(this);
+
+            _onBinded.Clear();
+            _onUnbinded.Clear();
+            _onDestroyed.Clear();
+        }
 
         public virtual object QueryChild(string childID)
         {
@@ -106,11 +149,30 @@ namespace Hinode
             return null;
         }
 
-        public virtual void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
+        public void Bind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap)
         {
+            Unbind();
+
+            UseModel = targetModel;
+            UseBindInfo = bindInfo;
+            UseBinderInstance = (binderInstanceMap?.Contains(UseModel) ?? false)
+                ? binderInstanceMap.BindInstances[UseModel]
+                : null;
+            OnBind(targetModel, bindInfo, binderInstanceMap);
+            _onBinded.Instance?.Invoke(this);
         }
-        public virtual void Unbind()
-        { }
+        public void Unbind()
+        {
+            if (this.DoBinding())
+            {
+                _onUnbinded.Instance?.Invoke(this);
+                OnUnbind();
+            }
+
+            UseModel = null;
+            UseBindInfo = null;
+            UseBinderInstance = null;
+        }
 
         public virtual void OnViewLayouted()
         { }

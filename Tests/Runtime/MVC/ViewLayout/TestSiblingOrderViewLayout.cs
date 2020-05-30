@@ -12,6 +12,11 @@ namespace Hinode.Tests.MVC.ViewLayout
         class SiblingOrderModel : Model
             , ISiblingOrder
         {
+                        public SiblingOrderModel(uint order = ISiblingOrderConst.INVALID_ORDER)
+            {
+                SiblingOrder = order;
+            }
+
             #region ISiblingOrder interface
             public uint SiblingOrder { get; set; }
             #endregion
@@ -67,6 +72,82 @@ namespace Hinode.Tests.MVC.ViewLayout
                     notSiblingView,
                 }, list.OrderBy(_v => _v, new SiblingOrderViewObjectCompare()),
                 $"想定された並び順になっていません");
+        }
+
+        [UnityTest]
+        public IEnumerator InsertPasses()
+        {
+            yield return null;
+
+            var parent = new GameObject("parent");
+            var binder = new ModelViewBinder.BindInfo(typeof(MonoBehaviourViewObject));
+
+            var child1 = MonoBehaviourViewObject.Create("child1");
+            var child2 = MonoBehaviourViewObject.Create("child2");
+            var child3 = MonoBehaviourViewObject.Create("child3");
+
+            child1.Bind(new SiblingOrderModel(100), binder, null);
+            child2.Bind(new SiblingOrderModel(200), binder, null);
+            child3.Bind(new SiblingOrderModel(300), binder, null);
+
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child1);
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child2);
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child3);
+
+            AssertionUtils.AssertEnumerable(
+                new Transform[] {
+                    child3.transform, child2.transform, child1.transform
+                }, parent.transform.GetChildEnumerable(), "");
+
+
+            var child4 = MonoBehaviourViewObject.Create("child4");
+            child4.Bind(new SiblingOrderModel(150), binder, null);
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child4);
+
+            AssertionUtils.AssertEnumerable(
+                new Transform[] {
+                    child3.transform, child2.transform, child4.transform, child1.transform
+                }, parent.transform.GetChildEnumerable(), "");
+        }
+
+        [UnityTest]
+        public IEnumerator InsertToSameIndexPasses()
+        {
+            yield return null;
+
+            var parent = new GameObject("parent");
+            var binder = new ModelViewBinder.BindInfo(typeof(MonoBehaviourViewObject));
+
+            var child1 = MonoBehaviourViewObject.Create("child1");
+            var child2 = MonoBehaviourViewObject.Create("child2");
+            var child3 = MonoBehaviourViewObject.Create("child3");
+
+            child1.Bind(new SiblingOrderModel(100), binder, null);
+            child2.Bind(new SiblingOrderModel(200), binder, null);
+            child3.Bind(new SiblingOrderModel(300), binder, null);
+
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child1);
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child2);
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child3);
+
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child1);
+            AssertionUtils.AssertEnumerable(
+                new Transform[] {
+                    child3.transform, child2.transform, child1.transform
+                }, parent.transform.GetChildEnumerable(), "");
+
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child2);
+            AssertionUtils.AssertEnumerable(
+                new Transform[] {
+                    child3.transform, child2.transform, child1.transform
+                }, parent.transform.GetChildEnumerable(), "");
+
+            SiblingOrderViewLayoutAccessor.Insert(parent.transform, child3);
+            AssertionUtils.AssertEnumerable(
+                new Transform[] {
+                    child3.transform, child2.transform, child1.transform
+                }, parent.transform.GetChildEnumerable(), "");
+
         }
     }
 }
