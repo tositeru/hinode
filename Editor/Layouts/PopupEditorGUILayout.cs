@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 namespace Hinode.Editors
 {
-    abstract class PopupEditorGUILayout
+    public abstract class PopupEditorGUILayout
     {
         protected abstract string[] CreateDisplayOptionList();
 

@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4a6c09edcc541a887e86dce9c80413, type: 3}
+  m_Name: recttransformviewlayouttemplate
+  m_EditorClassIdentifier: 
+  _isOnlyEmbbed: 0
+  _doShareKaywords: 0
+  _isSingleKeywordPairMode: 0
+  _templateText: "    #region $LayoutName$\n    public interface IRectTransform$LayoutName$ViewLayout
+    : IViewLayout\r\n    {\r\n        $LayoutType$ RectTransform$LayoutName$Layout
+    { get; set; }\r\n    }\r\n\r\n    public class RectTransform$LayoutName$ViewLayoutAccessor
+    : IViewLayoutAccessor\r\n    {\r\n        public override System.Type ViewLayoutType
+    { get => typeof(IRectTransform$LayoutName$ViewLayout); }\r\n        public override
+    System.Type ValueType { get => typeof($LayoutType$); }\r\n\r\n        protected
+    override object GetImpl(IViewObject viewObj)\r\n        {\r\n            return
+    (viewObj as IRectTransform$LayoutName$ViewLayout).RectTransform$LayoutName$Layout;\r\n
+    \       }\r\n\r\n        protected override void SetImpl(object value, IViewObject
+    viewObj)\r\n        {\r\n            (viewObj as IRectTransform$LayoutName$ViewLayout).RectTransform$LayoutName$Layout
+    = ($LayoutType$)value;\r\n        }\r\n    }\r\n    #endregion\n"
+  _keywords:
+  - key: LayoutName
+    values:
+    - AnchorX
+    - AnchorY
+    - Pivot
+    - Size
+    - AnchorMin
+    - AnchorMax
+    - OffsetMin
+    - OffsetMax
+  - key: LayoutType
+    values:
+    - Vector2
+  _ignorePairs: []
+  _embbedTemplates: []
+  _singleKeywordPairList: []
+  _newline: 0
