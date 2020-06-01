@@ -11,8 +11,19 @@ namespace Hinode.Editors
         protected abstract string[] CreateDisplayOptionList();
 
         string[] _displayOptionList;
+
         public int SelectedIndex { get; set; }
-        public string SelectedElement { get => DisplayOptionList[SelectedIndex]; }
+        public string SelectedElement
+        {
+            get => 0 <= SelectedIndex && SelectedIndex < DisplayOptionList.Length
+                ? DisplayOptionList[SelectedIndex]
+                : "";
+            set
+            {
+                SelectedIndex = System.Array.IndexOf(DisplayOptionList, value);
+                SelectedIndex = Mathf.Min(DisplayOptionList.Length-1, SelectedIndex);
+            }
+        }
 
         public string[] DisplayOptionList
         {
@@ -27,24 +38,52 @@ namespace Hinode.Editors
         }
 
         public bool Draw(SerializedProperty prop)
+            => Draw(prop, new GUIContent(prop.displayName));
+        public bool Draw(SerializedProperty prop, GUIContent label)
         {
             Assert.IsTrue(prop.propertyType == SerializedPropertyType.String);
-            var label = new GUIContent(prop.displayName);
+            return Draw(prop.stringValue, label);
+        }
+
+        public bool Draw(string element, GUIContent label)
+        {
             if (DisplayOptionList.Length == 0)
             {
-                prop.stringValue = "";
                 EditorGUILayout.LabelField(label, new GUIContent("Not options..."));
+                return element != "";
             }
             else
             {
-                var SelectedIndex = System.Array.IndexOf(DisplayOptionList, prop.stringValue, 0, DisplayOptionList.Length);
+                var SelectedIndex = System.Array.IndexOf(DisplayOptionList, element, 0, DisplayOptionList.Length);
                 if (SelectedIndex == -1) SelectedIndex = 0;
 
                 var newSelectedIndex = EditorGUILayout.Popup(label, SelectedIndex, DisplayOptionList);
                 if (newSelectedIndex != SelectedIndex)
                 {
                     SelectedIndex = newSelectedIndex;
-                    prop.stringValue = DisplayOptionList[SelectedIndex];
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool Draw(GUIContent label)
+        {
+            if (DisplayOptionList.Length == 0)
+            {
+                EditorGUILayout.LabelField(label, new GUIContent("Not options..."));
+                var isChanged = (SelectedIndex != -1);
+                SelectedIndex = -1;
+                return isChanged;
+            }
+            else
+            {
+                if (SelectedIndex == -1) SelectedIndex = 0;
+
+                var newSelectedIndex = EditorGUILayout.Popup(label, SelectedIndex, DisplayOptionList);
+                if (newSelectedIndex != SelectedIndex)
+                {
+                    SelectedIndex = newSelectedIndex;
                     return true;
                 }
             }

@@ -60,14 +60,6 @@ namespace Hinode.Editors.TextTemplateEngines
             get => _targetSO != null ? _targetSO : (_targetSO = new SerializedObject(CreateInstance<TextTemplateEngine>()));
         }
 
-
-        [MenuItem("Hinode/Tools/Text Template Engine")]
-        public static void Open()
-        {
-            var window = CreateWindow<TextTemplateEngineWindow>("Text Template Engine");
-            window.Show();
-        }
-
 #if USE_UI_ELEMENTS
         readonly string TARGET_INSPECTOR_NAME = "TargetInspector";
         readonly string TARGET_REFERENCE_NAME = "TargetReference";

@@ -222,6 +222,38 @@ namespace Hinode.Tests
             return Create(JsonUtility.ToJson(snapshot), testStackFrame, no, packageName);
         }
 
+        public static Snapshot Create(MethodInfo methodInfo)
+        {
+            var inst = ScriptableObject.CreateInstance<Snapshot>();
+
+            inst._created = System.DateTime.Now.ToString();
+            inst._snapshotJson = "";
+            inst._assemblyName = methodInfo.DeclaringType.Assembly.GetName().Name;
+            inst._innerNumber = -1;
+
+            string className;
+            string methodName;
+            if (REGEX_CLASS_NAME.IsMatch(methodInfo.DeclaringType.Name))
+            {
+                var match = REGEX_CLASS_NAME.Match(methodInfo.DeclaringType.Name);
+                className = methodInfo.DeclaringType.DeclaringType.Name;
+                methodName = match.Groups[1].Value;
+            }
+            else
+            {
+                className = methodInfo.DeclaringType.Name;
+                methodName = methodInfo.Name;
+            }
+            inst._packageName = methodInfo.DeclaringType.Namespace;
+            inst._testClassName = methodInfo.DeclaringType.Namespace + "." + className;
+            inst._testMethodName = methodName;
+
+            inst._screenshotFilepath = inst.GetScreenshotFilepath();
+            inst._screenshotFilepathAtTest = inst.GetScreenshotFilepathAtTest();
+            return inst;
+        }
+
+
         public Snapshot Copy()
         {
             var copy = SerializedObjectExtensions.Copy(this, CreateInstance<Snapshot>());

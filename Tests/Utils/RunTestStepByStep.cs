@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
+using System.Reflection;
 
 namespace Hinode.Tests
 {
@@ -74,6 +75,16 @@ namespace Hinode.Tests
             stepByStep._snapshot = snapshot.Copy();
             Selection.activeGameObject = stepByStep.gameObject;
         }
+
+        public static void SetupScene(Scene scene, MethodInfo methodInfo)
+        {
+            var observer = new GameObject("__RunTestStepByStep");
+            var stepByStep = observer.AddComponent<RunTestStepByStep>();
+            stepByStep._snapshot = Snapshot.Create(methodInfo);
+
+            Selection.activeGameObject = stepByStep.gameObject;
+        }
+
     }
 }
 #endif
