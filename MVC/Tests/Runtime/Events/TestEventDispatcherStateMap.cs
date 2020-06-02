@@ -116,7 +116,148 @@ namespace Hinode.MVC.Tests.Events
                         errorMessage);
                 }
             }
-
         }
+
+        interface LayerTestEventHandler : IEventHandler
+        {
+            void LayerTest(Model sender, int eventData);
+        }
+
+        [Test]
+        public void LayerPasses()
+        {
+            var layerName = "#LayerName";
+            var layer2Name = "#LayerName2";
+            var DisableID = "#Disable";
+            var LayerID = "#Layer";
+            var Layer2ID = "#Layer2";
+            var eventDispatcherStateMap = new EventDispatchStateMap()
+                .AddState(EventDispatchStateName.disable, new EventDispatchQuery(DisableID, "")
+                    .AddIncludedEventType<LayerTestEventHandler>())
+                .AddState(layerName, EventDispatchStateName.disable, new EventDispatchQuery($"{LayerID}", "")
+                    .AddIncludedEventType<LayerTestEventHandler>())
+                .AddState(layer2Name, EventDispatchStateName.disable, new EventDispatchQuery($"{Layer2ID}", "")
+                    .AddIncludedEventType<LayerTestEventHandler>());
+
+            {
+                var switchingModel = new Model() { Name = "switch1" };
+                eventDispatcherStateMap
+                    .AddSwitchingModel(switchingModel);
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(DisableID)
+                    , null));
+
+                Assert.IsFalse(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(LayerID)
+                    , null));
+
+                Assert.IsFalse(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(Layer2ID)
+                    , null));
+
+                eventDispatcherStateMap.RemoveSwitchingModel(switchingModel);
+            }
+            Debug.Log($"Success to None Enabled Switching Model");
+            {
+                var switchingModel = new Model() { Name = "switch1" }
+                    .AddLogicalID(layerName);
+                eventDispatcherStateMap
+                    .AddSwitchingModel(switchingModel);
+
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(DisableID)
+                    , null));
+
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(LayerID)
+                    , null));
+
+                Assert.IsFalse(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(Layer2ID)
+                    , null));
+
+                eventDispatcherStateMap.RemoveSwitchingModel(switchingModel);
+            }
+            Debug.Log($"Success to Enabled Switching Model(switchingModel)");
+            {
+                var switchingModel = new Model() { Name = "switch1" }
+                    .AddLogicalID(layerName);
+                var switchingModel2 = new Model() { Name = "switch2" }
+                    .AddLogicalID(layer2Name);
+                eventDispatcherStateMap
+                    .AddSwitchingModel(switchingModel)
+                    .AddSwitchingModel(switchingModel2);
+
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(DisableID)
+                    , null));
+
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(LayerID)
+                    , null));
+
+                Assert.IsTrue(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                    EventDispatchStateName.disable
+                    , new Model().AddLogicalID(Layer2ID)
+                    , null));
+
+                eventDispatcherStateMap
+                    .RemoveSwitchingModel(switchingModel)
+                    .RemoveSwitchingModel(switchingModel2);
+            }
+            Debug.Log($"Success to Enabled Multiple Switching Model(switchingModel, switchingModel2)");
+        }
+
+        [Test]
+        public void DisableDefaultLayerPasses()
+        {
+            var DisableID = "#Disable";
+            var eventDispatcherStateMap = new EventDispatchStateMap()
+                .AddState(EventDispatchStateName.disable, new EventDispatchQuery(DisableID, "")
+                    .AddIncludedEventType<LayerTestEventHandler>());
+
+            var switchingModel = new Model() { Name = "switch1" }
+                .AddLogicalID(EventDispatchStateMap.DISABLE_DEFAULT_LAYER_LOGICAL_ID);
+            eventDispatcherStateMap
+                .AddSwitchingModel(switchingModel);
+            Assert.IsFalse(eventDispatcherStateMap.DoMatch<LayerTestEventHandler>(
+                EventDispatchStateName.disable
+                , new Model().AddLogicalID(DisableID)
+                , null));
+        }
+
+        [Test, Description("ModelViewBinderInstaceMapにModelを追加した時に自動的にSwitchingModelに登録するかテスト")]
+        public void AutoAddAndRemoveSwitchingModelPasses()
+        {
+            var binderMap = new ModelViewBinderMap()
+            {
+                ViewInstanceCreator = new DefaultViewInstanceCreator((typeof(EmptyViewObject), new EmptyModelViewParamBinder())),
+                UseEventDispatchStateMap = new EventDispatchStateMap(),
+            };
+            binderMap.AddBinder(new ModelViewBinder("*", null)
+                .AddBindInfo(new ModelViewBinder.BindInfo(typeof(EmptyViewObject))));
+
+            var binderInstacenMap = binderMap.CreateBinderInstaceMap();
+            var model = new Model().AddLogicalID(EventDispatchStateMap.AUTO_ADDED_SWITCHING_MODEL_LOGICAL_ID);
+            binderInstacenMap.Add(
+                model,
+                false);
+
+            Assert.IsTrue(binderMap.UseEventDispatchStateMap.SwitchingModels.Any(_m => _m == model));
+            Debug.Log($"Success to Auto Add in Switching Models");
+
+            binderInstacenMap.Remove(model);
+            Assert.IsFalse(binderMap.UseEventDispatchStateMap.SwitchingModels.Any(_m => _m == model));
+            Debug.Log($"Success to Remove Switching Models");
+        }
+
     }
 }

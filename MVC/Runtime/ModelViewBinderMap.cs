@@ -272,6 +272,12 @@ namespace Hinode.MVC
 
                                 Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.Query}");
 
+                                if(UseEventDispatchStateMap != null
+                                    && m.DoMatchQuery(EventDispatchStateMap.AUTO_ADDED_SWITCHING_MODEL_LOGICAL_ID))
+                                {
+                                    UseEventDispatchStateMap.AddSwitchingModel(m);
+                                }
+
                                 onAddedCallback?.Invoke(bindInst);
                                 BinderMap?.DefaultOnAddedCallback?.Invoke(bindInst);
                             }
@@ -395,8 +401,12 @@ namespace Hinode.MVC
                     {
                         _bindInstanceDict.Remove(m);
                     }
-                }
 
+                    if (UseEventDispatchStateMap != null)
+                    {
+                        UseEventDispatchStateMap.RemoveSwitchingModel(m);
+                    }
+                }
 
             }
         }
