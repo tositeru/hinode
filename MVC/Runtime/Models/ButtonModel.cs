@@ -12,6 +12,7 @@ namespace Hinode.MVC
     /// </summary>
     public class ButtonModel : Model
         , ISiblingOrder
+        , IHavingDialogData
     {
         public string Text { get; set; }
         public object Value { get; set; }
@@ -19,6 +20,11 @@ namespace Hinode.MVC
         #region ISiblingOrder interface
         uint _siblingOrder = ISiblingOrderConst.INVALID_ORDER;
         public uint SiblingOrder { get => _siblingOrder; set { _siblingOrder = value; DoneUpdate(); } }
+        #endregion
+
+        #region IHavingDialogData interface
+        public HavingTextResourceData DialogTitleTextResource { get; set; }
+        public HavingTextResourceData DialogTextTextResource { get; set; }
         #endregion
     }
 }

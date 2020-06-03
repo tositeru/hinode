@@ -6,6 +6,21 @@ using UnityEngine.Assertions;
 
 namespace Hinode.MVC
 {
+    public interface IReadOnlyModelViewBinderMap
+    {
+        IViewInstanceCreator ViewInstanceCreator { get; }
+        ViewLayouter UseViewLayouter { get; }
+        EventDispatcherMap UseEventDispatcherMap { get; }
+        EventDispatchStateMap UseEventDispatchStateMap { get; }
+        EventInterrupter UseEventInterrupter { get; }
+
+        IReadOnlyCollection<ModelViewBinder> Binders { get; }
+
+        ModelViewBinderInstanceMap CreateBinderInstaceMap();
+        ModelViewBinder MatchBinder(Model model);
+        ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap);
+    }
+
     /// <summary>
     /// ModelViewBinderをまとめたもの
     /// <seealso cref="IModel"/>
@@ -13,7 +28,7 @@ namespace Hinode.MVC
     /// <seealso cref="ModelViewBinderInstance"/>
     /// <seealso cref="ModelViewBinderInstanceMap"/>
     /// </summary>
-    public class ModelViewBinderMap
+    public class ModelViewBinderMap : IReadOnlyModelViewBinderMap, System.IDisposable
     {
         public delegate void OnAddedCallback(ModelViewBinderInstance binderInstance);
 
@@ -119,7 +134,21 @@ namespace Hinode.MVC
 
             return binder.CreateBindInstance(model, binderInstanceMap);
         }
+
+        #region System.IDisposable interface
+        public void Dispose()
+        {
+            //ViewInstanceCreator.Dispose();
+            //UseViewLayouter.Dispose();
+            //UseEventDispatcherMap.Dispose();
+            UseEventDispatchStateMap.Dispose();
+            //UseEventInterrupter.Dispose();
+
+            DefaultOnAddedCallback.ClearInvocations();
+            _binders.Clear();
+        }
     }
+    #endregion
 
     /// <summary>
     /// BindInstanceをまとめたもの
@@ -133,6 +162,7 @@ namespace Hinode.MVC
     /// </summary>
     public class ModelViewBinderInstanceMap
     {
+        ModelViewBinderMap _binderMap;
         Dictionary<Model, Operation> _operationList;
         Dictionary<Model, ModelViewBinderInstance> _bindInstanceDict = new Dictionary<Model, ModelViewBinderInstance>();
         Model _rootModel;
@@ -142,7 +172,7 @@ namespace Hinode.MVC
         /// </summary>
         public bool EnabledDelayOperation { get; set; } = false;
 
-        public ModelViewBinderMap BinderMap { get; }
+        public IReadOnlyModelViewBinderMap BinderMap { get => _binderMap; }
         public EventDispatcherMap UseEventDispatcherMap { get => BinderMap.UseEventDispatcherMap; }
         public EventDispatchStateMap UseEventDispatchStateMap {get => BinderMap.UseEventDispatchStateMap; }
         public EventInterrupter UseEventInterrupter { get => BinderMap.UseEventInterrupter; }
@@ -227,7 +257,7 @@ namespace Hinode.MVC
 
         public ModelViewBinderInstanceMap(ModelViewBinderMap binderMap)
         {
-            BinderMap = binderMap;
+            _binderMap = binderMap;
         }
 
         public ModelViewBinderInstance this[Model model]
@@ -279,7 +309,7 @@ namespace Hinode.MVC
                                 }
 
                                 onAddedCallback?.Invoke(bindInst);
-                                BinderMap?.DefaultOnAddedCallback?.Invoke(bindInst);
+                                _binderMap?.DefaultOnAddedCallback?.Invoke(bindInst);
                             }
                             else
                             {

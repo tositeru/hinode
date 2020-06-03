@@ -12,6 +12,12 @@ namespace Hinode.MVC.Tests
 	/// </summary>
     public class TestModelViewValidator
     {
+        [SetUp]
+        public void SetUp()
+        {
+            Logger.PriorityLevel = Logger.Priority.Debug;
+        }
+
         class AppleModel : Model { }
         class OrangeModel : Model { }
 
@@ -20,9 +26,9 @@ namespace Hinode.MVC.Tests
         class SpecifiedAttributeViewObj : EmptyViewObject
         {
             public class ParamBinder : IModelViewParamBinder
-			{
+            {
                 public void Update(Model model, IViewObject viewObj) { }
-			}
+            }
         }
 
         class NoneAttributeViewObj : EmptyViewObject
@@ -53,7 +59,6 @@ namespace Hinode.MVC.Tests
                 (typeof(InvalidAttributeViewObj), new InvalidAttributeViewObj.ParamBinder())
             );
 
-            Assert.IsFalse(ModelViewValidator.DoEnabled, "ModelViewValidator#DoEnabled is false at Default...");
             ModelViewValidator.DoEnabled = true;
 
             {//Check BasicUsage
@@ -62,11 +67,11 @@ namespace Hinode.MVC.Tests
                 Assert.IsTrue(ModelViewValidator.ValidateBindInfo(model, bindInfo, viewInstanceCreator));
             }
 
-			{//Check None Attributes
+            {//Check None Attributes
                 var model = new AppleModel();
                 var bindInfo = new ModelViewBinder.BindInfo(typeof(NoneAttributeViewObj));
                 Assert.IsTrue(ModelViewValidator.ValidateBindInfo(model, bindInfo, viewInstanceCreator));
-			}
+            }
 
             {//Check Invalid Attributes
                 var bindInfo = new ModelViewBinder.BindInfo(typeof(InvalidAttributeViewObj));
@@ -81,6 +86,43 @@ namespace Hinode.MVC.Tests
                 Assert.IsFalse(ModelViewValidator.ValidateBindInfo(orange, bindInfo, viewInstanceCreator), "Invalid Model Case");
             }
 
+        }
+
+        class AppleModelSubClass : AppleModel
+        { }
+
+        // A Test behaves as an ordinary method
+        [Test, Description("Check Validate Model Subclass")]
+        public void ModelSubclassValidateBindInfoPasses()
+        {
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(SpecifiedAttributeViewObj), new SpecifiedAttributeViewObj.ParamBinder())
+            );
+
+            ModelViewValidator.DoEnabled = true;
+
+            var model = new AppleModelSubClass();
+            var bindInfo = new ModelViewBinder.BindInfo(typeof(SpecifiedAttributeViewObj));
+            Assert.IsTrue(ModelViewValidator.ValidateBindInfo(model, bindInfo, viewInstanceCreator));
+        }
+
+        class SpecifiedAttributeViewObjParamBinderSubClass : SpecifiedAttributeViewObj.ParamBinder
+        {
+        }
+
+        // A Test behaves as an ordinary method
+        [Test, Description("Check Validate IModelViewParamBinder Subclass")]
+        public void ParamBinderSubclassValidateBindInfoPasses()
+        {
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(SpecifiedAttributeViewObj), new SpecifiedAttributeViewObjParamBinderSubClass())
+            );
+
+            ModelViewValidator.DoEnabled = true;
+
+            var model = new AppleModel();
+            var bindInfo = new ModelViewBinder.BindInfo(typeof(SpecifiedAttributeViewObj));
+            Assert.IsTrue(ModelViewValidator.ValidateBindInfo(model, bindInfo, viewInstanceCreator));
         }
     }
 }

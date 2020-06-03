@@ -6,35 +6,31 @@ using UnityEngine.Assertions;
 
 namespace Hinode.MVC
 {
-    /// <summary>
-    /// ModelとViewのパラメータを関連づけるinterface
-    /// </summary>
-    public interface IModelViewParamBinder
+    public interface IReadOnlyModelViewBinder
     {
-        void Update(Model model, IViewObject viewObj);
-    }
+        string Query { get; }
 
-    public static class IModelViewParamBinderExtenstions
-    {
-        /// <summary>
-        /// 値が異なる時だけ代入する関数。
-        /// IModelViewParamBinder内で値が変更されたかどうかチェックする方針なので用意しました。
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="dest"></param>
-        /// <param name="src"></param>
-        public static void SmartAssign<T>(this IModelViewParamBinder binder, ref T dest, ref T src)
-        {
-            if(!src.Equals(dest))
-            {
-                dest = src;
-            }
-        }
-    }
+        IReadOnlyCollection<System.Type> EnabledModelTypes { get; }
 
-    public class EmptyModelViewParamBinder : IModelViewParamBinder
-    {
-        public void Update(Model model, IViewObject viewObj) { }
+        IViewInstanceCreator ViewInstaceCreator { get; }
+
+        IEnumerable<ModelViewBinder.BindInfo> BindInfos { get; }
+        int BindInfoCount { get; }
+        IReadOnlyDictionary<string, ControllerInfo> Controllers { get; }
+
+        #region Enabled Model Type
+        bool ContainEnabledModelType(System.Type modelType);
+        bool ContainEnabledModelType<T>()
+            where T : Model;
+        bool ContainEnabledModelType(Model model);
+        #endregion
+
+        IModelViewParamBinder GetParamBinder(ModelViewBinder.BindInfo bindInfo);
+
+        bool DoMatch(Model model);
+
+        ModelViewBinderInstance CreateBindInstance(Model model, ModelViewBinderInstanceMap binderInstanceMap);
+        List<IViewObject> CreateViewObjects(Model model, ModelViewBinderInstance binderInstance, ModelViewBinderInstanceMap binderInstanceMap);
     }
 
     /// <summary>
@@ -51,7 +47,7 @@ namespace Hinode.MVC
     /// <seealso cref="ModelViewBinderInstance"/>
     /// <seealso cref="ModelViewBinderMap"/>
     /// </summary>
-    public class ModelViewBinder
+    public class ModelViewBinder : IReadOnlyModelViewBinder
     {
         HashSet<System.Type> _enabledModelTypes = new HashSet<System.Type>();
         Dictionary<string, BindInfo> _bindInfoDict = new Dictionary<string, BindInfo>();
@@ -382,7 +378,7 @@ namespace Hinode.MVC
 
         public bool IsValid { get => Model != null && !Model.IsMarkedDestory && Binder != null; }
 
-        public ModelViewBinder Binder { get; private set; }
+        public IReadOnlyModelViewBinder Binder { get; private set; }
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; private set; }
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
@@ -553,7 +549,7 @@ namespace Hinode.MVC
             => GetEventDispathcerHelpObject(viewObject, typeof(T)) as T;
         #endregion
 
-        #region IDisposabe interface
+        #region IDisposable interface
         public void Dispose()
         {
             HoldedEventInterruptedData = null;

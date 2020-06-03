@@ -46,7 +46,7 @@ namespace Hinode.MVC
                         .Distinct();
                     if(availableModelTypes.Any())
                     {
-                        if (!availableModelTypes.Any(_t => _t.Equals(model.GetType())))
+                        if (!availableModelTypes.Any(_t => model.GetType().IsSameOrInheritedType(_t)))
                         {
                             Logger.LogWarning(LogPriority, () =>
                                 $"!!Validate!! '{viewType}' is not available Model('{model}')..."
@@ -68,8 +68,8 @@ namespace Hinode.MVC
 
             try
             {
-                var paramBinder = viewInstanceCreator.GetParamBinderType(bindInfo);
-                if (paramBinder == null)
+                var paramBinderType = viewInstanceCreator.GetParamBinderType(bindInfo);
+                if (paramBinderType == null)
                 {
                     Logger.LogWarning(LogPriority, () =>
                         $"!!Validate!! BinderKey('{bindInfo.BinderKey}') in BindInfo don't get IModelViewParamBinder..."
@@ -84,10 +84,10 @@ namespace Hinode.MVC
                         .Distinct();
                     if(availableParamBinders.Any())
                     {
-                        if(!availableParamBinders.Any(_t => _t.Equals(paramBinder)))
+                        if(!availableParamBinders.Any(_t => paramBinderType.IsSameOrInheritedType(_t)))
                         {
                             Logger.LogWarning(LogPriority, () =>
-                                $"!!Validate!! '{viewType}' is not available ParamBinder('{paramBinder}')..."
+                                $"!!Validate!! '{viewType}' is not available ParamBinder('{paramBinderType}')..."
                             );
                             isValid = false;
                         }

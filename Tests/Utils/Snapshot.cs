@@ -17,7 +17,6 @@ namespace Hinode.Tests
     /// <summary>
     /// スナップショットテストの情報を保存するクラス
     ///
-    /// TODO スナップショットを作らなくてもUnityTestをStepByStepできるようにする機能
     /// </summary>
     public class Snapshot : ScriptableObject
     {
