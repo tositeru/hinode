@@ -79,7 +79,7 @@ namespace Hinode.MVC.Tests
                 Assert.IsFalse(ModelViewValidator.ValidateBindInfo(apple, bindInfo, viewInstanceCreator), "Invalid Model Case");
 
                 bindInfo = new ModelViewBinder.BindInfo(
-                    typeof(InvalidAttributeViewObj).FullName,
+                    ModelViewBinder.BindInfo.ToID(typeof(InvalidAttributeViewObj)),
                     typeof(InvalidAttributeViewObj).FullName,
                     "invalidBinderKey");
                 var orange = new OrangeModel();

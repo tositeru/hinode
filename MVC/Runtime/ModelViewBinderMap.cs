@@ -50,6 +50,8 @@ namespace Hinode.MVC
         }
 
         public ViewLayouter UseViewLayouter { get; set; }
+        public ViewLayoutOverwriter UseViewLayoutOverwriter { get; set; }
+
         public EventDispatcherMap UseEventDispatcherMap { get; set; }
         public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
         public EventInterrupter UseEventInterrupter { get; set; }
@@ -177,6 +179,7 @@ namespace Hinode.MVC
         public EventDispatchStateMap UseEventDispatchStateMap {get => BinderMap.UseEventDispatchStateMap; }
         public EventInterrupter UseEventInterrupter { get => BinderMap.UseEventInterrupter; }
         public ViewLayouter UseViewLayouter { get => BinderMap.UseViewLayouter; }
+        public ViewLayoutOverwriter UseViewLayoutOverwriter { get => _binderMap.UseViewLayoutOverwriter; }
 
         public IReadOnlyDictionary<Model, ModelViewBinderInstance> BindInstances
         {

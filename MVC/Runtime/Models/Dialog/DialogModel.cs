@@ -67,6 +67,7 @@ namespace Hinode.MVC
 
         public static OnEventInterruptCallback CreateDialogOnEventInterrupted(DialogType dialogType, TextResources textResources)
         {
+            Debug.Log("pass");
             return (binderInstanceMap, interruptedData) => {
                 var dialogModel = new DialogModel();
                 switch(dialogType)

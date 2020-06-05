@@ -60,7 +60,7 @@ namespace Hinode.MVC.Tests.Events
             {//DoMatch
                 {//root
                     var rootBinderInstance = binderInstanceMap.BindInstances[root];
-                    var defaultViewObj = rootBinderInstance.QueryViews(typeof(EmptyViewObject).FullName).First();
+                    var defaultViewObj = rootBinderInstance.QueryViews(ModelViewBinder.BindInfo.ToID(typeof(EmptyViewObject))).First();
                     var viewObjWithViewID = rootBinderInstance.QueryViews(viewID).First();
                     Assert.IsTrue(eventDispatcherStateMap.DoMatch<IOnTestReciever>(TestDispatchStateName.test, root, null));
                     Assert.IsTrue(rootBinderInstance.ViewObjects
@@ -89,7 +89,7 @@ namespace Hinode.MVC.Tests.Events
 
                 {//child
                     var childBinderInstace = binderInstanceMap.BindInstances[child];
-                    var defaultViewObj = childBinderInstace.QueryViews(typeof(EmptyViewObject).FullName).First();
+                    var defaultViewObj = childBinderInstace.QueryViews(ModelViewBinder.BindInfo.ToID(typeof(EmptyViewObject))).First();
                     var viewObjWithViewID = childBinderInstace.QueryViews(viewID).First();
                     Assert.IsFalse(eventDispatcherStateMap.DoMatch<IOnTestReciever>(TestDispatchStateName.test, child, null));
                     Assert.IsFalse(eventDispatcherStateMap.DoMatch<IOnTestReciever>(TestDispatchStateName.test, child, defaultViewObj));

@@ -386,7 +386,7 @@ namespace Hinode.MVC.Tests.ViewLayout
                     UseBindInfo = useBindInfo,
                     UseBinderInstance = null
                 };
-                foreach (var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, useBindInfo.ViewLayoutValues.Keys))
+                foreach (var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, useBindInfo.ViewLayoutValues.Layouts.Keys))
                 {
                     creator.Create(viewObj); // <- Here may be throw Exception...
                 }

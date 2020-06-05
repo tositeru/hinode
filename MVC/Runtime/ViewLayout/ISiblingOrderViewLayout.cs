@@ -44,7 +44,7 @@ namespace Hinode.MVC
             if (!(target is MonoBehaviour)) return;
 
             if(!(target.UseModel is ISiblingOrder)
-                && !(target.UseBindInfo?.ViewLayoutValues.OfType<ISiblingOrderViewLayout>().Any() ?? false))
+                && !(target.UseBindInfo?.ViewLayoutValues.Layouts.OfType<ISiblingOrderViewLayout>().Any() ?? false))
                 return;
 
             var comparer = new SiblingOrderViewObjectCompare();

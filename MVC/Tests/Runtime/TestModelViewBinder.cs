@@ -359,16 +359,18 @@ namespace Hinode.MVC.Tests
             var binderInstance = binder.CreateBindInstance(model, null);
 
             {//query => typeof(IntViewObjClass).FullName
-                var queryViewResult = binderInstance.QueryViews(typeof(IntViewObjClass).FullName);
+                var ID = ModelViewBinder.BindInfo.ToID(typeof(IntViewObjClass));
+                var queryViewResult = binderInstance.QueryViews(ID);
                 Assert.AreEqual(1, queryViewResult.Count());
-                var intViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == typeof(IntViewObjClass).FullName);
+                var intViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == ID);
                 Assert.IsTrue(intViewObj == queryViewResult.First());
             }
 
             {//query => typeof(FloatViewObjClass).FullName
-                var queryViewResult = binderInstance.QueryViews(typeof(FloatViewObjClass).FullName);
+                var ID = ModelViewBinder.BindInfo.ToID(typeof(FloatViewObjClass));
+                var queryViewResult = binderInstance.QueryViews(ID);
                 Assert.AreEqual(1, queryViewResult.Count());
-                var floatViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == typeof(FloatViewObjClass).FullName);
+                var floatViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == ID);
                 Assert.IsTrue(floatViewObj == queryViewResult.First());
             }
 

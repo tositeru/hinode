@@ -102,11 +102,9 @@ namespace Hinode.MVC.Tests.Events
             var interruptedData = EventInterruptedData.Create<ITestEventHandler>(
                 new Model() { Name = modelID }
                 , new EmptyViewObject()
-                {
-                    UseBindInfo = new ModelViewBinder.BindInfo(typeof(EmptyViewObject))
-                }
                 , 100
                 , new ControllerInfo(TestEventName.Test));
+            interruptedData.SenderViewObj.Bind(interruptedData.SenderModel, new ModelViewBinder.BindInfo(typeof(EmptyViewObject)), null);
 
             Assert.IsTrue(eventInterrupter.DoMatch(interruptedData));
             var doSendImmediate = eventInterrupter.Interrupt(binderInstanceMap, interruptedData);

@@ -30,6 +30,7 @@ namespace Hinode.MVC.Tests.Events
             var model = new Model() { Name = "model1", LogicalID = new ModelIDList("lg") };
             var viewObj = new EmptyViewObject()
             {
+                UseModel = model,
                 UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(EmptyViewObject))
             };
 

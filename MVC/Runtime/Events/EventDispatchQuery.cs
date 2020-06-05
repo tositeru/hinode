@@ -20,6 +20,7 @@ namespace Hinode.MVC
         public EventDispatchQuery(string query, string viewID)
         {
             Query = query;
+            ModelViewBinder.BindInfo.AssertViewID(viewID);
             ViewID = viewID;
         }
 
@@ -49,6 +50,7 @@ namespace Hinode.MVC
             }
             else
             {
+                Assert.AreEqual(model, viewObj.UseModel);
                 Assert.IsNotNull(viewObj.UseBindInfo);
 
                 return model.DoMatchQuery(Query)

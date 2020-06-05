@@ -245,7 +245,7 @@ namespace Hinode.MVC
         Model AddIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
-            foreach (var id in TrimStart(idList, '#', '.')
+            foreach (var id in TrimStart(idList, QUERY_LOGICAL_PREFIX_CHAR, QUERY_STYLE_PREFIX_CHAR)
                 .Where(_i => !list.Contains(_i)))
             {
                 list.Add(id);
@@ -258,7 +258,7 @@ namespace Hinode.MVC
         Model RemoveIDs(HashSet<string> list, IEnumerable<string> idList)
         {
             bool doCallEvent = false;
-            foreach (var id in TrimStart(idList, '#', '.')
+            foreach (var id in TrimStart(idList, QUERY_LOGICAL_PREFIX_CHAR, QUERY_STYLE_PREFIX_CHAR)
                 .Where(_i => list.Contains(_i)))
             {
                 list.Remove(id);
