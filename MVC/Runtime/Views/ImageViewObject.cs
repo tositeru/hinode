@@ -13,6 +13,7 @@ namespace Hinode.MVC
     [DisallowMultipleComponent()]
     public class ImageViewObject : RectTransformViewObject
         , RectTransformViewObject.IOptionalViewObject
+        , IColorViewLayout
     {
         public static new ImageViewObject Create(string name = "UIImage")
         {
@@ -22,6 +23,10 @@ namespace Hinode.MVC
         }
 
         public Image Image { get => gameObject.GetOrAddComponent<Image>(); }
+
+        #region IColorViewLayout interface
+        public Color ColorLayout { get => Image.color; set => Image.color = value; }
+        #endregion
 
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
             , RectTransformViewObject.IOptionalViewObjectParamBinder

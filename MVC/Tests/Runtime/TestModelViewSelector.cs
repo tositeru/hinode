@@ -123,7 +123,7 @@ namespace Hinode.MVC.Tests
 
                 var errorMessage = "Viewを指定した時はModelにバインドされているViewを取得できるようにしてください。";
                 AssertionUtils.AssertEnumerableByUnordered(
-                    binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever)
+                    binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever)
                     , enumerable
                     , errorMessage);
             }
@@ -138,7 +138,7 @@ namespace Hinode.MVC.Tests
                 var errorMessage = "バインドされているModelがIEventHandlerを継承していない場合でも取得できるようにしてください";
                 AssertionUtils.AssertEnumerableByUnordered(
                     binderMapInstance[noneRecieverModel].ViewObjects
-                        .Where(_v => _v.UseBindInfo.ID == viewReciever)
+                        .Where(_v => _v.UseBindInfo.ID.MainID == viewReciever)
                     , enumerable
                     , errorMessage);
             }
@@ -162,12 +162,12 @@ namespace Hinode.MVC.Tests
                 var enumerable = selector.GetEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "親指定のrecieverSelectorの時、クエリパスを指定した時はBinderInstanceMapのRootModelをクエリルートにしてください。";
-                var rootViewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                var parentViewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var rootViewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
+                var parentViewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 AssertionUtils.AssertEnumerableByUnordered(
                     binderMapInstance[noneRecieverModel].ViewObjects
                         .Concat(binderMapInstance[root].ViewObjects)
-                        .Where(_v => _v.UseBindInfo.ID == viewReciever)
+                        .Where(_v => _v.UseBindInfo.ID.MainID == viewReciever)
                     , enumerable
                     , errorMessage);
             }
@@ -262,8 +262,8 @@ namespace Hinode.MVC.Tests
                 var enumerable = selector.GetEnumerable(root, binderMapInstance);
 
                 var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
-                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
+                var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 AssertionUtils.AssertEnumerableByUnordered(new object[] {
                     viewObj1,
                     viewObj2
@@ -289,7 +289,7 @@ namespace Hinode.MVC.Tests
                 var enumerable = selector.GetEnumerable(root, binderMapInstance);
 
                 var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
-                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
@@ -357,7 +357,7 @@ namespace Hinode.MVC.Tests
 
                 var errorMessage = "Viewを指定した時はModelにバインドされているViewを取得できるようにしてください。";
                 AssertionUtils.AssertEnumerableByUnordered(
-                    binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever)
+                    binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever)
                     , enumerable, errorMessage);
             }
 
@@ -424,7 +424,7 @@ namespace Hinode.MVC.Tests
 
                 var errorMessage = "ModelViewSelector#Queryはクエリと一致したModelの中から指定したTypeのものを返すようにしてください。";
                 AssertionUtils.AssertEnumerableByUnordered(
-                    binderMapInstance.BindInstances[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever)
+                    binderMapInstance.BindInstances[root].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever)
                     , enumerable, errorMessage);
             }
             {//指定したTypeではない時
@@ -504,25 +504,34 @@ namespace Hinode.MVC.Tests
 
 
             {//Case Success childViewID
-                var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}.{ChildViewIDPassesViewObject.CHILD_ID}");
+                var selector = new ModelViewSelector(
+                    ModelRelationShip.Self
+                    , ""
+                    , ViewIdentity.Create(viewID, ChildViewIDPassesViewObject.CHILD_ID));
                 var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
 
-                var rootViewObjs = binderMapInstance[root].ViewObjects;
+                var rootViewObjs = binderMapInstance[root].QueryViews(viewID);
                 AssertionUtils.AssertEnumerableByUnordered(
-                    rootViewObjs.Select(_v => _v.QueryChild<EmptyViewObject>(ChildViewIDPassesViewObject.CHILD_ID))
+                    rootViewObjs
+                        .Select(_v => _v.QueryChild<EmptyViewObject>(ChildViewIDPassesViewObject.CHILD_ID))
+                        .Where(_v => _v != null)
                     , enumerable
                     , $"");
             }
 
             {//Case Success nested childViewID
-                var childViewID = $"{ChildViewIDPassesViewObject.NEST_CHILD_ID}.{ChildViewIDPassesViewObject.NestChildView.CHILD_APPLE_ID}";
-                var queryViewID = $"{viewID}.{childViewID}";
+                var queryViewID = ViewIdentity.Create(
+                    viewID
+                    , ChildViewIDPassesViewObject.NEST_CHILD_ID
+                    , ChildViewIDPassesViewObject.NestChildView.CHILD_APPLE_ID);
                 var selector = new ModelViewSelector(ModelRelationShip.Self, "", queryViewID);
                 var enumerable = selector.Query<ChildViewIDPassesViewObject.NestChildView.Apple>(root, binderMapInstance);
 
-                var rootViewObjs = binderMapInstance[root].ViewObjects;
+                var rootViewObjs = binderMapInstance[root].QueryViews(queryViewID)
+                    .OfType<ChildViewIDPassesViewObject.NestChildView.Apple>();
                 AssertionUtils.AssertEnumerableByUnordered(
-                    rootViewObjs.Select(_v => _v.QueryChild<ChildViewIDPassesViewObject.NestChildView.Apple>(childViewID.Split('.')))
+                    rootViewObjs
+                        //.Select(_v => _v.QueryChild<ChildViewIDPassesViewObject.NestChildView.Apple>(childViewID.Split('.')))
                     , enumerable
                     , $"Failed to query '{queryViewID}'...");
             }
@@ -531,12 +540,6 @@ namespace Hinode.MVC.Tests
                 var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}.invalidID");
                 var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
 
-                Assert.IsFalse(enumerable.Any());
-            }
-            {//Case Invalid ViewID Selector Format
-                var selector = new ModelViewSelector(ModelRelationShip.Self, "", $"{viewID}#{ChildViewIDPassesViewObject.CHILD_ID}");
-
-                var enumerable = selector.Query<EmptyViewObject>(root, binderMapInstance);
                 Assert.IsFalse(enumerable.Any());
             }
         }

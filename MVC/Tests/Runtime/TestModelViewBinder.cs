@@ -361,7 +361,7 @@ namespace Hinode.MVC.Tests
             {//query => typeof(IntViewObjClass).FullName
                 var ID = ModelViewBinder.BindInfo.ToID(typeof(IntViewObjClass));
                 var queryViewResult = binderInstance.QueryViews(ID);
-                Assert.AreEqual(1, queryViewResult.Count());
+                Assert.AreEqual(1, queryViewResult.Count(), $"Failed to Query Views... ID={ID}");
                 var intViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == ID);
                 Assert.IsTrue(intViewObj == queryViewResult.First());
             }
@@ -377,7 +377,7 @@ namespace Hinode.MVC.Tests
             {//query => Int
                 var queryViewResult = binderInstance.QueryViews("Int");
                 Assert.AreEqual(1, queryViewResult.Count());
-                var intIdViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID == "Int");
+                var intIdViewObj = binderInstance.ViewObjects.First(_v => _v.UseBindInfo.ID.MainID == "Int");
                 Assert.IsTrue(intIdViewObj == queryViewResult.First());
             }
 

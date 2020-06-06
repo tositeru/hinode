@@ -19,24 +19,19 @@ namespace Hinode.MVC
 
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
-        public string ViewIdentity { get; } = "";
-        public IEnumerable<string> ChildViewIdentities { get => _childViewIdentities; }
-        public bool HasChildViewId { get => _childViewIdentities.Any(); }
 
-        public ModelViewSelector(ModelRelationShip relationShip, string queryPath, string viewIdentity)
+        public ViewIdentity ViewIdentity { get; }
+        public string ViewMainID { get => ViewIdentity.MainID; }
+        public IEnumerable<string> ChildViewIdentities { get => ViewIdentity.ChildIDs; }
+        public bool HasChildViewId { get => ViewIdentity.HasChildIDs; }
+
+        public ModelViewSelector(ModelRelationShip relationShip, string queryPath, ViewIdentity viewIdentity)
         {
+            Assert.IsNotNull(viewIdentity);
+
             RelationShip = relationShip;
             QueryPath = queryPath;
-            if (viewIdentity.Contains('.'))
-            {
-                var ids = viewIdentity.Split('.');
-                ViewIdentity = ids[0];
-                _childViewIdentities = ids.Skip(1).ToList();
-            }
-            else
-            {
-                ViewIdentity = viewIdentity;
-            }
+            ViewIdentity = viewIdentity;
         }
 
         public IEnumerable<object> Query(System.Type objectType, Model model, ModelViewBinderInstanceMap viewBinderInstance)
@@ -79,7 +74,7 @@ namespace Hinode.MVC
                 switch (_target.RelationShip)
                 {
                     case ModelRelationShip.Self:
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             yield return _model;
                         }
@@ -87,7 +82,6 @@ namespace Hinode.MVC
                         {
                             var instanceMap = _viewBinderInstanceMap[_model];
                             foreach (var view in instanceMap.QueryViews(_target.ViewIdentity)
-                                .Select(_v => QueryChildViewID(_v))
                                 .Where(_v => _v != null))
                             {
                                 yield return view;
@@ -99,7 +93,7 @@ namespace Hinode.MVC
                             break;
 
                         if (_target.QueryPath == ""
-                            && _target.ViewIdentity == "")
+                            && _target.ViewIdentity.IsEmpty)
                         {
                             yield return _model.Parent;
                             break;
@@ -118,7 +112,7 @@ namespace Hinode.MVC
                         }
 
 
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             foreach (var p in parentModels)
                             {
@@ -131,7 +125,6 @@ namespace Hinode.MVC
                             foreach (var view in parentModels
                                 .Where(_p => _viewBinderInstanceMap.BindInstances.ContainsKey(_p))
                                 .SelectMany(_p => _viewBinderInstanceMap[_p].QueryViews(_target.ViewIdentity))
-                                .Select(_v => QueryChildViewID(_v))
                                 .Where(_v => _v != null))
                             {
                                 yield return view;
@@ -143,7 +136,7 @@ namespace Hinode.MVC
                             ? _model.Query(_target.QueryPath)
                             : _model.Children;
                         children = children.Where(_m => _m != _model);
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             foreach (var child in children)
                             {
@@ -155,7 +148,6 @@ namespace Hinode.MVC
                             var views = children
                                 .Where(_c => _viewBinderInstanceMap.BindInstances.ContainsKey(_c))
                                 .SelectMany(_c => _viewBinderInstanceMap[_c].QueryViews(_target.ViewIdentity))
-                                .Select(_v => QueryChildViewID(_v))
                                 .Where(_v => _v != null)
                             ;
                             foreach (var v in views)
@@ -170,18 +162,6 @@ namespace Hinode.MVC
             }
 
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
-
-            object QueryChildViewID(IViewObject rootViewObj)
-            {
-                if (_target.HasChildViewId)
-                {
-                    return rootViewObj.QueryChild(_target.ChildViewIdentities);
-                }
-                else
-                {
-                    return rootViewObj;
-                }
-            }
         }
 
         #region Object

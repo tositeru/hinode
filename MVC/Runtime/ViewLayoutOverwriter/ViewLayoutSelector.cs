@@ -19,26 +19,15 @@ namespace Hinode.MVC
         /// Model#DoMatchQueryに指定するものになります.
         /// </summary>
         public string Query { get; }
-        public string ViewID { get; }
+        public OnlyMainIDViewIdentity ViewID { get; }
         public IEnumerable<string> ChildViewIdentities { get => _childViewIdentities; }
         public bool HasChildViewId { get => _childViewIdentities.Any(); }
 
-        public ViewLayoutSelector(string query, string viewID)
+        public ViewLayoutSelector(string query, OnlyMainIDViewIdentity viewID)
         {
+            Assert.IsNotNull(viewID);
             Query = query;
-            ModelViewBinder.BindInfo.AssertViewID(viewID);
-            ViewID = viewID == null ? "" : viewID;
-
-            if (ViewID.Contains('.'))
-            {
-                var ids = ViewID.Split('.');
-                ViewID = ids[0];
-                _childViewIdentities = ids.Skip(1).ToList();
-            }
-            else
-            {
-                ViewID = ViewID;
-            }
+            ViewID = viewID;
         }
 
         public bool DoMatch(Model model, IViewObject viewObj)
@@ -47,7 +36,7 @@ namespace Hinode.MVC
             if (viewObj == null)
             {
                 return model.DoMatchQuery(Query)
-                    && ViewID == "";
+                    && ViewID.IsEmpty;
             }
             else
             {
@@ -59,7 +48,7 @@ namespace Hinode.MVC
                     : true;
 
                 return model.DoMatchQuery(Query)
-                    && (ViewID == "" || (viewObj.UseBindInfo.ID == ViewID && doMatchChild));
+                    && (ViewID.IsEmpty || (viewObj.UseBindInfo.ID == ViewID && doMatchChild));
             }
         }
 

@@ -14,13 +14,12 @@ namespace Hinode.MVC
         HashSet<System.Type> _enabledEventTypes = new HashSet<System.Type>();
 
         public string Query { get; }
-        public string ViewID { get; }
+        public OnlyMainIDViewIdentity ViewID { get; }
         public IEnumerable<System.Type> EnabledEventTypes { get => _enabledEventTypes; }
 
-        public EventDispatchQuery(string query, string viewID)
+        public EventDispatchQuery(string query, OnlyMainIDViewIdentity viewID)
         {
             Query = query;
-            ModelViewBinder.BindInfo.AssertViewID(viewID);
             ViewID = viewID;
         }
 
@@ -45,7 +44,7 @@ namespace Hinode.MVC
             if(viewObj == null)
             {
                 return model.DoMatchQuery(Query)
-                    && ViewID == ""
+                    && ViewID.IsEmpty
                     && DoEnableEventType(eventType);
             }
             else
@@ -54,7 +53,7 @@ namespace Hinode.MVC
                 Assert.IsNotNull(viewObj.UseBindInfo);
 
                 return model.DoMatchQuery(Query)
-                    && (ViewID == "" || viewObj.UseBindInfo.ID == ViewID)
+                    && (ViewID.IsEmpty || viewObj.UseBindInfo.ID == ViewID)
                     && DoEnableEventType(eventType);
             }
         }

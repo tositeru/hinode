@@ -90,20 +90,17 @@ namespace Hinode.MVC
         /// </summary>
         public class BindInfo
         {
-            public static string ToID(System.Type type)
-                => type.FullName.Replace(Model.QUERY_STYLE_PREFIX_CHAR, '_');
-            public static void AssertViewID(string viewID)
-            {
-                if (viewID == null) return;
-
-                Assert.IsFalse(viewID.Contains(Model.QUERY_STYLE_PREFIX_CHAR), $"IDには{Model.QUERY_STYLE_PREFIX_CHAR}は含まないようにしてください... viewID={viewID}");
-            }
+            public static OnlyMainIDViewIdentity ToID(System.Type type)
+                => OnlyMainIDViewIdentity.Create(
+                    type.FullName
+                        .Replace(OnlyMainIDViewIdentity.SEPARATOR, '!')
+                        .Replace('+', '!'));
 
             Dictionary<string, ControllerInfo> _controllers = new Dictionary<string, ControllerInfo>();
             //Dictionary<string, object> _viewLayouts = new Dictionary<string, object>();
             ViewLayoutValueDictionary _viewLayoutValueDict = new ViewLayoutValueDictionary();
 
-            public string ID { get; }
+            public OnlyMainIDViewIdentity ID { get; }
             public string InstanceKey { get; }
             public string BinderKey { get; }
             public IModelViewParamBinder UseParamBinder { get; set; }
@@ -111,15 +108,14 @@ namespace Hinode.MVC
 
             public IReadOnlyDictionary<string, ControllerInfo> Controllers { get => _controllers; }
             public IReadOnlyViewLayoutValueDictionary ViewLayoutValues { get => _viewLayoutValueDict; }
-            public BindInfo(string id, string instanceKey, string binderKey)
+            public BindInfo(OnlyMainIDViewIdentity id, string instanceKey, string binderKey)
             {
-                AssertViewID(id);
                 ID = id;
                 InstanceKey = instanceKey;
                 BinderKey = binderKey;
             }
 
-            public BindInfo(string id, System.Type viewType)
+            public BindInfo(OnlyMainIDViewIdentity id, System.Type viewType)
                 : this(id, viewType.FullName, viewType.FullName)
             { }
 
@@ -215,8 +211,8 @@ namespace Hinode.MVC
         #region BindInfo
         public ModelViewBinder AddBindInfo(BindInfo bindInfo)
         {
-            Assert.IsFalse(_bindInfoDict.ContainsKey(bindInfo.ID), $"BindInfo(ID={bindInfo.ID}) already exist in this Binder...");
-            _bindInfoDict.Add(bindInfo.ID, bindInfo);
+            Assert.IsFalse(_bindInfoDict.ContainsKey(bindInfo.ID.MainID), $"BindInfo(ID={bindInfo.ID}) already exist in this Binder...");
+            _bindInfoDict.Add(bindInfo.ID.MainID, bindInfo);
             return this;
         }
         public ModelViewBinder RemoveBindInfo(string ID)
@@ -228,7 +224,7 @@ namespace Hinode.MVC
             return this;
         }
         public ModelViewBinder RemoveBindInfo(BindInfo bindInfo)
-            => RemoveBindInfo(bindInfo.ID);
+            => RemoveBindInfo(bindInfo.ID.MainID);
         #endregion
 
         #region Enabled Model Type
@@ -284,7 +280,7 @@ namespace Hinode.MVC
         {
             foreach(var bindInfo in otherBinder.BindInfos)
             {
-                if(_bindInfoDict.ContainsKey(bindInfo.ID))
+                if(_bindInfoDict.ContainsKey(bindInfo.ID.MainID))
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Not Add bindInfo because already exist ID({bindInfo.ID})...  otherBinder({otherBinder})");
                     continue;
@@ -296,7 +292,7 @@ namespace Hinode.MVC
                 }
                 else
                 {
-                    _bindInfoDict.Add(bindInfo.ID, bindInfo);
+                    _bindInfoDict.Add(bindInfo.ID.MainID, bindInfo);
                 }
             }
             return this;
@@ -533,9 +529,14 @@ namespace Hinode.MVC
             }
         }
 
-        public IEnumerable<IViewObject> QueryViews(string query)
+        public IEnumerable<IViewObject> QueryViews(ViewIdentity query)
         {
-            return ViewObjects.Where(_v => _v.UseBindInfo.ID == query);
+            var matchViews = ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == query.MainID);
+            if(query.HasChildIDs)
+            {
+                matchViews = matchViews.Select(_v => _v.QueryChild<IViewObject>(query.ChildIDs));
+            }
+            return matchViews;
         }
 
         #region IEventDispatcherHelper

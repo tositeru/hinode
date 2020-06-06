@@ -8,6 +8,7 @@ namespace Hinode.MVC
     {
         depth,
         siblingOrder,
+        color,
     }
 
     public static partial class ViewLayouterExtensions
@@ -17,7 +18,9 @@ namespace Hinode.MVC
             return viewLayouter
                 .AddKeywords(
                     (BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor()),
-                    (BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor()));
+                    (BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor()),
+                    (BasicViewLayoutName.color.ToString(), new ColorViewLayoutAccessor())
+                );
         }
     }
 }

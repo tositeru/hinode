@@ -116,7 +116,7 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "Viewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを取得できるようにしてください。";
-                var viewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 Assert.AreEqual(1, enumerable.Count(), errorMessage);
                 Assert.AreSame(viewObj, enumerable.First(), errorMessage);
             }
@@ -129,7 +129,7 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "バインドされているModelがIEventHandlerを継承していない場合でも取得できるようにしてください";
-                var viewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 Assert.AreEqual(1, enumerable.Count(), errorMessage);
                 Assert.AreSame(viewObj, enumerable.First(), errorMessage);
             }
@@ -153,8 +153,8 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(model1, binderMapInstance);
 
                 var errorMessage = "親指定のrecieverSelectorの時、クエリパスを指定した時はBinderInstanceMapのRootModelをクエリルートにしてください。";
-                var rootViewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                var parentViewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var rootViewObj = binderMapInstance[root].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
+                var parentViewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 Assert.AreEqual(2, enumerable.Count(), errorMessage);
                 AssertionUtils.AssertEnumerable(new IViewObject[] { rootViewObj, parentViewObj }.OfType<IEventHandler>(), enumerable, errorMessage);
 
@@ -242,8 +242,8 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(root, binderMapInstance);
 
                 var errorMessage = "子モデルのViewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
-                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
-                var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
+                var viewObj2 = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1, viewObj2 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
@@ -266,7 +266,7 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(root, binderMapInstance);
 
                 var errorMessage = "クエリパスを伴う子モデルのViewを指定した時はクエリパスに一致しModelにバインドされていて、かつIEventHandlerを継承しているViewを全て取得できるようにしてください。";
-                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj1 = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 AssertionUtils.AssertEnumerable((new IViewObject[] { viewObj1 }).OfType<IEventHandler>(), enumerable, errorMessage);
             }
 
@@ -341,7 +341,7 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(recieverModel, binderMapInstance);
 
                 var errorMessage = "Viewを指定した時はModelにバインドされていて、かつIEventHandlerを継承しているViewを取得できるようにしてください。";
-                var viewObj = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj = binderMapInstance[recieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 Assert.AreEqual(1, enumerable.Count(), errorMessage);
                 Assert.AreSame(viewObj, enumerable.First(), errorMessage);
             }
@@ -354,7 +354,7 @@ namespace Hinode.MVC.Tests.Events
                 var enumerable = selector.GetEventHandlerEnumerable(noneRecieverModel, binderMapInstance);
 
                 var errorMessage = "バインドされているModelがIEventHandlerを継承していない場合でも取得できるようにしてください";
-                var viewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID == viewReciever).First();
+                var viewObj = binderMapInstance[noneRecieverModel].ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == viewReciever).First();
                 Assert.AreEqual(1, enumerable.Count(), errorMessage);
                 Assert.AreSame(viewObj, enumerable.First(), errorMessage);
             }

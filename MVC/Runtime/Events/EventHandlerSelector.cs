@@ -10,13 +10,13 @@ namespace Hinode.MVC
     {
         public ModelRelationShip RelationShip { get; }
         public string QueryPath { get; } = "";
-        public string ViewIdentity { get; } = "";
+        public OnlyMainIDViewIdentity ViewIdentity { get; }
 
         public bool IsFooking { get => FookingRecieverType != null; }
         public System.Type FookingRecieverType { get; set; }
         public object FookEventData { get; set; }
 
-        public EventHandlerSelector(ModelRelationShip relationShip, string queryPath, string viewIdentity)
+        public EventHandlerSelector(ModelRelationShip relationShip, string queryPath, OnlyMainIDViewIdentity viewIdentity)
         {
             RelationShip = relationShip;
             QueryPath = queryPath;
@@ -70,7 +70,7 @@ namespace Hinode.MVC
                 switch (_target.RelationShip)
                 {
                     case ModelRelationShip.Self:
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             if (_model is IEventHandler)
                             {
@@ -92,7 +92,7 @@ namespace Hinode.MVC
                             break;
 
                         if (_target.QueryPath == ""
-                            && _target.ViewIdentity == "")
+                            && _target.ViewIdentity.IsEmpty)
                         {
                             if (_model.Parent is IEventHandler)
                                 yield return _model.Parent as IEventHandler;
@@ -112,7 +112,7 @@ namespace Hinode.MVC
                         }
 
 
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             foreach (var p in parentModels
                                 .OfType<IEventHandler>())
@@ -137,7 +137,7 @@ namespace Hinode.MVC
                             ? _model.Query(_target.QueryPath)
                             : _model.Children;
                         children = children.Where(_m => _m != _model);
-                        if (_target.ViewIdentity == "")
+                        if (_target.ViewIdentity.IsEmpty)
                         {
                             foreach (var child in children
                                 .OfType<IEventHandler>())
@@ -167,7 +167,7 @@ namespace Hinode.MVC
 
     }
 
-    public static partial class RecieverSelectorExtensions
+    public static partial class EventHandlerSelectorExtensions
     {
         /// <summary>
         /// 指定したtargetModel,eventDataをselectorとマッチするIEventHandlerへ送信する

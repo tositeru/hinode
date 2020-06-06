@@ -13,6 +13,7 @@ namespace Hinode.MVC
     [DisallowMultipleComponent()]
     public class TextViewObject : RectTransformViewObject
         , RectTransformViewObject.IOptionalViewObject
+        , IColorViewLayout
     {
         public static new TextViewObject Create(string name = "Text")
         {
@@ -30,6 +31,10 @@ namespace Hinode.MVC
                 Text.font = GUI.skin.font;
             }
         }
+
+        #region IColorViewLayout
+        public Color ColorLayout { get => Text.color; set => Text.color = value; }
+        #endregion
 
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
             , RectTransformViewObject.IOptionalViewObjectParamBinder

@@ -22,9 +22,9 @@ namespace Hinode.MVC.Tests.LayoutOverwriter
         public void BasicUsagePasses()
         {
             var query = ".style";
-            var selector = new ViewLayoutSelector(query, null);
+            var selector = new ViewLayoutSelector(query, "");
             Assert.AreEqual(query, selector.Query);
-            Assert.AreEqual("", selector.ViewID);
+            Assert.IsTrue(selector.ViewID.IsEmpty);
 
             var model = new Model() { Name = "Model", StylingID = new ModelIDList(query) };
             var otherModel = new Model() { Name = "OtherModel", StylingID = new ModelIDList(".style2") };
@@ -59,35 +59,6 @@ namespace Hinode.MVC.Tests.LayoutOverwriter
             {
                 (false, model, null),
                 (true, model, new EmptyViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(EmptyViewObject))}),
-                (false, model, new EmptyViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo("otherViewID", typeof(EmptyViewObject))}),
-                (true, model, new HaveChildViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(HaveChildViewObject))}),
-                (false, model, new HaveChildViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo("view2", typeof(HaveChildViewObject))}),
-
-                (false, otherModel, null),
-                (false, otherModel, new EmptyViewObject() { UseModel = otherModel, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(EmptyViewObject))}),
-                (false, otherModel, new EmptyViewObject() { UseModel = otherModel, UseBindInfo = new ModelViewBinder.BindInfo("otherViewID", typeof(EmptyViewObject))}),
-                (false, otherModel, new HaveChildViewObject() { UseModel = otherModel, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(HaveChildViewObject))}),
-                (false, otherModel, new HaveChildViewObject() { UseModel = otherModel, UseBindInfo = new ModelViewBinder.BindInfo("view2", typeof(HaveChildViewObject))}),
-            };
-            foreach (var (result, m, v) in testData)
-            {
-                Assert.AreEqual(result, selector.DoMatch(m, v), $"Failed test... selector={selector} result={result}, model={m}, viewObj={v}");
-            }
-        }
-
-        [Test, Description("Version Specify ViewID")]
-        public void BasicUsageSpecifiedChildViewIDPasses()
-        {
-            var query = ".style";
-            var viewID = "view1";
-            var selector = new ViewLayoutSelector(query, $"{viewID}.{HaveChildViewObject.CHILD_ID}");
-
-            var model = new Model() { Name = "Model", StylingID = new ModelIDList(query) };
-            var otherModel = new Model() { Name = "OtherModel", StylingID = new ModelIDList(".style2") };
-            var testData = new List<(bool result, Model, IViewObject)>()
-            {
-                (false, model, null),
-                (false, model, new EmptyViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(EmptyViewObject))}),
                 (false, model, new EmptyViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo("otherViewID", typeof(EmptyViewObject))}),
                 (true, model, new HaveChildViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo(viewID, typeof(HaveChildViewObject))}),
                 (false, model, new HaveChildViewObject() { UseModel = model, UseBindInfo = new ModelViewBinder.BindInfo("view2", typeof(HaveChildViewObject))}),
