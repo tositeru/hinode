@@ -20,6 +20,14 @@ namespace Hinode.MVC
             return gameObj.AddComponent<MonoBehaviourViewObject>();
         }
 
+        #region Unity Callback
+        void OnDestroy()
+        {
+            Debug.Log($"debug -- destroy {name}");
+            IsAlive = false;
+        }
+        #endregion
+
         protected virtual void OnDestroyViewObj() { }
         protected virtual void OnBind(Model targetModel, ModelViewBinder.BindInfo bindInfo, ModelViewBinderInstanceMap binderInstanceMap) { }
         protected virtual void OnUnbind() { }
@@ -28,6 +36,7 @@ namespace Hinode.MVC
         SmartDelegate<OnViewObjectBinded> _onBinded = new SmartDelegate<OnViewObjectBinded>();
         SmartDelegate<OnViewObjectUnbinded> _onUnbinded = new SmartDelegate<OnViewObjectUnbinded>();
 
+        public bool IsAlive { get; private set; } = true;
         public bool IsVisibility { get => gameObject.activeInHierarchy; set => gameObject.SetActive(value); }
 
         public virtual Model UseModel { get; set; }
@@ -47,7 +56,9 @@ namespace Hinode.MVC
             _onDestroyed.Instance?.Invoke(this);
             _onDestroyed.Clear();
             OnDestroyViewObj();
-            Destroy(this.gameObject);
+            if(IsAlive)
+                Destroy(this.gameObject);
+            IsAlive = false;
         }
 
         public virtual object QueryChild(string childID)

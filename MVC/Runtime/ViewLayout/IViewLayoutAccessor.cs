@@ -20,34 +20,51 @@ namespace Hinode.MVC
 
         public ViewLayouter.IAutoViewObjectCreator UseAutoCreator { get; set; }
 
-        protected abstract void SetImpl(object value, IViewObject viewObj);
-        protected abstract object GetImpl(IViewObject viewObj);
+        protected abstract void SetImpl(object value, object viewLayoutObj);
+        protected abstract object GetImpl(object viewLayoutObj);
 
-        public void Set(object value, IViewObject viewObj)
+        public void Set(object value, object viewLayoutObj)
         {
-            if (!IsVaildValue(value) || !IsVaildViewObject(viewObj))
+            if (!IsVaildValue(value) || !IsVaildViewLayoutType(viewLayoutObj.GetType()))
             {
-                throw new System.ArgumentException($"Don't set value({value.GetType()}) to {viewObj.GetType()}... Valid ValueType={ValueType} viewLayoutType={ViewLayoutType}");
+                throw new System.ArgumentException($"Don't set value({value.GetType()}) to {viewLayoutObj.GetType()}... Valid ValueType={ValueType} viewLayoutType={ViewLayoutType}");
             }
-            SetImpl(value, viewObj);
+            SetImpl(value, viewLayoutObj);
         }
 
-        public object Get(IViewObject viewObj)
+        public object Get(object viewLayoutObj)
         {
-            if (!IsVaildViewObject(viewObj))
+            if (!IsVaildViewLayoutType(viewLayoutObj.GetType()))
             {
-                throw new System.ArgumentException($"Don't Get value from {viewObj.GetType()}... Valid viewLayoutType={ViewLayoutType}");
+                throw new System.ArgumentException($"Don't Get value from {viewLayoutObj.GetType()}... Valid viewLayoutType={ViewLayoutType}");
             }
-            return GetImpl(viewObj);
+            return GetImpl(viewLayoutObj);
         }
 
-        public virtual bool IsVaildViewObject(IViewObject viewObj)
+        public virtual bool IsVaildViewLayoutType(System.Type type)
         {
-            return viewObj.GetType().HasInterface(ViewLayoutType);
+            return type.HasInterface(ViewLayoutType);
         }
+
         public virtual bool IsVaildValue(object value)
         {
             return value.GetType().Equals(ValueType);
+        }
+
+        static protected IViewObject GetViewObject(object viewLayoutObj)
+        {
+            if(viewLayoutObj is IViewObject)
+            {
+                return viewLayoutObj as IViewObject;
+            }
+            else if(viewLayoutObj is IAutoViewLayoutObject)
+            {
+                return (viewLayoutObj as IAutoViewLayoutObject).Target;
+            }
+            else
+            {
+                throw new System.ArgumentException($"This Object({viewLayoutObj.GetType()}) is not Support Type... Please Pass IViewObject or IAutoViewLayoutObject!");
+            }
         }
     }
 }

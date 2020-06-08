@@ -394,11 +394,11 @@ namespace Hinode.MVC.Tests
             public override Type ValueType { get => typeof(int); }
             public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-            protected override object GetImpl(IViewObject viewObj)
-                => (viewObj as ITestViewLayout).TestViewLayout;
+            protected override object GetImpl(object viewLayoutObj)
+                => (viewLayoutObj as ITestViewLayout).TestViewLayout;
 
-            protected override void SetImpl(object value, IViewObject viewObj)
-                => (viewObj as ITestViewLayout).TestViewLayout = (int)value;
+            protected override void SetImpl(object value, object viewLayoutObj)
+                => (viewLayoutObj as ITestViewLayout).TestViewLayout = (int)value;
         }
 
         class OnViewLayoutViewObj : EmptyViewObject

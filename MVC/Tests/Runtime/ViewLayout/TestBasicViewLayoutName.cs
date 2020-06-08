@@ -18,17 +18,16 @@ namespace Hinode.MVC.Tests.ViewLayout
         {
             var viewLayouter = new ViewLayouter()
                 .AddBasicViewLayouter();
-            var keywords = new Dictionary<string, IViewLayoutAccessor>() {
-                { BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor() },
-                { BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor() }
+            var keywords = new Dictionary<string, (IViewLayoutAccessor accessor, bool containAutoViewObj)>() {
+                { BasicViewLayoutName.depth.ToString(), (new DepthViewLayoutAccessor(), false) },
+                { BasicViewLayoutName.siblingOrder.ToString(), (new SiblingOrderViewLayoutAccessor(), true) }
             };
-            foreach (var (keyword, accessor) in keywords.Select(_t => (_t.Key, _t.Value)))
+            foreach (var (keyword, accessor, containAutoViewObj) in keywords.Select(_t => (_t.Key, _t.Value.accessor, _t.Value.containAutoViewObj)))
             {
                 Assert.IsTrue(viewLayouter.ContainsKeyword(keyword), $"Don't exist {keyword}...");
                 Assert.AreSame(accessor.GetType(), viewLayouter.Accessors[keyword].GetType(), $"cur={accessor.GetType()}, got={viewLayouter.Accessors[keyword].GetType()}");
-                Assert.IsFalse(viewLayouter.ContainAutoViewObjectCreator(keyword), $"Don't exist autoLayoutCreator... keyword={keyword}");
+                Assert.AreEqual(containAutoViewObj, viewLayouter.ContainAutoViewObjectCreator(keyword), $"Don't equal to Contain autoLayoutCreator... keyword={keyword}");
             }
-            Assert.IsFalse(viewLayouter.ContainAutoViewObjectCreator(keywords.Keys));
         }
     }
 }

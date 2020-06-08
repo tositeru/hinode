@@ -16,14 +16,14 @@ namespace Hinode.MVC
         public override Type ValueType { get => typeof(float); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IDepthViewLayout).DepthLayout;
+            return (viewLayoutObj as IDepthViewLayout).DepthLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            var layout = (viewObj as IDepthViewLayout);
+            var layout = (viewLayoutObj as IDepthViewLayout);
             if (value.GetType().IsFloat())
             {
                 layout.DepthLayout = (float)value;

@@ -8,7 +8,7 @@ namespace Hinode.MVC
     /// <summary>
     /// 
     /// </summary>
-    [RequireComponent(typeof(RectTransform), typeof(Image))]
+    [RequireComponent(typeof(RectTransform))]
     [AvailableModelViewParamBinder(typeof(ImageViewObject.FixedParamBinder))]
     [DisallowMultipleComponent()]
     public class ImageViewObject : RectTransformViewObject
@@ -24,8 +24,22 @@ namespace Hinode.MVC
 
         public Image Image { get => gameObject.GetOrAddComponent<Image>(); }
 
+        #region Unity Callback
+        void OnDestroy()
+        {
+            Destroy(Image);
+        }
+        #endregion
+
         #region IColorViewLayout interface
         public Color ColorLayout { get => Image.color; set => Image.color = value; }
+        #endregion
+
+        #region RectTransformViewObject.IOptionalViewObject interface
+        public void DettachFromMainViewObject()
+        {
+            Object.Destroy(this);
+        }
         #endregion
 
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder

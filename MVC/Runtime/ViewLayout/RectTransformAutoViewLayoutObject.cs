@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode.MVC
 {
     [RequireComponent(typeof(RectTransform))]
-    public class RectTransformViewLayoutAccessor : MonoBehaviourViewObject
+    public class RectTransformAutoViewLayoutObject : UnityAutoViewLayoutObject
         , IRectTransformAnchorXViewLayout
         , IRectTransformAnchorYViewLayout
         , IRectTransformPivotViewLayout
@@ -18,17 +19,18 @@ namespace Hinode.MVC
     {
         public class AutoCreator : ViewLayouter.IAutoViewObjectCreator
         {
-            protected override IViewObject CreateImpl(IViewObject viewObj)
+            protected override IAutoViewLayoutObject CreateImpl(IViewObject viewObj)
             {
                 if (!(viewObj is MonoBehaviour)) return null;
                 var behaviour = viewObj as MonoBehaviour;
-                if (!(behaviour.transform is RectTransform)) return null;
-                return behaviour.gameObject.GetOrAddComponent<RectTransformViewLayoutAccessor>();
+                var inst = behaviour.gameObject.GetOrAddComponent<RectTransformAutoViewLayoutObject>();
+                inst.Attach(viewObj);
+                return inst;
             }
 
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
             {
-                return typeof(RectTransformViewLayoutAccessor).GetInterfaces()
+                return typeof(RectTransformAutoViewLayoutObject).GetInterfaces()
                     .Where(_t => _t.HasInterface<IViewLayout>());
             }
         }
@@ -89,7 +91,7 @@ namespace Hinode.MVC
         }
         #endregion
 
-        #region IViewObject
+        #region IAutoViewLayoutObject
         #endregion
     }
 
@@ -110,7 +112,7 @@ namespace Hinode.MVC
             target.AddKeywords(
                 keywords.Select(_t => (_t.Key, _t.Value))
             );
-            target.AddAutoCreateViewObject(new RectTransformViewLayoutAccessor.AutoCreator(), keywords.Keys);
+            target.AddAutoCreateViewObject(new RectTransformAutoViewLayoutObject.AutoCreator(), keywords.Keys);
             return target;
         }
     }

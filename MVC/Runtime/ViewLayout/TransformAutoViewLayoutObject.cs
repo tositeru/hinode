@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 namespace Hinode.MVC
 {
     [RequireComponent(typeof(Transform))]
-    public class TransformViewLayoutAccessor : MonoBehaviourViewObject
+    public class TransformAutoViewLayoutObject : UnityAutoViewLayoutObject
         , ITransformParentViewLayout
         , ITransformPosViewLayout
         , ITransformRotateViewLayout
@@ -17,17 +18,17 @@ namespace Hinode.MVC
     {
         public class AutoCreator : ViewLayouter.IAutoViewObjectCreator
         {
-            protected override IViewObject CreateImpl(IViewObject viewObj)
+            protected override IAutoViewLayoutObject CreateImpl(IViewObject viewObj)
             {
                 if (!(viewObj is MonoBehaviour)) return null;
                 var behaviour = viewObj as MonoBehaviour;
-                if (!(behaviour.transform is Transform)) return null;
-                return behaviour.gameObject.GetOrAddComponent<TransformViewLayoutAccessor>();
+                var inst = behaviour.gameObject.GetOrAddComponent<TransformAutoViewLayoutObject>();
+                return inst;
             }
 
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
             {
-                return typeof(TransformViewLayoutAccessor).GetInterfaces()
+                return typeof(TransformAutoViewLayoutObject).GetInterfaces()
                     .Where(_t => _t.HasInterface<IViewLayout>());
             }
         }
@@ -87,7 +88,7 @@ namespace Hinode.MVC
         }
         #endregion
 
-        #region IViewObject
+        #region IAutoViewLayoutObject interface
         #endregion
     }
 
@@ -106,7 +107,7 @@ namespace Hinode.MVC
             target.AddKeywords(
                 keywords.Select(_t => (_t.Key, _t.Value))
             );
-            target.AddAutoCreateViewObject(new TransformViewLayoutAccessor.AutoCreator(), keywords.Keys);
+            target.AddAutoCreateViewObject(new TransformAutoViewLayoutObject.AutoCreator(), keywords.Keys);
             return target;
         }
     }

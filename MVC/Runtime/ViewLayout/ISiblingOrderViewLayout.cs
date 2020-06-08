@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,35 +16,42 @@ namespace Hinode.MVC
 
     public class SiblingOrderViewLayoutAccessor : IViewLayoutAccessor
     {
-        public override Type ViewLayoutType { get => typeof(ISiblingOrderViewLayout); }
-        public override Type ValueType { get => typeof(uint); }
+        public override System.Type ViewLayoutType { get => typeof(ISiblingOrderViewLayout); }
+        public override System.Type ValueType { get => typeof(uint); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
-            => (viewObj as ISiblingOrderViewLayout).SiblingOrder;
+        protected override object GetImpl(object viewLayoutObj)
+            => (viewLayoutObj as ISiblingOrderViewLayout).SiblingOrder;
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            var layout = (viewObj as ISiblingOrderViewLayout);
+            var layout = (viewLayoutObj as ISiblingOrderViewLayout);
             layout.SiblingOrder = (uint)value;
 
-            if(viewObj is MonoBehaviour)
+            if (viewLayoutObj is MonoBehaviour)
             {
-                var behaviour = viewObj as MonoBehaviour;
-                if(behaviour.transform.parent != null)
+                var behaviour = viewLayoutObj as MonoBehaviour;
+                if (behaviour.transform.parent != null)
                 {
-                    SiblingOrderViewLayoutAccessor.Insert(behaviour.transform.parent, viewObj);
+                    SiblingOrderViewLayoutAccessor.Insert(behaviour.transform.parent, viewLayoutObj);
                 }
             }
+        }
+
+        public static void Insert(Transform parent, object target)
+        {
+            IViewObject viewObject = IViewLayoutAccessor.GetViewObject(target);
+            Insert(parent, viewObject);
         }
 
         public static void Insert(Transform parent, IViewObject target)
         {
             if (!(target is MonoBehaviour)) return;
 
-            if(!(target.UseModel is ISiblingOrder)
-                && !(target.UseBindInfo?.ViewLayoutValues.Layouts.OfType<ISiblingOrderViewLayout>().Any() ?? false))
+            if (!ContainsSibilingOrder(target))
+            {
                 return;
+            }
 
             var comparer = new SiblingOrderViewObjectCompare();
             var lowerChild = parent.GetChildEnumerable()
@@ -74,7 +80,7 @@ namespace Hinode.MVC
             }
             else
             {
-                t.SetSiblingIndex(parent.childCount-1);
+                t.SetSiblingIndex(Mathf.Max(0, parent.childCount - 1));
             }
 
             if (target.UseModel is ButtonModel)
@@ -85,7 +91,15 @@ namespace Hinode.MVC
             }
             //Debug.Log($"debug - {(lowerChild != null ? lowerChild.name : "(null)")}");
         }
+
+        static bool ContainsSibilingOrder(IViewObject target)
+        {
+            //TODO Support ViewLayoutOverwriter
+            return target.UseModel is ISiblingOrder
+                || (target.UseBindInfo?.ViewLayoutValues.Layouts.OfType<ISiblingOrderViewLayout>().Any() ?? false);
+        }
     }
+
 
     /// <summary>
     /// 

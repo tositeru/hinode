@@ -9,6 +9,12 @@ namespace Hinode.MVC
     /// <summary>
     /// 
     /// </summary>
+    public interface IViewLayoutable
+    { }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public interface IViewLayout
     {
     }
@@ -24,8 +30,8 @@ namespace Hinode.MVC
         public abstract class IAutoViewObjectCreator
         {
             public abstract IEnumerable<System.Type> GetSupportedIViewLayouts();
-            protected abstract IViewObject CreateImpl(IViewObject viewObj);
-            public IViewObject Create(IViewObject viewObj)
+            protected abstract IAutoViewLayoutObject CreateImpl(IViewObject viewObj);
+            public IAutoViewLayoutObject Create(IViewObject viewObj)
             {
                 var inst = CreateImpl(viewObj);
                 Assert.IsNotNull(inst);
@@ -34,9 +40,7 @@ namespace Hinode.MVC
                     Assert.IsTrue(inst.GetType().HasInterface(supportedType),
                         $"'{inst.GetType()}' don't support IViewLayout({supportedType})... creatorType='{this.GetType()}'");
                 }
-                inst.UseModel = viewObj.UseModel;
-                inst.UseBindInfo = viewObj.UseBindInfo;
-                inst.UseBinderInstance = viewObj.UseBinderInstance;
+                inst.Attach(viewObj);
                 return inst;
             }
 
@@ -70,12 +74,12 @@ namespace Hinode.MVC
         public bool ContainsKeyword(string keyword)
             => _layoutAccessors.ContainsKey(keyword);
 
-        public bool IsVaildViewObject(string keyword, IViewObject viewObj)
+        public bool IsVaildViewObject(string keyword, IViewLayoutable viewLayoutObj)
         {
             if (!ContainsKeyword(keyword)) return false;
 
             var accessor = _layoutAccessors[keyword];
-            return accessor.IsVaildViewObject(viewObj);
+            return accessor.IsVaildViewLayoutType(viewLayoutObj.GetType());
         }
 
         public bool IsVaildValue(string keyword, object value)
@@ -86,37 +90,80 @@ namespace Hinode.MVC
             return accessor.IsVaildValue(value);
         }
 
-        public void Set(string keyword, object value, IViewObject viewObj)
+        public void Set(string keyword, object value, IViewLayoutable viewLayoutObj)
         {
             var accessor = _layoutAccessors[keyword];
-            accessor.Set(value, viewObj);
+            accessor.Set(value, viewLayoutObj);
         }
 
-        public object Get(string keyword, IViewObject viewObj)
+        public object Get(string keyword, IViewLayoutable viewLayoutObj)
         {
             var accessor = _layoutAccessors[keyword];
-            return accessor.Get(viewObj);
+            return accessor.Get(viewLayoutObj);
         }
 
+        /// <summary>
+        /// ModelViewBinderInstanceがBindされていた場合は対応しているIAutoViewLayoutObjectもチェック対象に含めます
+        /// </summary>
+        /// <param name="updateTimingFlags"></param>
+        /// <param name="target"></param>
+        /// <param name="keyAndValues"></param>
+        /// <returns></returns>
         public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
         {
-            return GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues).Any();
+            var getKeyAndValues = GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues);
+            if(target.ContainsAutoViewLayoutObjects())
+            {
+                var autoViewLayouts = target.UseBinderInstance?.AutoLayoutViewObjects[target];
+                getKeyAndValues = getKeyAndValues.Concat(
+                    autoViewLayouts.SelectMany(_o => GetMatchKeyAndValues(updateTimingFlags, _o, keyAndValues))
+                );
+            }
+            return getKeyAndValues.Any();
         }
 
+        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IAutoViewLayoutObject target, IReadOnlyDictionary<string, object> keyAndValues)
+            => GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues).Any();
+
+        /// <summary>
+        /// 一致しているLayoutを設定します。
+        ///
+        /// もしtargetがIAutoViewLayoutObjectを持っており、あるキーがtargetと一致していない場合は、
+        /// そのキーと一致しているIAutoViewLayoutObjectに値を設定します。
+        /// </summary>
+        /// <param name="updateTimingFlags"></param>
+        /// <param name="target"></param>
+        /// <param name="keyAndValues"></param>
         public void SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
         {
-            foreach (var (value, layoutAccessor) in GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues)
-                .Select(_t => (value: _t.Value, layout: Accessors[_t.Key])))
+            foreach (var (targetObj, value, layoutAccessor) in keyAndValues
+                .Where(_t => ContainsKeyword(_t.Key))
+                .Select(_t => {
+                    var accessor = Accessors[_t.Key];
+
+                    object targetObj = accessor.IsVaildViewLayoutType(target.GetType())
+                        ? target
+                        : (object)(target.ContainsAutoViewLayoutObjects()
+                            ? target.GetAutoViewLayoutObjects()
+                                .FirstOrDefault(_a => accessor.IsVaildViewLayoutType(_a.GetType()))
+                            : null);
+                    //targetObjがnullならループから弾くようにしてください
+                    return (targetObj, value: _t.Value, layoutAccessor: accessor);
+                })
+                .Where(_t => _t.targetObj != null
+                        && _t.layoutAccessor.IsVaildValue(_t.value)
+                        && 0 != (updateTimingFlags & _t.layoutAccessor.UpdateTiming)
+                ))
             {
-                layoutAccessor.Set(value, target);
+                layoutAccessor.Set(value, targetObj);
             }
         }
 
-        IEnumerable<KeyValuePair<string, object>> GetMatchKeyAndValues(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+        IEnumerable<KeyValuePair<string, object>> GetMatchKeyAndValues(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewLayoutable target, IReadOnlyDictionary<string, object> keyAndValues)
             => keyAndValues.Where(_t => {
                 if (!ContainsKeyword(_t.Key)) return false;
                 var layout = Accessors[_t.Key];
-                return layout.IsVaildViewObject(target)
+                return layout.IsVaildViewLayoutType(target.GetType())
                     && layout.IsVaildValue(_t.Value)
                     && 0 != (updateTimingFlags & layout.UpdateTiming);
             });

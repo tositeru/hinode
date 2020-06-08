@@ -43,9 +43,18 @@ namespace Hinode.MVC
 
         protected override void OnPushed(IViewObject viewObj)
         {
-            Debug.Log($"debug -- {viewObj.GetType()}");
-            if (viewObj is MonoBehaviour)
+            if(viewObj is MonoBehaviourViewObject)
             {
+                var behaviour = viewObj as MonoBehaviourViewObject;
+                if(behaviour.IsAlive)
+                {
+                    behaviour.gameObject.SetActive(false);
+                    behaviour.transform.SetParent(PoolingObjParent);
+                }
+            }
+            else if (viewObj is MonoBehaviour)
+            {
+                Logger.LogWarning(Logger.Priority.High, () => $"Please Use MonoBehaviourViewObject instead of MonoBehaviour, Because GameObject was destroyed...");
                 var behaviour = viewObj as MonoBehaviour;
                 behaviour.gameObject.SetActive(false);
                 behaviour.transform.SetParent(PoolingObjParent);

@@ -13,7 +13,7 @@ namespace Hinode.MVC.Tests.ViewLayout
         class SiblingOrderModel : Model
             , ISiblingOrder
         {
-                        public SiblingOrderModel(uint order = ISiblingOrderConst.INVALID_ORDER)
+            public SiblingOrderModel(uint order = ISiblingOrderConst.INVALID_ORDER)
             {
                 SiblingOrder = order;
             }

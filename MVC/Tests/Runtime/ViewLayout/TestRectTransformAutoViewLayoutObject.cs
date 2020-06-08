@@ -16,13 +16,13 @@ namespace Hinode.MVC.Tests.ViewLayout
         [Test]
         public void CheckClassDefinePasses()
         {
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IViewObject>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorMinViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorMaxViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorXViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformAnchorYViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformPivotViewLayout>());
-            Assert.IsTrue(typeof(RectTransformViewLayoutAccessor).HasInterface<IRectTransformSizeViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IAutoViewLayoutObject>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorMinViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorMaxViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorXViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorYViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformPivotViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformSizeViewLayout>());
         }
 
         [Test]
@@ -61,7 +61,7 @@ namespace Hinode.MVC.Tests.ViewLayout
         public IEnumerator AutoLayoutViewCreatorPasses()
         {
             yield return null;
-            var creator = new RectTransformViewLayoutAccessor.AutoCreator();
+            var creator = new RectTransformAutoViewLayoutObject.AutoCreator();
 
             //Check Inherit IViewLayouts
             AssertionUtils.AssertEnumerableByUnordered(new System.Type[]{
@@ -96,11 +96,11 @@ namespace Hinode.MVC.Tests.ViewLayout
                 var viewObj = obj.GetComponent<ViewObj>();
                 var rectTransformLayoutAccessor = creator.Create(viewObj);
                 Assert.IsNotNull(rectTransformLayoutAccessor);
-                Assert.IsTrue(viewObj.TryGetComponent<RectTransformViewLayoutAccessor>(out var getAccessor));
+                Assert.IsTrue(viewObj.TryGetComponent<RectTransformAutoViewLayoutObject>(out var getAccessor));
 
                 var inst2 = creator.Create(viewObj);
                 Assert.AreSame(getAccessor, inst2, "既にComponentが追加されていたらそれを返すようにし、一つ以上追加しないようにする。");
-                Assert.AreEqual(1, viewObj.GetComponents<RectTransformViewLayoutAccessor>().Count());
+                Assert.AreEqual(1, viewObj.GetComponents<RectTransformAutoViewLayoutObject>().Count());
             }
 
             {

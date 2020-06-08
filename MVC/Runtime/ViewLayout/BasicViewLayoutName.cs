@@ -15,12 +15,14 @@ namespace Hinode.MVC
     {
         public static ViewLayouter AddBasicViewLayouter(this ViewLayouter viewLayouter)
         {
-            return viewLayouter
-                .AddKeywords(
-                    (BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor()),
-                    (BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor()),
-                    (BasicViewLayoutName.color.ToString(), new ColorViewLayoutAccessor())
-                );
+            viewLayouter.AddKeywords(
+                (BasicViewLayoutName.depth.ToString(), new DepthViewLayoutAccessor()),
+                (BasicViewLayoutName.siblingOrder.ToString(), new SiblingOrderViewLayoutAccessor()),
+                (BasicViewLayoutName.color.ToString(), new ColorViewLayoutAccessor())
+            );
+
+            viewLayouter.AddAutoCreateViewObject(new SiblingOrderAutoViewLayoutObject.AutoCreator(), BasicViewLayoutName.siblingOrder.ToString());
+            return viewLayouter;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Hinode.MVC
     /// <summary>
     /// TODO TextViewObjectのFontの設定
     /// </summary>
-    [RequireComponent(typeof(RectTransform), typeof(Text))]
+    [RequireComponent(typeof(RectTransform))]
     [AvailableModelViewParamBinder(typeof(TextViewObject.FixedParamBinder))]
     [DisallowMultipleComponent()]
     public class TextViewObject : RectTransformViewObject
@@ -32,8 +32,22 @@ namespace Hinode.MVC
             }
         }
 
+        #region Unity Callback
+        void OnDestroy()
+        {
+            Destroy(Text);
+        }
+        #endregion
+
         #region IColorViewLayout
         public Color ColorLayout { get => Text.color; set => Text.color = value; }
+        #endregion
+
+        #region RectTransformViewObject.IOptionalViewObject interface
+        public void DettachFromMainViewObject()
+        {
+            Object.Destroy(this);
+        }
         #endregion
 
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder

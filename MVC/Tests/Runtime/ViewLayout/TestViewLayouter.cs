@@ -24,14 +24,14 @@ namespace Hinode.MVC.Tests.ViewLayout
             public override System.Type ValueType { get => typeof(Color); }
             public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-            protected override object GetImpl(IViewObject viewObj)
+            protected override object GetImpl(object viewLayoutObj)
             {
-                return (viewObj as ITestColorViewLayout).ColorLayout;
+                return (viewLayoutObj as ITestColorViewLayout).ColorLayout;
             }
 
-            protected override void SetImpl(object value, IViewObject viewObj)
+            protected override void SetImpl(object value, object viewLayoutObj)
             {
-                (viewObj as ITestColorViewLayout).ColorLayout = (Color)value;
+                (viewLayoutObj as ITestColorViewLayout).ColorLayout = (Color)value;
             }
         }
 
@@ -46,14 +46,14 @@ namespace Hinode.MVC.Tests.ViewLayout
             public override System.Type ValueType { get => typeof(int); }
             public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-            protected override object GetImpl(IViewObject viewObj)
+            protected override object GetImpl(object viewLayoutObj)
             {
-                return (viewObj as ITestShapeViewLayout).ShapeNoLayout;
+                return (viewLayoutObj as ITestShapeViewLayout).ShapeNoLayout;
             }
 
-            protected override void SetImpl(object value, IViewObject viewObj)
+            protected override void SetImpl(object value, object viewLayoutObj)
             {
-                (viewObj as ITestShapeViewLayout).ShapeNoLayout = (int)value;
+                (viewLayoutObj as ITestShapeViewLayout).ShapeNoLayout = (int)value;
             }
         }
 
@@ -68,37 +68,27 @@ namespace Hinode.MVC.Tests.ViewLayout
             public override System.Type ValueType { get => typeof(int); }
             public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.Always; }
 
-            protected override object GetImpl(IViewObject viewObj)
+            protected override object GetImpl(object viewLayoutObj)
             {
-                return (viewObj as ITestAlwaysUpdateViewLayout).AlwaysUpdateLayout;
+                return (viewLayoutObj as ITestAlwaysUpdateViewLayout).AlwaysUpdateLayout;
             }
 
-            protected override void SetImpl(object value, IViewObject viewObj)
+            protected override void SetImpl(object value, object viewLayoutObj)
             {
-                (viewObj as ITestAlwaysUpdateViewLayout).AlwaysUpdateLayout = (int)value;
+                (viewLayoutObj as ITestAlwaysUpdateViewLayout).AlwaysUpdateLayout = (int)value;
             }
         }
 
-        class TestAutoViewObj : EmptyViewObject, ITestColorViewLayout
+        class TestAutoViewObj : EmptyAutoViewLayoutObject, ITestColorViewLayout
         {
             public Color ColorLayout { get; set; }
-
-            public class ParamBinder : IModelViewParamBinder
-            {
-                public void Update(Model model, IViewObject viewObj)
-                {
-                }
-            }
         }
 
         class AutoTestColorViewLayoutCreator : ViewLayouter.IAutoViewObjectCreator
         {
-            protected override IViewObject CreateImpl(IViewObject viewObj)
+            protected override IAutoViewLayoutObject CreateImpl(IViewObject viewObj)
             {
-                return new TestAutoViewObj()
-                {
-                    UseBinderInstance = viewObj.UseBinderInstance
-                };
+                return new TestAutoViewObj();
             }
 
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
@@ -317,17 +307,15 @@ namespace Hinode.MVC.Tests.ViewLayout
                 Assert.AreEqual(1, autoViewObjs.Count());
                 Assert.IsTrue(autoViewObjs.Any(_v => _v is TestAutoViewObj));
                 var autoViewObj = autoViewObjs.First(_v => _v is TestAutoViewObj);
-                Assert.AreSame(view2Obj.UseModel, autoViewObj.UseModel);
-                Assert.AreSame(view2Obj.UseBindInfo, autoViewObj.UseBindInfo);
-                Assert.AreSame(view2Obj.UseBinderInstance, autoViewObj.UseBinderInstance);
+                Assert.AreSame(view2Obj, autoViewObj.Target);
             }
         }
 
         class NotSupportViewLayoutCreator : ViewLayouter.IAutoViewObjectCreator
         {
-            protected override IViewObject CreateImpl(IViewObject viewObj)
+            protected override IAutoViewLayoutObject CreateImpl(IViewObject viewObj)
             {
-                return new ViewObj();
+                return new ViewLayoutObj();
             }
 
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
@@ -335,14 +323,8 @@ namespace Hinode.MVC.Tests.ViewLayout
                 return new[] { typeof(ITestColorViewLayout) };
             }
 
-            public class ViewObj : EmptyViewObject
+            public class ViewLayoutObj : EmptyAutoViewLayoutObject
             {
-                public class ParamBinder : IModelViewParamBinder
-                {
-                    public void Update(Model model, IViewObject viewObj)
-                    {
-                    }
-                }
             }
         }
 
@@ -444,7 +426,7 @@ namespace Hinode.MVC.Tests.ViewLayout
                 Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
                 Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
             }
-            Debug.Log($"Success to DoMatchAnyLayout(class DoMatchAnyLayoutPassesViewObj)!");
+            Debug.Log($"Success to DoMatchAnyLayout(class AllUpdateTimingViewObj)!");
 
             {
                 var testViewObj = new TestViewObj();
@@ -469,6 +451,63 @@ namespace Hinode.MVC.Tests.ViewLayout
                 Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class OnlyAlwaysUpdateLayoutViewObj)!");
+        }
+
+        class AllUpdateTimingAutoViewLayoutObj : EmptyAutoViewLayoutObject
+            , ITestColorViewLayout
+            , ITestAlwaysUpdateViewLayout
+        {
+            public Color ColorLayout { get; set; } = Color.white;
+            public int AlwaysUpdateLayout { get; set; } = 0;
+
+            #region IAutoViewLayoutObject interface
+            #endregion
+        }
+
+        class OnlyAlwaysUpdateAutoViewLayoutObj : EmptyAutoViewLayoutObject
+            , ITestAlwaysUpdateViewLayout
+        {
+            public int AlwaysUpdateLayout { get; set; } = 0;
+            #region IAutoViewLayoutObject interface
+            #endregion
+        }
+
+        [Test, Description("IAutoViewLayoutObjectが一致しているかどうかのテスト")]
+        public void DoIAutoViewLayoutObjectMatchAnyLayoutPasses()
+        {
+            var colorLayoutName = "color";
+            var alywaysUpdateLayoutName = "always";
+            //viewLayouter:
+            //  - color: TestColorViewLayoutSetter
+            var colorLayouterAccessor = new TestColorViewLayoutAccessor();
+            var alwaysUpdateLayoutAccessor = new TestAlwaysUpdateViewLayoutAccessor();
+            var viewLayouter = new ViewLayouter(
+                (colorLayoutName, colorLayouterAccessor),
+                (alywaysUpdateLayoutName, alwaysUpdateLayoutAccessor));
+
+            {
+                var testViewLayoutObj = new AllUpdateTimingAutoViewLayoutObj();
+                var keyAndValues = new Dictionary<string, object>() {
+                    { colorLayoutName, Color.blue },
+                    { alywaysUpdateLayoutName, 123 },
+                };
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, keyAndValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, keyAndValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, keyAndValues));
+            }
+            Debug.Log($"Success to DoMatchAnyLayout(class AllUpdateTimingAutoViewLayoutObj)!");
+
+            {
+                var testViewLayoutObj = new OnlyAlwaysUpdateAutoViewLayoutObj();
+                var keyAndValues = new Dictionary<string, object>() {
+                    { colorLayoutName, Color.blue },
+                    { alywaysUpdateLayoutName, 123 },
+                };
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, keyAndValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, keyAndValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, keyAndValues));
+            }
+            Debug.Log($"Success to DoMatchAnyLayout(class OnlyAlwaysUpdateAutoViewLayoutObj)!");
         }
 
         [Test, Description("KeyAndValueが一致しているかどうかのテスト")]

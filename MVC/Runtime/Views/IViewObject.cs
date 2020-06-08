@@ -16,7 +16,7 @@ namespace Hinode.MVC
     /// <seealso cref="EmptyViewObject"/>
     /// <seealso cref="MonoBehaviourViewObject"/>
     /// </summary>
-    public interface IViewObject
+    public interface IViewObject : IViewLayoutable
     {
         bool IsVisibility { get; set; }
 

@@ -10,7 +10,7 @@ namespace Hinode.MVC
     public class RectTransformViewObject : MonoBehaviourViewObject
         , IEnableToHaveOptionalViewObjects<RectTransformViewObject.IOptionalViewObject, RectTransformViewObject.IOptionalViewObjectParamBinder>
     {
-        public static RectTransformViewObject Create(string name = "rectTransformViewObj")
+        public static new RectTransformViewObject Create(string name = "rectTransformViewObj")
         {
             var obj = new GameObject(name, typeof(RectTransform));
             return obj.AddComponent<RectTransformViewObject>();
@@ -29,7 +29,15 @@ namespace Hinode.MVC
         }
         #endregion
 
-        #region IViewObject interface
+        #region MonoBehaviourViewObject class
+        protected override void OnDestroyViewObj()
+        {
+            foreach (var optionalViewObj in _optionalViewObjects.Values)
+            {
+                optionalViewObj.DettachFromMainViewObject();
+            }
+        }
+
         protected override void OnUnbind()
         {
             foreach (var optionalViewObj in _optionalViewObjects.Values)
@@ -47,6 +55,7 @@ namespace Hinode.MVC
         /// </summary>
         public interface IOptionalViewObject : IViewObject
         {
+            void DettachFromMainViewObject();
         }
 
         /// <summary>

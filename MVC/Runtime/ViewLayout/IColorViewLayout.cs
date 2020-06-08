@@ -17,11 +17,11 @@ namespace Hinode.MVC
 
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
-            => (viewObj as IColorViewLayout).ColorLayout;
+        protected override object GetImpl(object viewLayoutObj)
+            => (viewLayoutObj as IColorViewLayout).ColorLayout;
 
-        protected override void SetImpl(object value, IViewObject viewObj)
-            => (viewObj as IColorViewLayout).ColorLayout = (Color)value;
+        protected override void SetImpl(object value, object viewLayoutObj)
+            => (viewLayoutObj as IColorViewLayout).ColorLayout = (Color)value;
     }
 }
 

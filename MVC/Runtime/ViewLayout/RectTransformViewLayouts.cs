@@ -32,14 +32,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformAnchorXViewLayout).RectTransformAnchorXLayout;
+            return (viewLayoutObj as IRectTransformAnchorXViewLayout).RectTransformAnchorXLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformAnchorXViewLayout).RectTransformAnchorXLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformAnchorXViewLayout).RectTransformAnchorXLayout = (Vector2)value;
         }
     }
     #endregion
@@ -56,14 +56,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformAnchorYViewLayout).RectTransformAnchorYLayout;
+            return (viewLayoutObj as IRectTransformAnchorYViewLayout).RectTransformAnchorYLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformAnchorYViewLayout).RectTransformAnchorYLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformAnchorYViewLayout).RectTransformAnchorYLayout = (Vector2)value;
         }
     }
     #endregion
@@ -80,14 +80,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformPivotViewLayout).RectTransformPivotLayout;
+            return (viewLayoutObj as IRectTransformPivotViewLayout).RectTransformPivotLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformPivotViewLayout).RectTransformPivotLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformPivotViewLayout).RectTransformPivotLayout = (Vector2)value;
         }
     }
     #endregion
@@ -104,14 +104,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformSizeViewLayout).RectTransformSizeLayout;
+            return (viewLayoutObj as IRectTransformSizeViewLayout).RectTransformSizeLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformSizeViewLayout).RectTransformSizeLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformSizeViewLayout).RectTransformSizeLayout = (Vector2)value;
         }
     }
     #endregion
@@ -128,14 +128,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformAnchorMinViewLayout).RectTransformAnchorMinLayout;
+            return (viewLayoutObj as IRectTransformAnchorMinViewLayout).RectTransformAnchorMinLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformAnchorMinViewLayout).RectTransformAnchorMinLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformAnchorMinViewLayout).RectTransformAnchorMinLayout = (Vector2)value;
         }
     }
     #endregion
@@ -152,14 +152,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformAnchorMaxViewLayout).RectTransformAnchorMaxLayout;
+            return (viewLayoutObj as IRectTransformAnchorMaxViewLayout).RectTransformAnchorMaxLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformAnchorMaxViewLayout).RectTransformAnchorMaxLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformAnchorMaxViewLayout).RectTransformAnchorMaxLayout = (Vector2)value;
         }
     }
     #endregion
@@ -176,14 +176,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout;
+            return (viewLayoutObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformOffsetMinViewLayout).RectTransformOffsetMinLayout = (Vector2)value;
         }
     }
     #endregion
@@ -200,14 +200,14 @@ namespace Hinode.MVC
         public override System.Type ValueType { get => typeof(Vector2); }
         public override ViewLayoutAccessorUpdateTiming UpdateTiming { get => ViewLayoutAccessorUpdateTiming.AtOnlyModel; }
 
-        protected override object GetImpl(IViewObject viewObj)
+        protected override object GetImpl(object viewLayoutObj)
         {
-            return (viewObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout;
+            return (viewLayoutObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout;
         }
 
-        protected override void SetImpl(object value, IViewObject viewObj)
+        protected override void SetImpl(object value, object viewLayoutObj)
         {
-            (viewObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout = (Vector2)value;
+            (viewLayoutObj as IRectTransformOffsetMaxViewLayout).RectTransformOffsetMaxLayout = (Vector2)value;
         }
     }
     #endregion

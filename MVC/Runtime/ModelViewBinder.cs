@@ -379,7 +379,7 @@ namespace Hinode.MVC
     public class ModelViewBinderInstance : System.IDisposable
     {
         List<IViewObject> _viewObjects = new List<IViewObject>();
-        Dictionary<IViewObject, HashSet<IViewObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IViewObject>>();
+        Dictionary<IViewObject, HashSet<IAutoViewLayoutObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IAutoViewLayoutObject>>();
 
         Dictionary<IViewObject, HashSet<IEventDispatcherHelper>> _eventDispathcerHelpObjectListDict = new Dictionary<IViewObject, HashSet<IEventDispatcherHelper>>();
 
@@ -389,7 +389,7 @@ namespace Hinode.MVC
         public ModelViewBinderInstanceMap UseInstanceMap { get; set; }
         public Model Model { get; private set; }
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
-        public IReadOnlyDictionary<IViewObject, HashSet<IViewObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
+        public IReadOnlyDictionary<IViewObject, HashSet<IAutoViewLayoutObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IEventDispatcherHelper>> EventDispatcherHelpObjectsForView { get => _eventDispathcerHelpObjectListDict; }
         public EventInterruptedData HoldedEventInterruptedData { get; set; }
         public bool HasEventInterruptedData { get => HoldedEventInterruptedData != null; }
@@ -424,17 +424,13 @@ namespace Hinode.MVC
                 {
                     var bindInfo = viewObj.UseBindInfo;
 
-                    var autoViewObjHash = new HashSet<IViewObject>();
+                    var autoViewObjHash = new HashSet<IAutoViewLayoutObject>();
                     foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayoutValues.Layouts.Keys))
                     {
                         var autoViewObj = creator.Create(viewObj);
                         autoViewObjHash.Add(autoViewObj);
                     }
                     if(autoViewObjHash.Any()) {
-                        foreach(var v in autoViewObjHash)
-                        {
-                            v.UseBinderInstance = this;
-                        }
                         _autoLayoutViewObjects.Add(viewObj, autoViewObjHash);
 
                         Logger.Log(Logger.Priority.Debug, () => {
@@ -494,23 +490,28 @@ namespace Hinode.MVC
                 return;
             var viewLayouter = UseInstanceMap.UseViewLayouter;
             var viewObjAndLayoutValueDicts = ViewObjects
-                .Concat(ViewObjects
-                    .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
-                    .SelectMany(_v => AutoLayoutViewObjects[_v]))
+                //.Concat(ViewObjects
+                //    .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
+                //    .SelectMany(_v => AutoLayoutViewObjects[_v]))
                 .Where(_v => _v.UseBindInfo != null)
-                .Select(_v => (viewObjs:_v, layoutValueDict: _v.UseBindInfo?.ViewLayoutValues.Layouts ?? null));
+                .Select(_v => (
+                    viewObj:_v,
+                    autoViewLayouts: AutoLayoutViewObjects.ContainsKey(_v) ? AutoLayoutViewObjects[_v] : null,
+                    layoutValueDict: _v.UseBindInfo?.ViewLayoutValues.Layouts ?? null));
             if (UseInstanceMap?.UseViewLayoutOverwriter != null )
             {
                 viewObjAndLayoutValueDicts = viewObjAndLayoutValueDicts
                     .Select(_v => (
-                        viewObj: _v.viewObjs,
-                        layoutValueDict: UseInstanceMap.UseViewLayoutOverwriter.MergeMatchedLayouts(_v.viewObjs) as IReadOnlyDictionary<string, object>)
+                        _v.viewObj,
+                        _v.autoViewLayouts,
+                        layoutValueDict: UseInstanceMap.UseViewLayoutOverwriter.MergeMatchedLayouts(_v.viewObj) as IReadOnlyDictionary<string, object>)
                     );
             }
             viewObjAndLayoutValueDicts = viewObjAndLayoutValueDicts.Where(_v => _v.layoutValueDict != null);
 
-            foreach (var (viewObj, layoutValueDict) in viewObjAndLayoutValueDicts
-                .Where(_v => viewLayouter.DoMatchAnyLayout(updateTimingFlags, _v.viewObjs, _v.viewObjs.UseBindInfo.ViewLayoutValues.Layouts)))
+            foreach (var (viewObj, autoViewLayouts, layoutValueDict) in viewObjAndLayoutValueDicts
+                .Where(_v => viewLayouter.DoMatchAnyLayout(
+                    updateTimingFlags, _v.viewObj, _v.viewObj.UseBindInfo.ViewLayoutValues.Layouts)))
             {
                 viewLayouter.SetAllMatchLayouts(updateTimingFlags, viewObj, layoutValueDict);
 
@@ -523,10 +524,24 @@ namespace Hinode.MVC
             }
 
             //他のViewObjectの影響を受けるかもしれないので、ここで行っている。
-            foreach (var viewObj in viewObjAndLayoutValueDicts.Select(_v => _v.viewObjs))
+            foreach (var (viewObj, autoViewLayouts) in viewObjAndLayoutValueDicts.Select(_v => (_v.viewObj, _v.autoViewLayouts)))
             {
                 viewObj.OnViewLayouted();
+
+                if(autoViewLayouts != null)
+                {
+                    foreach(var autoLayout in autoViewLayouts)
+                    {
+                        autoLayout.OnViewLayouted();
+                    }
+                }
             }
+        }
+
+        public bool ContainsAutoViewLayoutObjects(IViewObject viewObject)
+        {
+            Assert.IsTrue(ViewObjects.Contains(viewObject));
+            return AutoLayoutViewObjects.ContainsKey(viewObject);
         }
 
         public IEnumerable<IViewObject> QueryViews(ViewIdentity query)
@@ -589,7 +604,7 @@ namespace Hinode.MVC
                     {
                         foreach(var autoView in _autoLayoutViewObjects[view])
                         {
-                            autoView.Unbind();
+                            autoView.Dettach();
                         }
                     }
                     if(view.UseBindInfo.ViewObjectCreateType == ViewObjectCreateType.Default)
@@ -698,6 +713,12 @@ namespace Hinode.MVC
         public static T GetEventDispathcerHelpObject<T>(this IViewObject viewObject)
             where T : class, IEventDispatcherHelper
             => viewObject.UseBinderInstance.GetEventDispathcerHelpObject<T>(viewObject);
+
+        public static bool ContainsAutoViewLayoutObjects(this IViewObject viewObject)
+            => viewObject.UseBinderInstance?.ContainsAutoViewLayoutObjects(viewObject) ?? false;
+
+        public static IReadOnlyCollection<IAutoViewLayoutObject> GetAutoViewLayoutObjects(this IViewObject viewObject)
+            => viewObject.UseBinderInstance?.AutoLayoutViewObjects[viewObject] ?? null;
 
     }
 }

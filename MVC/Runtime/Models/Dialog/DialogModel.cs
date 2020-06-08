@@ -52,8 +52,6 @@ namespace Hinode.MVC
                 Logger.LogError(Logger.Priority.High, () => $"ButtonModel#Value must be string... got Type={btn.Value.GetType()}");
                 return;
             }
-
-            Debug.Log("debug -- DialogModel onclick");
             MarkDestroy();
         }
         #endregion
@@ -67,7 +65,6 @@ namespace Hinode.MVC
 
         public static OnEventInterruptCallback CreateDialogOnEventInterrupted(DialogType dialogType, TextResources textResources)
         {
-            Debug.Log("pass");
             return (binderInstanceMap, interruptedData) => {
                 var dialogModel = new DialogModel();
                 switch(dialogType)

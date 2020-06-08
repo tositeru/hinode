@@ -27,6 +27,14 @@ namespace Hinode.MVC.Tests.Views
             , RectTransformViewObject.IOptionalViewObject
         {
             public int Value { get; set; }
+
+            #region RectTransformViewObject.IOptionalViewObject interface
+            public void DettachFromMainViewObject()
+            {
+                Destroy(this);
+            }
+            #endregion
+
             public class ParamBinder : RectTransformViewObject.IOptionalViewObjectParamBinder
             {
                 public int Value { get; set; }

@@ -134,6 +134,11 @@ namespace Hinode.MVC
         public void Destroy()
         {
             Destroy(this);
+            if(HasAutoBoxCollider)
+            {
+                Destroy(_autoBoxCollider);
+                _autoBoxCollider = null;
+            }
         }
         #endregion
     }

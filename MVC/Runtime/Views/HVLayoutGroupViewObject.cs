@@ -102,6 +102,13 @@ namespace Hinode.MVC
             if(layout != null) Destroy(layout);
         }
 
+        #region RectTransformViewObject.IOptionalViewObject interface
+        public void DettachFromMainViewObject()
+        {
+            Object.Destroy(this);
+        }
+        #endregion
+
         public new class FixedParamBinder : RectTransformViewObject.FixedParamBinder
             , RectTransformViewObject.IOptionalViewObjectParamBinder
         {
