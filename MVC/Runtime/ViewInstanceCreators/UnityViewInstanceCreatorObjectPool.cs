@@ -21,6 +21,7 @@ namespace Hinode.MVC
                 if(_poolingObjParent == null)
                 {
                     _poolingObjParent = new GameObject("__poolingViewObjParent").transform;
+                    Object.DontDestroyOnLoad(_poolingObjParent);
                 }
                 return _poolingObjParent;
             }

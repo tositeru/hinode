@@ -93,10 +93,10 @@ namespace Hinode.MVC
             if (_viewObjectDict.ContainsKey(instanceKey))
             {
                 var viewObj = _viewObjectDict[instanceKey].Create();
-                //if(viewObj is MonoBehaviour)
-                //{
-                //    Object.DontDestroyOnLoad((viewObj as MonoBehaviour).gameObject);
-                //}
+                if (viewObj is MonoBehaviour)
+                {
+                    Object.DontDestroyOnLoad((viewObj as MonoBehaviour).gameObject);
+                }
                 return viewObj;
             }
             else
