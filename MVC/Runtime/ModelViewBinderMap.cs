@@ -633,11 +633,12 @@ namespace Hinode.MVC
             if (doApplyViewLayout && UseViewLayouter != null)
             {
                 //Apply ViewLayout(Only UpdateTiming#Alyways)
-                foreach(var bindInstance in BindInstances.Values)
+                foreach(var bindInstance in BindInstances.Values
+                    .Where(_b => _b.Model != null))
                 {
                     try
                     {
-                        bindInstance.ApplyViewLayout(ViewLayoutAccessorUpdateTiming.All);
+                        bindInstance.ApplyViewLayout(ViewLayoutAccessorUpdateTiming.Always);
                     }
                     catch (System.Exception e)
                     {

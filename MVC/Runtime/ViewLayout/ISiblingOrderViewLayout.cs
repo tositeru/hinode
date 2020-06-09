@@ -71,25 +71,17 @@ namespace Hinode.MVC
             var t = (target as MonoBehaviour).transform;
             if (t.parent != parent)
             {
-                t.SetParent(parent);
+                t.SetParent(parent, false);
             }
 
-            if (lowerChild != null)
-            {
-                t.SetSiblingIndex(lowerChild.GetSiblingIndex());
-            }
-            else
-            {
-                t.SetSiblingIndex(Mathf.Max(0, parent.childCount - 1));
-            }
+            var insertIndex = (lowerChild != null)
+                ? (lowerChild.GetSiblingIndex() - 1)
+                : parent.childCount - 1;
+            insertIndex = Mathf.Max(0, insertIndex);
 
-            if (target.UseModel is ButtonModel)
-            {
-                var btn = target.UseModel as ButtonModel;
-                var insertIndex = lowerChild != null ? lowerChild.GetSiblingIndex() : -1;
-                Debug.Log($"{btn.Text} insert to parent({parent.name}) index={insertIndex}");
-            }
-            //Debug.Log($"debug - {(lowerChild != null ? lowerChild.name : "(null)")}");
+            t.SetSiblingIndex(insertIndex);
+
+            Logger.Log(Logger.Priority.Debug, () => $"{target} insert to parent({parent.name}) index={t.GetSiblingIndex()}, insertIndex={insertIndex}");
         }
 
         static bool ContainsSibilingOrder(IViewObject target)
@@ -108,6 +100,8 @@ namespace Hinode.MVC
     {
         public int Compare(IViewObject left, IViewObject right)
         {
+            if (left == right) return 0;
+
             var leftOrder = (modelOrder: left.GetModelSiblingOrder(), viewOrder: left.GetViewObjSiblingOrder());
             var rightOrder = (modelOrder: right.GetModelSiblingOrder(), viewOrder: right.GetViewObjSiblingOrder());
 
@@ -202,6 +196,10 @@ namespace Hinode.MVC
                 if (value is uint) return (uint)(uint)value;
                 if (value is ulong) return (uint)(ulong)value;
                 throw new System.InvalidCastException($"value Type={value.GetType()}");
+            }
+            else if(target is ISiblingOrderViewLayout)
+            {
+                return (target as ISiblingOrderViewLayout).SiblingOrder;
             }
             else
             {

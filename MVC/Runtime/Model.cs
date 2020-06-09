@@ -129,15 +129,20 @@ namespace Hinode.MVC
             return path;
         }
 
+        public string GetFullName()
+        {
+            return $"{ToString()}:{GetType().FullName}";
+        }
+
         public override string ToString()
         {
             string logicalIds = "";
             if (LogicalID.Any())
-                logicalIds = LogicalID.Aggregate(" ", (_sum, _cur) => _sum + " #" + _cur);
+                logicalIds = LogicalID.Aggregate(" ", (_sum, _cur) => _sum + $" {QUERY_LOGICAL_PREFIX_CHAR}" + _cur);
             string stylingIds = "";
             if (StylingID.Any())
-                stylingIds = StylingID.Aggregate(" ", (_sum, _cur) => _sum + " ." + _cur);
-            return $"{GetPath()}{logicalIds}{stylingIds}:{GetType().FullName}";
+                stylingIds = StylingID.Aggregate(" ", (_sum, _cur) => _sum + $" {QUERY_STYLE_PREFIX_CHAR}" + _cur);
+            return $"{GetPath()}{logicalIds}{stylingIds}";
         }
         #region OnUpdated callback
         /// <summary>

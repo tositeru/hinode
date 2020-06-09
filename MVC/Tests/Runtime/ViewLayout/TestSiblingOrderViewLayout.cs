@@ -10,6 +10,12 @@ namespace Hinode.MVC.Tests.ViewLayout
 {
     public class TestSiblingOrderViewLayout
     {
+        [SetUp]
+        public void SetUp()
+        {
+            Logger.PriorityLevel = Logger.Priority.Debug;
+        }
+
         class SiblingOrderModel : Model
             , ISiblingOrder
         {

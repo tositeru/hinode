@@ -61,7 +61,7 @@ namespace Hinode.MVC
     {
         public static string ToString(this IViewObject viewObject)
         {
-            return $"{viewObject.GetType().FullName} in Model={(viewObject.UseModel != null ? viewObject.UseModel.GetPath(): "(none)")} BindInfo={(viewObject.UseBindInfo != null ? viewObject.UseBindInfo.ID.ToString() : "(none)")}";
+            return $"[{(viewObject.UseModel != null ? viewObject.UseModel.ToString(): "(none)")} : {(viewObject.UseBindInfo != null ? viewObject.UseBindInfo.ID.ToString() : "(none)")}]";
         }
 
         public static bool DoBinding(this IViewObject target)

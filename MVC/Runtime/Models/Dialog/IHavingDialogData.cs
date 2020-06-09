@@ -16,7 +16,7 @@ namespace Hinode.MVC
         {
             if (textResources.Contains(data.DialogTitleTextResource)) target.Title = textResources.Get(data.DialogTitleTextResource);
             if (textResources.Contains(data.DialogTextTextResource)) target.Text = textResources.Get(data.DialogTextTextResource);
-            Debug.Log($"pass Title={target.Title} Text={target.Text}");
+            //Debug.Log($"pass Title={target.Title} Text={target.Text}");
         }
     }
 }

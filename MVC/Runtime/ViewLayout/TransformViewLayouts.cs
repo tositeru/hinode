@@ -75,6 +75,10 @@ namespace Hinode.MVC
                     }
 
                     SiblingOrderViewLayoutAccessor.Insert(parent, viewLayoutObj);
+
+                    //Transform周りのパラメータが更新されない可能性があるので、Layoutを更新するようにしています
+                    // ex) RectTransform#offsetMin, offsetMax
+                    viewObj.UseBinderInstance?.ApplyViewLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel);
                 }
                 else
                 {
