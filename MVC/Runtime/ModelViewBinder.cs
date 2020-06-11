@@ -13,6 +13,11 @@ namespace Hinode.MVC
         IReadOnlyCollection<System.Type> EnabledModelTypes { get; }
 
         IViewInstanceCreator ViewInstaceCreator { get; }
+        ViewLayouter UseViewLayouter { get; }
+        ViewLayoutOverwriter UseViewLayoutOverwriter { get; }
+        EventDispatcherMap UseEventDispatcherMap { get; }
+        EventDispatchStateMap UseEventDispatchStateMap { get; }
+        EventInterrupter UseEventInterrupter { get; }
 
         IEnumerable<ModelViewBinder.BindInfo> BindInfos { get; }
         int BindInfoCount { get; }
@@ -69,6 +74,12 @@ namespace Hinode.MVC
         /// 
         /// </summary>
         public IViewInstanceCreator ViewInstaceCreator { get; set; }
+
+        public ViewLayouter UseViewLayouter { get; set; }
+        public ViewLayoutOverwriter UseViewLayoutOverwriter { get; set; }
+        public EventDispatcherMap UseEventDispatcherMap { get; set; }
+        public EventDispatchStateMap UseEventDispatchStateMap { get; set; }
+        public EventInterrupter UseEventInterrupter { get; set; }
 
         /// <summary>
         /// ModelとViewの関連付けるための情報
@@ -380,6 +391,7 @@ namespace Hinode.MVC
     {
         List<IViewObject> _viewObjects = new List<IViewObject>();
         Dictionary<IViewObject, HashSet<IAutoViewLayoutObject>> _autoLayoutViewObjects = new Dictionary<IViewObject, HashSet<IAutoViewLayoutObject>>();
+        Dictionary<IViewObject, ViewLayoutState> _viewLayoutStateDict = new Dictionary<IViewObject, ViewLayoutState>();
 
         Dictionary<IViewObject, HashSet<IEventDispatcherHelper>> _eventDispathcerHelpObjectListDict = new Dictionary<IViewObject, HashSet<IEventDispatcherHelper>>();
 
@@ -390,9 +402,16 @@ namespace Hinode.MVC
         public Model Model { get; private set; }
         public IEnumerable<IViewObject> ViewObjects { get => _viewObjects; }
         public IReadOnlyDictionary<IViewObject, HashSet<IAutoViewLayoutObject>> AutoLayoutViewObjects { get => _autoLayoutViewObjects; }
+        public IReadOnlyDictionary<IViewObject, ViewLayoutState> ViewLayoutStateDict { get => _viewLayoutStateDict; }
         public IReadOnlyDictionary<IViewObject, HashSet<IEventDispatcherHelper>> EventDispatcherHelpObjectsForView { get => _eventDispathcerHelpObjectListDict; }
         public EventInterruptedData HoldedEventInterruptedData { get; set; }
         public bool HasEventInterruptedData { get => HoldedEventInterruptedData != null; }
+
+        public ViewLayouter UseViewLayouter { get => UseInstanceMap?.UseViewLayouter ?? Binder.UseViewLayouter; }
+        public ViewLayoutOverwriter UseViewLayoutOverwriter { get => UseInstanceMap?.UseViewLayoutOverwriter ?? Binder.UseViewLayoutOverwriter; }
+        public EventDispatcherMap UseEventDispatcherMap { get => UseInstanceMap?.UseEventDispatcherMap ?? Binder.UseEventDispatcherMap; }
+        public EventDispatchStateMap UseEventDispatchStateMap { get => UseInstanceMap?.UseEventDispatchStateMap ?? Binder.UseEventDispatchStateMap; }
+        public EventInterrupter UseEventInterrupter { get => UseInstanceMap?.UseEventInterrupter ?? Binder.UseEventInterrupter; }
 
         public ModelViewBinderInstance(ModelViewBinder binder, Model model, ModelViewBinderInstanceMap binderInstanceMap)
         {
@@ -403,9 +422,19 @@ namespace Hinode.MVC
             foreach(var v in ViewObjects)
             {
                 v.UseBinderInstance = this;
+
+                //Create ViewLayoutState
+                var state = new ViewLayoutState();
+                state.SetBindInfo(v.UseBindInfo);
+                if (UseViewLayoutOverwriter != null)
+                {
+                    state.SetLayoutOverwriter(v, binderInstanceMap.UseViewLayoutOverwriter);
+                }
+                state.OnChangedValue.Add(ViewLayoutStateOnChangedValue);
+                _viewLayoutStateDict.Add(v, state);
             }
 
-            if (binderInstanceMap != null && binderInstanceMap.UseEventDispatcherMap != null)
+            if (UseEventDispatcherMap != null)
             {
                 var eventDispatcherMap = binderInstanceMap.UseEventDispatcherMap;
                 foreach (var view in ViewObjects
@@ -417,9 +446,9 @@ namespace Hinode.MVC
                 }
             }
 
-            if (binderInstanceMap != null && (binderInstanceMap.UseViewLayouter?.DoEnableToAutoCreateViewObject ?? false))
+            if (UseViewLayouter?.DoEnableToAutoCreateViewObject ?? false)
             {
-                var viewLayouter = binderInstanceMap.UseViewLayouter;
+                var viewLayouter = UseViewLayouter;
                 foreach (var viewObj in ViewObjects)
                 {
                     var bindInfo = viewObj.UseBindInfo;
@@ -475,6 +504,29 @@ namespace Hinode.MVC
             Model.OnUpdated.Remove(ModelOnDestroyed);
         }
 
+        void ViewLayoutStateOnChangedValue(ViewLayoutState.OnUpdatedCallbackData eventData)
+        {
+            if (eventData.Value == null) return;
+
+            if(UseViewLayouter != null)
+            {
+                var viewLayouter = UseViewLayouter;
+
+                if (!viewLayouter.IsVaildValue(eventData.Key, eventData.Value))
+                    return;
+
+                var viewObj = _viewLayoutStateDict
+                    .Where(_t => _t.Value == eventData.Self)
+                    .Select(_t => _t.Key)
+                    .FirstOrDefault();
+                if (viewObj == null)
+                    return;
+
+                viewLayouter.Set(eventData.Key, eventData.Value, viewObj);
+                viewObj.OnViewLayouted();
+            }
+        }
+
         public void UpdateViewObjects()
         {
             foreach (var viewObj in ViewObjects)
@@ -486,34 +538,19 @@ namespace Hinode.MVC
 
         public void ApplyViewLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags)
         {
-            if (UseInstanceMap == null || UseInstanceMap.UseViewLayouter == null)
+            if (UseViewLayouter == null)
                 return;
-            var viewLayouter = UseInstanceMap.UseViewLayouter;
-            var viewObjAndLayoutValueDicts = ViewObjects
-                //.Concat(ViewObjects
-                //    .Where(_v => AutoLayoutViewObjects.ContainsKey(_v))
-                //    .SelectMany(_v => AutoLayoutViewObjects[_v]))
-                .Where(_v => _v.UseBindInfo != null)
+            var viewLayouter = UseViewLayouter;
+            var viewObjs = ViewObjects
                 .Select(_v => (
-                    viewObj:_v,
+                    viewObj: _v,
                     autoViewLayouts: AutoLayoutViewObjects.ContainsKey(_v) ? AutoLayoutViewObjects[_v] : null,
-                    layoutValueDict: _v.UseBindInfo?.ViewLayoutValues.Layouts ?? null));
-            if (UseInstanceMap?.UseViewLayoutOverwriter != null )
+                    layoutState: _v.GetViewLayoutState()
+                    ))
+                .Where(_t => _t.layoutState != null);
+            foreach (var (viewObj, autoViewLayouts, layoutState) in viewObjs)
             {
-                viewObjAndLayoutValueDicts = viewObjAndLayoutValueDicts
-                    .Select(_v => (
-                        _v.viewObj,
-                        _v.autoViewLayouts,
-                        layoutValueDict: UseInstanceMap.UseViewLayoutOverwriter.MergeMatchedLayouts(_v.viewObj) as IReadOnlyDictionary<string, object>)
-                    );
-            }
-            viewObjAndLayoutValueDicts = viewObjAndLayoutValueDicts.Where(_v => _v.layoutValueDict != null);
-
-            foreach (var (viewObj, autoViewLayouts, layoutValueDict) in viewObjAndLayoutValueDicts
-                .Where(_v => viewLayouter.DoMatchAnyLayout(
-                    updateTimingFlags, _v.viewObj, _v.viewObj.UseBindInfo.ViewLayoutValues.Layouts)))
-            {
-                viewLayouter.SetAllMatchLayouts(updateTimingFlags, viewObj, layoutValueDict);
+                viewLayouter.SetAllMatchLayouts(updateTimingFlags, viewObj, layoutState);
 
                 Logger.Log(Logger.Priority.Low, () => {
                     var log = viewObj.UseBindInfo.ViewLayoutValues.Layouts
@@ -524,13 +561,13 @@ namespace Hinode.MVC
             }
 
             //他のViewObjectの影響を受けるかもしれないので、ここで行っている。
-            foreach (var (viewObj, autoViewLayouts) in viewObjAndLayoutValueDicts.Select(_v => (_v.viewObj, _v.autoViewLayouts)))
+            foreach (var (viewObj, autoViewLayouts, _) in viewObjs)
             {
                 viewObj.OnViewLayouted();
 
-                if(autoViewLayouts != null)
+                if (autoViewLayouts != null)
                 {
-                    foreach(var autoLayout in autoViewLayouts)
+                    foreach (var autoLayout in autoViewLayouts)
                     {
                         autoLayout.OnViewLayouted();
                     }
@@ -553,6 +590,11 @@ namespace Hinode.MVC
             }
             return matchViews;
         }
+
+        public ViewLayoutState GetViewLayoutState(IViewObject viewObject)
+            => ViewLayoutStateDict.ContainsKey(viewObject)
+            ? ViewLayoutStateDict[viewObject]
+            : null;
 
         #region IEventDispatcherHelper
         public bool HasEventDispatcherHelpObject(IViewObject viewObject, System.Type helpObjectType)
@@ -616,6 +658,12 @@ namespace Hinode.MVC
                     {
                         view.Unbind();
                     }
+
+                    if(_viewLayoutStateDict.ContainsKey(view))
+                    {
+                        var state = _viewLayoutStateDict[view];
+                        state.OnChangedValue.Remove(ViewLayoutStateOnChangedValue);
+                    }
                 }
                 _autoLayoutViewObjects.Clear();
                 _eventDispathcerHelpObjectListDict.Clear();
@@ -639,7 +687,27 @@ namespace Hinode.MVC
         #endregion
     }
 
-    public static class ModelViewBinderInstanceExtensions
+    public static partial class ModelViewBinderBindInfoExtensions
+    {
+        public static ModelViewBinder.BindInfo AddViewLayoutValues(this ModelViewBinder.BindInfo target, params (System.Enum key, object value)[] keyAndValues)
+            => target.AddViewLayoutValues(keyAndValues.AsEnumerable().Select(_t => (key: _t.key.ToString(), _t.value)));
+        public static ModelViewBinder.BindInfo AddViewLayoutValues(this ModelViewBinder.BindInfo target, IEnumerable<(System.Enum key, object value)> keyAndValues)
+            => target.AddViewLayoutValues(keyAndValues.Select(_t => (key: _t.key.ToString(), _t.value)));
+
+        public static ModelViewBinder.BindInfo AddViewLayoutValues(this ModelViewBinder.BindInfo target, params (string key, object value)[] keyAndValues)
+            => target.AddViewLayoutValues(keyAndValues.AsEnumerable());
+
+        public static ModelViewBinder.BindInfo AddViewLayoutValues(this ModelViewBinder.BindInfo target, IEnumerable<(string key, object value)> keyAndValues)
+        {
+            foreach (var (key, value) in keyAndValues)
+            {
+                target.AddViewLayoutValue(key, value);
+            }
+            return target;
+        }
+    }
+
+    public static partial class ModelViewBinderInstanceExtensions
     {
         /// <summary>
         /// target内にある全てのControllerInfoを取得する 
@@ -718,7 +786,19 @@ namespace Hinode.MVC
             => viewObject.UseBinderInstance?.ContainsAutoViewLayoutObjects(viewObject) ?? false;
 
         public static IReadOnlyCollection<IAutoViewLayoutObject> GetAutoViewLayoutObjects(this IViewObject viewObject)
-            => viewObject.UseBinderInstance?.AutoLayoutViewObjects[viewObject] ?? null;
+        {
+            if (viewObject.UseBinderInstance == null) return null;
 
+            if(viewObject.UseBinderInstance.AutoLayoutViewObjects.ContainsKey(viewObject))
+            {
+                return viewObject.UseBinderInstance.AutoLayoutViewObjects[viewObject];
+            }
+            return null;
+        }
+
+        public static ViewLayoutState GetViewLayoutState(this IViewObject viewObject)
+            => viewObject.DoBinding()
+            ? viewObject.UseBinderInstance.GetViewLayoutState(viewObject)
+            : null;
     }
 }

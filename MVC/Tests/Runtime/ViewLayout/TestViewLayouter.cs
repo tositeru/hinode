@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Hinode.Tests;
+using System;
 
 namespace Hinode.MVC.Tests.ViewLayout
 {
@@ -144,10 +145,40 @@ namespace Hinode.MVC.Tests.ViewLayout
 
             var testView2Obj = new TestView2Obj();
             Assert.IsFalse(viewLayouter.IsVaildViewObject("color", testView2Obj));
-            Assert.Throws<System.ArgumentException>(() =>
+            viewLayouter.Set("color", Color.blue, testView2Obj);
+            Assert.AreNotEqual(Color.blue, testView2Obj.ColorLayout);
+        }
+
+        [Test, Description("ViewObjectに対応しているIAutoViewLayoutObjectにも値が設定されるかどうかのテスト")]
+        public void SetViewObjectPasses()
+        {
+            var viewCreator = new DefaultViewInstanceCreator(
+                (typeof(EmptyViewObject), new EmptyModelViewParamBinder())
+            );
+            var viewLayouter = new ViewLayouter()
+                .AddKeywords(("color", new TestColorViewLayoutAccessor()))
+                .AddAutoCreateViewObject(new AutoTestColorViewLayoutCreator(), "color");
+
+            var binder = new ModelViewBinder("*", viewCreator)
             {
-                viewLayouter.Set("color", Color.blue, testView2Obj);
-            });
+                UseViewLayouter = viewLayouter,
+            }
+                .AddBindInfo(new ModelViewBinder.BindInfo(typeof(EmptyViewObject))
+                    .AddViewLayoutValue("color", Color.white)
+            );
+
+            var model = new Model() { Name = "TestModel" };
+
+            var binderInstance = binder.CreateBindInstance(model, null);
+            var viewObj = binderInstance.ViewObjects.First();
+
+            Assert.IsTrue(viewObj.ContainsAutoViewLayoutObjects());
+            Assert.IsNotNull(viewObj.GetAutoViewLayoutObjects().OfType<TestAutoViewObj>().First());
+
+            viewLayouter.Set("color", Color.blue, viewObj);
+
+            var autoViewObj = viewObj.GetAutoViewLayoutObjects().OfType<TestAutoViewObj>().First();
+            Assert.AreEqual(Color.blue, autoViewObj.ColorLayout);
         }
 
         [Test]
@@ -180,15 +211,15 @@ namespace Hinode.MVC.Tests.ViewLayout
             var viewLayouter = new ViewLayouter(("color", colorLayouterAccessor));
 
             var setColor = Color.black;
-            var keyAndValues = new Dictionary<string, object>() {
-                {"color", setColor }
-            };
+            var layoutState = new ViewLayoutState()
+                .SetRaw("color", setColor)
+            ;
             var testViewObj = new TestViewObj();
-            viewLayouter.SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues);
+            viewLayouter.SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutState);
             Assert.AreEqual(setColor, testViewObj.ColorLayout);
 
             var testView2Obj = new TestView2Obj();
-            viewLayouter.SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming.All, testView2Obj, keyAndValues);
+            viewLayouter.SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming.All, testView2Obj, layoutState);
             Assert.AreNotEqual(setColor, testView2Obj.ColorLayout);
         }
 
@@ -418,37 +449,37 @@ namespace Hinode.MVC.Tests.ViewLayout
 
             {
                 var testViewObj = new AllUpdateTimingViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class AllUpdateTimingViewObj)!");
 
             {
                 var testViewObj = new TestViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class TestViewObj)!");
 
             {
                 var testViewObj = new OnlyAlwaysUpdateLayoutViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class OnlyAlwaysUpdateLayoutViewObj)!");
         }
@@ -487,25 +518,25 @@ namespace Hinode.MVC.Tests.ViewLayout
 
             {
                 var testViewLayoutObj = new AllUpdateTimingAutoViewLayoutObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class AllUpdateTimingAutoViewLayoutObj)!");
 
             {
                 var testViewLayoutObj = new OnlyAlwaysUpdateAutoViewLayoutObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, keyAndValues));
-                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewLayoutObj, layoutValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewLayoutObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewLayoutObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(class OnlyAlwaysUpdateAutoViewLayoutObj)!");
         }
@@ -523,37 +554,37 @@ namespace Hinode.MVC.Tests.ViewLayout
 
             {
                 var testViewObj = new AllUpdateTimingViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(Both AyOnlyModel and Always)!");
 
             {
                 var testViewObj = new AllUpdateTimingViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    { colorLayoutName, Color.blue },
-                    //{ alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    .SetRaw(colorLayoutName, Color.blue)
+                    //.SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(Only AyOnlyModel)!");
 
             {
                 var testViewObj = new AllUpdateTimingViewObj();
-                var keyAndValues = new Dictionary<string, object>() {
-                    //{ colorLayoutName, Color.blue },
-                    { alywaysUpdateLayoutName, 123 },
-                };
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, keyAndValues));
-                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, keyAndValues));
-                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, keyAndValues));
+                var layoutValues = new ViewLayoutState()
+                    //.SetRaw(colorLayoutName, Color.blue)
+                    .SetRaw(alywaysUpdateLayoutName, 123)
+                ;
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.All, testViewObj, layoutValues));
+                Assert.IsFalse(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.AtOnlyModel, testViewObj, layoutValues));
+                Assert.IsTrue(viewLayouter.DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming.Always, testViewObj, layoutValues));
             }
             Debug.Log($"Success to DoMatchAnyLayout(Only Always)!");
 

@@ -107,50 +107,6 @@ namespace Hinode.MVC.Tests.LayoutOverwriter
         }
 
         [Test]
-        public void MergeMatchedLayoutsPasses()
-        {
-            var styleID = ".styleID";
-            var testViewLayoutName = "test";
-            var viewID = "viewID";
-            var viewInstanceCreator = new DefaultViewInstanceCreator(
-                (typeof(TestViewObject), new EmptyModelViewParamBinder())
-            );
-            var binder = new ModelViewBinder("*", viewInstanceCreator,
-                new ModelViewBinder.BindInfo(viewID, typeof(TestViewObject))
-                    .AddViewLayoutValue(BasicViewLayoutName.depth, 100)
-                    .AddViewLayoutValue(testViewLayoutName, 222)
-            );
-
-            var model = new Model() { Name = "Model" }
-                .AddStylingID(styleID);
-            var bindInstance = binder.CreateBindInstance(model, null);
-
-            var viewLayouter = new ViewLayouter()
-                .AddBasicViewLayouter()
-                .AddKeywords((testViewLayoutName, new TestViewLayoutAccessor()));
-
-            var layoutOverrwirter = new ViewLayoutOverwriter()
-                .Add(new ViewLayoutSelector("*", viewID)
-                    , new ViewLayoutValueDictionary()
-                        .AddValue(testViewLayoutName, -222)
-            );
-
-            var targetViewObj = bindInstance.QueryViews(viewID).First();
-            var layoutValueDict = layoutOverrwirter.MergeMatchedLayouts(targetViewObj);
-
-            AssertionUtils.AssertEnumerableByUnordered(
-                new Dictionary<string, object>() {
-                    { BasicViewLayoutName.depth.ToString(), 100 },
-                    { testViewLayoutName, -222 },
-                }
-                , layoutValueDict
-                , ""
-            );
-
-            viewLayouter.SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming.All, targetViewObj, layoutValueDict);
-        }
-
-        [Test]
         public void BinderInstanceApplyViewLayoutPasses()
         {
             var styleID = ".styleID";

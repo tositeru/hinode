@@ -90,6 +90,34 @@ namespace Hinode.MVC
             return accessor.IsVaildValue(value);
         }
 
+        public void Set(string keyword, object value, IViewObject viewObj)
+        {
+            if (viewObj == null) return;
+
+            bool doUpdate = false;
+            if (IsVaildViewObject(keyword, viewObj))
+            {
+                doUpdate = true;
+                Set(keyword, value, viewObj as IViewLayoutable);
+            }
+            if(viewObj.ContainsAutoViewLayoutObjects())
+            {
+                foreach (var autoViewObj in viewObj.GetAutoViewLayoutObjects()
+                    .Where(_a => IsVaildViewObject(keyword, _a)))
+                {
+                    Set(keyword, value, autoViewObj);
+                    doUpdate = true;
+                }
+            }
+
+            if (doUpdate)
+            {
+                Logger.Log(Logger.Priority.Low, () => {
+                    return $"ViewLayouter#Set(IViewObject) -> {viewObj}: layout=[{keyword}={value}, layoutType={_layoutAccessors[keyword].GetType()}]";
+                });
+            }
+        }
+
         public void Set(string keyword, object value, IViewLayoutable viewLayoutObj)
         {
             var accessor = _layoutAccessors[keyword];
@@ -109,21 +137,21 @@ namespace Hinode.MVC
         /// <param name="target"></param>
         /// <param name="keyAndValues"></param>
         /// <returns></returns>
-        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, ViewLayoutState layoutState)
         {
-            var getKeyAndValues = GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues);
+            var getKeyAndValues = GetMatchKeyAndValues(updateTimingFlags, target, layoutState);
             if(target.ContainsAutoViewLayoutObjects())
             {
                 var autoViewLayouts = target.UseBinderInstance?.AutoLayoutViewObjects[target];
                 getKeyAndValues = getKeyAndValues.Concat(
-                    autoViewLayouts.SelectMany(_o => GetMatchKeyAndValues(updateTimingFlags, _o, keyAndValues))
+                    autoViewLayouts.SelectMany(_o => GetMatchKeyAndValues(updateTimingFlags, _o, layoutState))
                 );
             }
             return getKeyAndValues.Any();
         }
 
-        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IAutoViewLayoutObject target, IReadOnlyDictionary<string, object> keyAndValues)
-            => GetMatchKeyAndValues(updateTimingFlags, target, keyAndValues).Any();
+        public bool DoMatchAnyLayout(ViewLayoutAccessorUpdateTiming updateTimingFlags, IAutoViewLayoutObject target, ViewLayoutState layoutState)
+            => GetMatchKeyAndValues(updateTimingFlags, target, layoutState).Any();
 
         /// <summary>
         /// 一致しているLayoutを設定します。
@@ -134,12 +162,12 @@ namespace Hinode.MVC
         /// <param name="updateTimingFlags"></param>
         /// <param name="target"></param>
         /// <param name="keyAndValues"></param>
-        public void SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, IReadOnlyDictionary<string, object> keyAndValues)
+        public void SetAllMatchLayouts(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewObject target, ViewLayoutState viewLayoutState)
         {
-            foreach (var (targetObj, value, layoutAccessor) in keyAndValues
-                .Where(_t => ContainsKeyword(_t.Key))
+            foreach (var (targetObj, value, layoutAccessor) in viewLayoutState
+                .Where(_t => ContainsKeyword(_t.key))
                 .Select(_t => {
-                    var accessor = Accessors[_t.Key];
+                    var accessor = Accessors[_t.key];
 
                     object targetObj = accessor.IsVaildViewLayoutType(target.GetType())
                         ? target
@@ -148,7 +176,7 @@ namespace Hinode.MVC
                                 .FirstOrDefault(_a => accessor.IsVaildViewLayoutType(_a.GetType()))
                             : null);
                     //targetObjがnullならループから弾くようにしてください
-                    return (targetObj, value: _t.Value, layoutAccessor: accessor);
+                    return (targetObj, value: _t.value, layoutAccessor: accessor);
                 })
                 .Where(_t => _t.targetObj != null
                         && _t.layoutAccessor.IsVaildValue(_t.value)
@@ -159,19 +187,19 @@ namespace Hinode.MVC
             }
         }
 
-        IEnumerable<KeyValuePair<string, object>> GetMatchKeyAndValues(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewLayoutable target, IReadOnlyDictionary<string, object> keyAndValues)
-            => keyAndValues.Where(_t => {
-                if (!ContainsKeyword(_t.Key)) return false;
-                var layout = Accessors[_t.Key];
+        IEnumerable<(string key, object value)> GetMatchKeyAndValues(ViewLayoutAccessorUpdateTiming updateTimingFlags, IViewLayoutable target, ViewLayoutState layoutState)
+            => layoutState.Where(_t => {
+                if (!ContainsKeyword(_t.key)) return false;
+                var layout = Accessors[_t.key];
                 return layout.IsVaildViewLayoutType(target.GetType())
-                    && layout.IsVaildValue(_t.Value)
+                    && layout.IsVaildValue(_t.value)
                     && 0 != (updateTimingFlags & layout.UpdateTiming);
             });
 
         #region AutoViewObject
-        public void AddAutoCreateViewObject(IAutoViewObjectCreator creator, params string[] keywords)
+        public ViewLayouter AddAutoCreateViewObject(IAutoViewObjectCreator creator, params string[] keywords)
             => AddAutoCreateViewObject(creator, keywords.AsEnumerable());
-        public void AddAutoCreateViewObject(IAutoViewObjectCreator creator, IEnumerable<string> keywords)
+        public ViewLayouter AddAutoCreateViewObject(IAutoViewObjectCreator creator, IEnumerable<string> keywords)
         {
             Assert.IsNotNull(creator);
             var supportedLayoutTypes = creator.GetSupportedIViewLayouts();
@@ -182,6 +210,7 @@ namespace Hinode.MVC
                 Assert.IsTrue(supportedLayoutTypes.Contains(viewLayout), $"Not support IViewLayout Type({viewLayout}) for AutoViewObjectCreator{creator.GetType()}... keyword={key}");
                 _autoCreatorDict.Add(key, creator);
             }
+            return this;
         }
 
         public IEnumerable<IAutoViewObjectCreator> GetAutoViewObjectCreator(IViewObject viewObj, params string[] keywords)

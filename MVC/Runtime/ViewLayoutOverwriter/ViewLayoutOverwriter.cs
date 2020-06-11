@@ -45,24 +45,6 @@ namespace Hinode.MVC
                 ;
         }
 
-        public Dictionary<string, object> MergeMatchedLayouts(IViewObject viewObject)
-        {
-            Assert.IsTrue(viewObject.DoBinding());
-
-            var matchLayoutValues = MatchLayoutValueDicts(viewObject.UseModel, viewObject);
-            var useBindInfo = viewObject.UseBindInfo;
-
-            var result = new Dictionary<string, object>();
-            foreach (var t in matchLayoutValues
-                .SelectMany(_dict => _dict.Layouts)
-                .Concat(useBindInfo.ViewLayoutValues.Layouts)
-                .Where(_t => !result.ContainsKey(_t.Key)))
-            {
-                result.Add(t.Key, t.Value);
-            }
-            return result.Count > 0 ? result : null;
-        }
-
         #region System.IDisposable interface
         public void Dispose()
         {

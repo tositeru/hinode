@@ -16,6 +16,12 @@ namespace Hinode.MVC.Tests
     /// </summary>
     public class TestModelViewBinder
     {
+        [SetUp]
+        public void SetUp()
+        {
+            Logger.PriorityLevel = Logger.Priority.Debug;
+        }
+
         class ModelClass : Model
         {
             public int Value1 { get; set; }
@@ -429,7 +435,6 @@ namespace Hinode.MVC.Tests
             binderMap.UseViewLayouter = new ViewLayouter()
                 .AddKeywords(("testLayout", new TestViewLayoutAccessor()));
 
-
             var binderInstanceMap = binderMap.CreateBinderInstaceMap();
             binderInstanceMap.Add(model);
 
@@ -455,5 +460,164 @@ namespace Hinode.MVC.Tests
             }
             Debug.Log($"Success at ViewLayoutAccessorUpdateTiming.AtOnlyModel!(Call OnViewLayout)");
         }
+
+        [Test]
+        public void InitialViewLayoutStatePasses()
+        {
+            var styleID = ".styleID";
+            var layoutName1 = "testLayout";
+            var layoutName2 = "test2";
+
+            var layoutName1Value = 5;
+            var layoutName2Value = "testText";
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(OnViewLayoutViewObj), new EmptyModelViewParamBinder())
+            );
+            var binder = new ModelViewBinder("*", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(OnViewLayoutViewObj))
+                    .AddViewLayoutValue(layoutName1, layoutName1Value)
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, binder);
+            binderMap.UseViewLayouter = new ViewLayouter()
+                .AddKeywords(("testLayout", new TestViewLayoutAccessor()));
+            binderMap.UseViewLayoutOverwriter = new ViewLayoutOverwriter()
+                .Add(new ViewLayoutSelector(styleID, ""), new ViewLayoutValueDictionary().AddValue(layoutName2, layoutName2Value));
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f }
+                .AddStylingID(styleID);
+            binderInstanceMap.Add(model);
+
+
+            var binderInstance = binderInstanceMap[model];
+            var viewObject = binderInstance.ViewObjects.First();
+            Assert.AreEqual(1, binderInstance.ViewLayoutStateDict.Count);
+            Assert.IsTrue(binderInstance.ViewLayoutStateDict.ContainsKey(viewObject));
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                new (string key, object value)[] {
+                    (layoutName1, layoutName1Value),
+                    (layoutName2, layoutName2Value)
+                }
+                , viewObject.GetViewLayoutState()
+                , "");
+        }
+
+        [Test]
+        public void ViewLayoutStateOnChangedValuePasses()
+        {
+            var styleID = ".styleID";
+            var layoutName1 = "testLayout";
+            var layoutName2 = "test2";
+
+            var layoutName1Value = 5;
+            var layoutName2Value = "testText";
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(OnViewLayoutViewObj), new EmptyModelViewParamBinder())
+            );
+            var binder = new ModelViewBinder("*", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(OnViewLayoutViewObj))
+                    .AddViewLayoutValue(layoutName1, layoutName1Value)
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, binder);
+            binderMap.UseViewLayouter = new ViewLayouter()
+                .AddKeywords((layoutName1, new TestViewLayoutAccessor()));
+            binderMap.UseViewLayoutOverwriter = new ViewLayoutOverwriter()
+                .Add(new ViewLayoutSelector(styleID, ""), new ViewLayoutValueDictionary()
+                    .AddValue(layoutName2, layoutName2Value));
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f }
+                .AddStylingID(styleID);
+            binderInstanceMap.Add(model);
+
+
+            var binderInstance = binderInstanceMap[model];
+            Assert.IsNotNull(binderInstance.UseInstanceMap);
+            Assert.IsNotNull(binderInstance.UseInstanceMap.UseViewLayouter);
+
+            var viewObject = binderInstance.ViewObjects.OfType<OnViewLayoutViewObj>().First();
+            viewObject.GetViewLayoutState().SetRaw(layoutName1, 100);
+
+            Assert.AreEqual(100, viewObject.OnViewLayoutValue, $"Call ViewLayoutState#OnChangedValue Automatic when Change Value in ViewLayoutState of IViewObject if BinderInstance Contains BinderInstanceMap and ViewLayouter.");
+        }
+
+        class OnViewLayoutViewObjParamBinder : IModelViewParamBinder
+        {
+            public string LayoutKey { get; set; }
+            public object LayoutValue { get; set; }
+
+            public void Update(Model model, IViewObject viewObj)
+            {
+                viewObj.GetViewLayoutState()?.SetRaw(LayoutKey, LayoutValue); // <- Test Point
+            }
+        }
+
+        public class TestAutoViewLayoutObject : EmptyAutoViewLayoutObject
+            , ITestViewLayout
+        {
+            #region ITestViewLayout interface
+            public int TestViewLayout { get; set; }
+            #endregion
+
+            public class Creator : ViewLayouter.IAutoViewObjectCreator
+            {
+                public override IEnumerable<Type> GetSupportedIViewLayouts()
+                {
+                    return new System.Type[] { typeof(ITestViewLayout) };
+                }
+
+                protected override IAutoViewLayoutObject CreateImpl(IViewObject viewObj)
+                {
+                    return new TestAutoViewLayoutObject();
+                }
+            }
+        }
+        [Test]
+        public void ViewLayoutStateOnChangedValueInIModelViewParamBinderPasses()
+        {
+            var styleID = ".styleID";
+            var layoutName1 = "testLayout";
+
+            var layoutName1Value = 5;
+            var paramBinder = new OnViewLayoutViewObjParamBinder() {
+                LayoutKey = layoutName1,
+                LayoutValue = 100
+            };
+            var viewInstanceCreator = new DefaultViewInstanceCreator(
+                (typeof(OnViewLayoutViewObj), paramBinder)
+            );
+            var binder = new ModelViewBinder("*", viewInstanceCreator,
+                new ModelViewBinder.BindInfo(typeof(OnViewLayoutViewObj))
+                    .AddViewLayoutValue(layoutName1, layoutName1Value)
+            );
+            var binderMap = new ModelViewBinderMap(viewInstanceCreator, binder)
+            {
+                UseViewLayouter = new ViewLayouter()
+                    .AddKeywords((layoutName1, new TestViewLayoutAccessor()))
+                    //.AddAutoCreateViewObject(new TestAutoViewLayoutObject.Creator(), layoutName1)
+            };
+
+            var binderInstanceMap = binderMap.CreateBinderInstaceMap();
+
+            var model = new ModelClass { Name = "apple", Value1 = 111, Value2 = 1.234f }
+                .AddStylingID(styleID);
+            Assert.DoesNotThrow(() => {
+                binderInstanceMap.Add(model); // <- Test Point
+            });
+
+            var binderInstance = binderInstanceMap[model];
+            Assert.IsNotNull(binderInstance.UseInstanceMap);
+            Assert.IsNotNull(binderInstance.UseInstanceMap.UseViewLayouter);
+
+            var viewObject = binderInstance.ViewObjects.OfType<OnViewLayoutViewObj>().First();
+
+            var errorMessage = $"Call ViewLayoutState#OnChangedValue Automatic when Change Value in ViewLayoutState of IViewObject if BinderInstance Contains BinderInstanceMap and ViewLayouter.";
+            Assert.AreEqual(paramBinder.LayoutValue, viewObject.TestViewLayout, errorMessage);
+            Assert.AreEqual(100, viewObject.OnViewLayoutValue, errorMessage);
+        }
+
     }
 }

@@ -300,8 +300,8 @@ namespace Hinode.MVC
                             var bindInst = BinderMap.CreateBindInstance(m, this);
                             if (bindInst != null)
                             {
-                                bindInst.UpdateViewObjects();
                                 _bindInstanceDict.Add(m, bindInst);
+                                bindInst.UpdateViewObjects();
 
                                 Logger.Log(Logger.Priority.Debug, () => $"ModelViewBinderInstanceMap#Add: Add model({m})!! queryPath={bindInst.Binder.Query}");
 

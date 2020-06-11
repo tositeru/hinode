@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Hinode.MVC
 {
-    public interface IReadOnlyViewLayoutValueDictionary
+    public interface IReadOnlyViewLayoutValueDictionary : IEnumerable<KeyValuePair<string, object>>
     {
         int Count { get; }
         IReadOnlyDictionary<string, object> Layouts { get; }
@@ -19,7 +20,9 @@ namespace Hinode.MVC
     /// <summary>
     /// <seealso cref="ViewLayoutValueDictionary"/>
     /// </summary>
-    public class ViewLayoutValueDictionary : IReadOnlyViewLayoutValueDictionary, System.IDisposable
+    public class ViewLayoutValueDictionary : IReadOnlyViewLayoutValueDictionary
+        , System.IDisposable
+        , IEnumerable<KeyValuePair<string, object>>
     {
         Dictionary<string, object> _dict = new Dictionary<string, object>();
 
@@ -76,5 +79,33 @@ namespace Hinode.MVC
             Clear();
         }
         #endregion
+
+        #region IEnumerable<KeyValuePair<string, object>> interface
+        public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
+            => _dict.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator()
+            => GetEnumerator();
+        #endregion
+    }
+
+    public static partial class ViewLayoutValueDictionaryExtensions
+    {
+        public static ViewLayoutValueDictionary AddKeyAndValues(this ViewLayoutValueDictionary target, params (System.Enum key, object value)[] keyAndValues)
+            => target.AddKeyAndValues(keyAndValues.AsEnumerable().Select(_t => (key: _t.key.ToString(), _t.value)));
+        public static ViewLayoutValueDictionary AddKeyAndValues(this ViewLayoutValueDictionary target, IEnumerable<(System.Enum key, object value)> keyAndValues)
+            => target.AddKeyAndValues(keyAndValues.Select(_t => (key: _t.key.ToString(), _t.value)));
+
+        public static ViewLayoutValueDictionary AddKeyAndValues(this ViewLayoutValueDictionary target, params (string key, object value)[] keyAndValues)
+            => target.AddKeyAndValues(keyAndValues.AsEnumerable());
+
+        public static ViewLayoutValueDictionary AddKeyAndValues(this ViewLayoutValueDictionary target, IEnumerable<(string key, object value)> keyAndValues)
+        {
+            foreach (var (key, value) in keyAndValues)
+            {
+                target.AddValue(key, value);
+            }
+            return target;
+        }
     }
 }
