@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Hinode
@@ -25,25 +26,51 @@ namespace Hinode
         /// </summary>
         public static Priority PriorityLevel { get; set; } = Priority.High;
 
-        public static void Log(Priority priority, System.Func<string> getLog)
+        static HashSet<string> _selectors = new HashSet<string>();
+        public static IEnumerable<string> Selectors { get => _selectors; }
+
+        public static bool IsMatchSelectors(params string[] selectors)
+            => !Selectors.Any() || selectors.All(_s => Selectors.Contains(_s));
+
+        public static void AddSelector(string selector)
+        {
+            if(!_selectors.Contains(selector))
+                _selectors.Add(selector);
+        }
+
+        public static void RemoveSelector(string selector)
+        {
+            _selectors.Remove(selector);
+        }
+
+        public static void Log(Priority priority, System.Func<string> getLog, params string[] selectors)
         {
             if (PriorityLevel < priority)
+                return;
+
+            if(!IsMatchSelectors(selectors))
                 return;
 
             Debug.Log(GetPrefix(priority) + getLog());
         }
 
-        public static void LogWarning(Priority priority, System.Func<string> getLog)
+        public static void LogWarning(Priority priority, System.Func<string> getLog, params string[] selectors)
         {
             if (PriorityLevel < priority)
+                return;
+
+            if (!IsMatchSelectors(selectors))
                 return;
 
             Debug.LogWarning("Warning!! " + GetPrefix(priority) + getLog());
         }
 
-        public static void LogError(Priority priority, System.Func<string> getLog)
+        public static void LogError(Priority priority, System.Func<string> getLog, params string[] selectors)
         {
             if (PriorityLevel < priority)
+                return;
+
+            if (!IsMatchSelectors(selectors))
                 return;
 
             Debug.LogError("Error!! " + GetPrefix(priority) + getLog());

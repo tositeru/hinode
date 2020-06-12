@@ -42,21 +42,7 @@ namespace Hinode.MVC
             set
             {
                 transform.SetParent(value);
-                if(transform is RectTransform)
-                {
-                    //TODO UnityEngine.UIのLayout Systemの都合上レイアウト計算が一フレーム遅れるケースがあるので、自前のLayout Systemを作る
-                    //var R = transform as RectTransform;
-                    //var rootR = R.GetParentEnumerable().OfType<RectTransform>().LastOrDefault();
-                    //if(rootR != null)
-                    //{
-                    //    LayoutRebuilder.ForceRebuildLayoutImmediate(rootR);
-                    //}
-                    //else
-                    //{
-                    //    LayoutRebuilder.ForceRebuildLayoutImmediate(R);
-                    //    LayoutRebuilder.ForceRebuildLayoutImmediate(value as RectTransform);
-                    //}
-                }
+                //TODO UnityEngine.UIのLayout Systemの都合上レイアウト計算が一フレーム遅れるケースがあるので、自前のLayout Systemを作る
             }
         }
         public Transform SelfTransform { get => transform; }

@@ -86,9 +86,8 @@ namespace Hinode.MVC
 
         static bool ContainsSibilingOrder(IViewObject target)
         {
-            //TODO Support ViewLayoutOverwriter
             return target.UseModel is ISiblingOrder
-                || (target.UseBindInfo?.ViewLayoutValues.Layouts.OfType<ISiblingOrderViewLayout>().Any() ?? false);
+                || (target.GetViewLayoutState()?.ContainsKey(BasicViewLayoutName.siblingOrder) ?? false);
         }
     }
 
@@ -185,9 +184,9 @@ namespace Hinode.MVC
 
         public static uint GetViewObjSiblingOrder(this IViewObject target)
         {
-            if (target.UseBindInfo != null && target.UseBindInfo.HasViewLayoutValue(BasicViewLayoutName.siblingOrder))
+            if (target.GetViewLayoutState()?.ContainsKey(BasicViewLayoutName.siblingOrder) ?? false)
             {
-                var value = target.UseBindInfo.GetViewLayoutValue(BasicViewLayoutName.siblingOrder);
+                var value = target.GetViewLayoutState().GetValue(BasicViewLayoutName.siblingOrder);
                 if (value is uint) return (uint)value;
                 if (value is short) return (uint)(short)value;
                 if (value is int) return (uint)(int)value;
