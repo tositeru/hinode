@@ -235,7 +235,7 @@ namespace Hinode.Editors.MVC.ViewInstanceCreatorSettings
                 {
                     var instanceTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.ExportedTypes)
-                        .Where(_t => _t.HasInterface<IViewObject>() && _t.IsSubclassOf(typeof(MonoBehaviour)))
+                        .Where(_t => _t.ContainsInterface<IViewObject>() && _t.IsSubclassOf(typeof(MonoBehaviour)))
                         .Select(_t => _t.FullName);
                     return instanceTypes.ToArray();
                 }
@@ -258,7 +258,7 @@ namespace Hinode.Editors.MVC.ViewInstanceCreatorSettings
                 {
                     var instanceTypes = System.AppDomain.CurrentDomain.GetAssemblies()
                         .SelectMany(_asm => _asm.ExportedTypes)
-                        .Where(_t => _t.HasInterface<IModelViewParamBinder>())
+                        .Where(_t => _t.ContainsInterface<IModelViewParamBinder>())
                         .Select(_t => _t.FullName);
                     if (CurrentInstanceType == null)
                     {

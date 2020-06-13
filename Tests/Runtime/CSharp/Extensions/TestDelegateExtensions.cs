@@ -6,11 +6,17 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.CSharp.Extensions
 {
+    /// <summary>
+    /// <seealso cref="DelegateExtensions"/>
+    /// </summary>
     public class TestDelegateExtensions : TestBase
     {
         delegate void TestDelegate();
 
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="DelegateExtensions.ClearInvocations(System.Delegate)"/>
+        /// <seealso cref="DelegateExtensions.ClearInvocations{T}(T)"/>
+        /// </summary>
         [Test]
         public void ClearInvocationsPasses()
         {

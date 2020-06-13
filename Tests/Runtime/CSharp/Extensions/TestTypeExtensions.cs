@@ -8,6 +8,9 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.CSharp.Extensions
 {
+    /// <summary>
+    /// <seealso cref="TypeExtensions"/>
+    /// </summary>
     public class TestTypeExtensions
     {
         interface IsSameOrInheritedTypePassesInterface { }
@@ -18,6 +21,11 @@ namespace Hinode.Tests.CSharp.Extensions
         { }
         class IsSameOrInheritedTypePassesOtherClass { }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.IsSameOrInheritedType(System.Type, System.Type)"/>
+        /// <seealso cref="TypeExtensions.IsSameOrInheritedType{T}(System.Type)"/>
+        /// </summary>
+        [Test]
         public void IsSameOrInheritedTypePasses()
         {
             Assert.IsTrue(typeof(IsSameOrInheritedTypePassesClass).IsSameOrInheritedType<IsSameOrInheritedTypePassesClass>());
@@ -46,14 +54,18 @@ namespace Hinode.Tests.CSharp.Extensions
             public void Func() { }
         }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.ContainsInterface(System.Type, System.Type)"/>
+        /// <seealso cref="TypeExtensions.ContainsInterface{InterfaceType}(System.Type)"/>
+        /// </summary>
         [Test]
-        public void HasInterfacePasses()
+        public void ContainsInterfacePasses()
         {
-            Assert.IsTrue(typeof(HasInterfacePassesClass).HasInterface(typeof(HasInterfacePassesInterface)));
-            Assert.IsTrue(typeof(HasInterfacePassesClass).HasInterface<HasInterfacePassesInterface>());
+            Assert.IsTrue(typeof(HasInterfacePassesClass).ContainsInterface(typeof(HasInterfacePassesInterface)));
+            Assert.IsTrue(typeof(HasInterfacePassesClass).ContainsInterface<HasInterfacePassesInterface>());
 
-            Assert.IsFalse(typeof(HasInterfacePassesClass).HasInterface<HasInterfacePassesInterface2>());
-            Assert.IsFalse(typeof(HasInterfacePassesClass).HasInterface<TestTypeExtensions>());
+            Assert.IsFalse(typeof(HasInterfacePassesClass).ContainsInterface<HasInterfacePassesInterface2>());
+            Assert.IsFalse(typeof(HasInterfacePassesClass).ContainsInterface<TestTypeExtensions>());
         }
 
         class GetFieldInHierarchyBaseClass : ScriptableObject
@@ -69,7 +81,9 @@ namespace Hinode.Tests.CSharp.Extensions
 #pragma warning restore CS0649, CS0414
         }
 
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="TypeExtensions.GetFieldInHierarchy(System.Type, string, BindingFlags)"/>
+        /// </summary>
         [Test]
         public void GetFieldInHierarchyPasses()
         {
@@ -80,6 +94,9 @@ namespace Hinode.Tests.CSharp.Extensions
 
         class InheritedList : List<int> {}
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.IsArrayOrList(System.Type)"/>
+        /// </summary>
         [Test]
         public void IsArrayOrListPasses()
         {
@@ -95,6 +112,9 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.IsFalse(typeof(Dictionary<string, int>).IsArrayOrList());
         }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.GetArrayElementType(System.Type)"/>
+        /// </summary>
         [Test]
         public void GetArrayElementTypePasses()
         {
@@ -110,6 +130,9 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => typeof(Dictionary<string, int>).GetArrayElementType());
         }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.EqualGenericTypeDefinition(System.Type, System.Type)"/>
+        /// </summary>
         [Test]
         public void EqualGenericTypeDefinitionPasses()
         {
@@ -126,10 +149,11 @@ namespace Hinode.Tests.CSharp.Extensions
         }
 
         /// <summary>
-        /// 数値型かどうか確認するための拡張メソッドのテスト
+        /// 整数型かどうか確認するための拡張メソッドのテスト
+        /// <seealso cref="TypeExtensions.IsInteger(System.Type)"/>
         /// </summary>
-        [Test, Description("数値型かどうか確認するための拡張メソッドのテスト")]
-        public void IsNumericPasses()
+        [Test, Description("整数型かどうか確認するための拡張メソッドのテスト")]
+        public void IsIntegerPasses()
         {
             Assert.IsTrue(typeof(byte).IsInteger());
             Assert.IsTrue(typeof(sbyte).IsInteger());
@@ -143,7 +167,15 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.IsFalse(typeof(float).IsInteger());
             Assert.IsFalse(typeof(double).IsInteger());
             Assert.IsFalse(typeof(decimal).IsInteger());
+        }
 
+        /// <summary>
+        /// 浮動小数点型かどうか確認するための拡張メソッドのテスト
+        /// <seealso cref="TypeExtensions.IsFloat(System.Type)"/>
+        /// </summary>
+        [Test, Description("浮動小数点型かどうか確認するための拡張メソッドのテスト")]
+        public void IsFloatPasses()
+        {
             Assert.IsFalse(typeof(byte).IsFloat());
             Assert.IsFalse(typeof(sbyte).IsFloat());
             Assert.IsFalse(typeof(short).IsFloat());
@@ -156,7 +188,15 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.IsTrue(typeof(float).IsFloat());
             Assert.IsTrue(typeof(double).IsFloat());
             Assert.IsTrue(typeof(decimal).IsFloat());
+        }
 
+        /// <summary>
+        /// 数値型かどうか確認するための拡張メソッドのテスト
+        /// <seealso cref="TypeExtensions.IsNumeric(System.Type)"/>
+        /// </summary>
+        [Test, Description("数値型かどうか確認するための拡張メソッドのテスト")]
+        public void IsNumericPasses()
+        {
             Assert.IsTrue(typeof(byte).IsNumeric());
             Assert.IsTrue(typeof(sbyte).IsNumeric());
             Assert.IsTrue(typeof(short).IsNumeric());
@@ -174,6 +214,9 @@ namespace Hinode.Tests.CSharp.Extensions
         struct IsStructPassesStruct { }
         enum IsStructPassesEnum { }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.IsStruct(System.Type)"/>
+        /// </summary>
         [Test, Description("struct型かどうか確認するための拡張メソッドのテスト")]
         public void IsStructPasses()
         {
@@ -193,6 +236,9 @@ namespace Hinode.Tests.CSharp.Extensions
             A, B, C
         }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.ParseToNumber(System.Type, string)"/>
+        /// </summary>
         [Test, Description("数値を表す文字列を型に合わせた値に変換するメソッドのテスト")]
         public void ParseToNumberPasses()
         {
@@ -215,6 +261,9 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.Throws<System.NotSupportedException>(() => { typeof(ParseToNumberPassesClass).ParseToNumber("1"); });
         }
 
+        /// <summary>
+        /// <seealso cref="TypeExtensions.TryParseToNumber(System.Type, string, out object)"/>
+        /// </summary>
         [Test, Description("数値を表す文字列を型に合わせた値に変換するメソッドのテスト")]
         public void TryParseToNumber()
         {
@@ -250,6 +299,27 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.IsNull(_str);
             Assert.IsFalse(typeof(ParseToNumberPassesClass).TryParseToNumber("1", out var _class));
             Assert.IsNull(_class);
+        }
+
+        class ClassHierarchyBaseClass { }
+        class ClassHierarchyChildClass : ClassHierarchyBaseClass { }
+        class ClassHierarchyChild2Class : ClassHierarchyChildClass { }
+
+        /// <summary>
+        /// <seealso cref="TypeExtensions.GetClassHierarchyEnumerable(System.Type)"/>
+        /// </summary>
+        [Test]
+        public void GetClassHierarchyEnumerablePasses()
+        {
+            AssertionUtils.AssertEnumerable(
+                new System.Type[] {
+                    typeof(ClassHierarchyChild2Class),
+                    typeof(ClassHierarchyChildClass),
+                    typeof(ClassHierarchyBaseClass),
+                }
+                , typeof(ClassHierarchyChild2Class).GetClassHierarchyEnumerable()
+                , ""
+            );
         }
     }
 }

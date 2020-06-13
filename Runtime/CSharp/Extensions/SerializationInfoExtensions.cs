@@ -5,8 +5,17 @@ using UnityEngine;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="SerializationInfo"/>
+    /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestSerializationInfoExtensions"/>
+    /// </summary>
     public static class SerializationInfoExtensions
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestSerializationInfoExtensions.GetEnumerablePasses()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static IEnumerable<SerializationEntry> GetEnumerable(this SerializationInfo t)
         {
             return new SerializationEntryEnumerable(t);

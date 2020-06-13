@@ -6,8 +6,15 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.CSharp.Extensions
 {
+    /// <summary>
+    /// <seealso cref="DictionaryExtensions"/>
+    /// </summary>
     public class TestDictionaryExtensions
     {
+        /// <summary>
+        /// <seealso cref="DictionaryExtensions.Merge{TKey, TValue}(Dictionary{TKey, TValue}, bool, IEnumerable{KeyValuePair{TKey, TValue}}[])"/>
+        /// <seealso cref="DictionaryExtensions.Merge{TKey, TValue}(Dictionary{TKey, TValue}, bool, IEnumerable{KeyValuePair{TKey, TValue}}[])"/>
+        /// </summary>
         [Test]
         public void NotOverwriteMergePasses()
         {
@@ -38,6 +45,10 @@ namespace Hinode.Tests.CSharp.Extensions
                 , dict, "Failed Merge by no overwrite mode...");
         }
 
+        /// <summary>
+        /// <seealso cref="DictionaryExtensions.Merge{TKey, TValue}(Dictionary{TKey, TValue}, bool, IEnumerable{KeyValuePair{TKey, TValue}}[])"/>
+        /// <seealso cref="DictionaryExtensions.Merge{TKey, TValue}(Dictionary{TKey, TValue}, bool, IEnumerable{KeyValuePair{TKey, TValue}}[])"/>
+        /// </summary>
         [Test]
         public void OverwriteMergePasses()
         {

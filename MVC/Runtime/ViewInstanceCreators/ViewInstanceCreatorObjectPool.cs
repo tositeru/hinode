@@ -72,7 +72,7 @@ namespace Hinode.MVC
             public ViewObjectPool(ViewInstanceCreatorObjectPool pool, System.Type type)
             {
                 Assert.IsNotNull(pool);
-                Assert.IsTrue(type.HasInterface<IViewObject>());
+                Assert.IsTrue(type.ContainsInterface<IViewObject>());
 
                 ParentPool = pool;
                 ViewType = type;

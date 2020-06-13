@@ -31,7 +31,7 @@ namespace Hinode.MVC
             public override IEnumerable<System.Type> GetSupportedIViewLayouts()
             {
                 return typeof(RectTransformAutoViewLayoutObject).GetInterfaces()
-                    .Where(_t => _t.HasInterface<IViewLayout>());
+                    .Where(_t => _t.ContainsInterface<IViewLayout>());
             }
         }
 

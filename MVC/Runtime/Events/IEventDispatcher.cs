@@ -147,7 +147,7 @@ namespace Hinode.MVC
                     }
                 }
 
-                if(controllerInfo.IsInterruptMode)
+                if (controllerInfo.IsInterruptMode)
                 {
                     var binderInstance = binderInstanceMap[model];
                     if (binderInstance.HasEventInterruptedData)
@@ -162,7 +162,7 @@ namespace Hinode.MVC
             // 別ループで割り込み処理を行うようにしています。
             if (binderInstanceMap.UseEventInterrupter != null)
             {
-                foreach(var interruptedData in interruptedDataList)
+                foreach (var interruptedData in interruptedDataList)
                 {
                     var doSendImmediate = binderInstanceMap.UseEventInterrupter.Interrupt(binderInstanceMap, interruptedData);
                     if (doSendImmediate)
@@ -234,7 +234,7 @@ namespace Hinode.MVC
 
             public Info(string keyword, System.Type eventHandlerType)
             {
-                Assert.IsTrue(eventHandlerType.HasInterface<IEventHandler>());
+                Assert.IsTrue(eventHandlerType.ContainsInterface<IEventHandler>());
 
                 Keyword = keyword;
                 EnvetHandlerType = eventHandlerType;

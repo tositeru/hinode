@@ -29,13 +29,13 @@ namespace Hinode.MVC
             if (IsFooking)
             {
                 return recievers
-                    .Where(_r => _r.GetType().HasInterface(FookingRecieverType))
+                    .Where(_r => _r.GetType().ContainsInterface(FookingRecieverType))
                     .Select(_r => (eventHandlerType: FookingRecieverType, eventHandler: _r, eventData: FookEventData));
             }
             else
             {
                 return recievers
-                    .Where(_r => _r.GetType().HasInterface(eventHandlerType))
+                    .Where(_r => _r.GetType().ContainsInterface(eventHandlerType))
                     .Select(_r => (eventHandlerType: eventHandlerType, eventHandler: _r, eventData: eventData));
             }
         }
