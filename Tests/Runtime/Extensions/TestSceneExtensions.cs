@@ -7,11 +7,16 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.Extensions
 {
+    /// <summary>
+    /// <seealso cref="SceneExtensions"/>
+    /// </summary>
     public class TestSceneExtensions : TestBase
     {
-        // A Test behaves as an ordinary method
-        [Test]
-        public void ObjectEnumerablePasses()
+        /// <summary>
+        /// <seealso cref="SceneExtensions.GetGameObjectEnumerable(Scene)"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GetGameObjectEnumerablePasses()
         {
             var scene = SceneManager.GetActiveScene();
             var corrects = new List<GameObject>();
@@ -42,6 +47,7 @@ namespace Hinode.Tests.Extensions
                 corrects);
 
             AssertionUtils.AssertEnumerable(corrects, scene.GetGameObjectEnumerable(), "SceneExtensions#GetGameObjectEnumerableの探索順が想定したものになっていません。");
+            yield return null;
         }
     }
 }

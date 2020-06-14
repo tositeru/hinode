@@ -5,13 +5,25 @@ using UnityEngine.SceneManagement;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Extensions.TestSceneExtensions"/>
+    /// </summary>
     public static class SceneExtensions
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestSceneExtensions.GetGameObjectEnumerablePasses()"/>
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static IEnumerable<GameObject> GetGameObjectEnumerable(this Scene s)
         {
             return new GameObjectEnumerable(s);
         }
 
+
+        /// <summary>
+        /// <seealso cref="GetGameObjectEnumerable(Scene)"/>
+        /// </summary>
         public class GameObjectEnumerable : IEnumerable<GameObject>, IEnumerable
         {
             Scene _target;

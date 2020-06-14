@@ -44,4 +44,31 @@
 
 ### Unity
 
-- 
+- AssetBundle
+    - LoadGameObjectComponent<T>(string name) where T : Component
+    - LoadGameObjectComponent(string name, System.Type type)
+- Color
+    - HSVToRGBA(float H, float S, float V, float a, bool hdr=false) <= not Extension Methods
+- GameObject
+    - GetOrAddComponent<T>() where T : Component
+    - GetOrAddComponent(System.Type componentType)
+    - Create(string name, Transform parent) <= not Extension Methods
+- MonoBehaviour
+    - AssertObjectReference(HashSet<object> objHash = null)
+    - SafeStartCoroutine(ref Coroutine coroutine, IEnumerator routine)
+- RangeAttribute
+    - IsInRange(float value)
+    - IsInRange(double value)
+    - Clamp(float value)
+    - Clamp(double value)
+- Rect
+    - Overlaps(Vector2 point)
+    - Overlaps(Rect other)
+- Scene
+    - GetGameObjectEnumerable()
+- Transform
+    - GetChildEnumerable()
+    - GetHierarchyEnumerable()
+    - GetParentEnumerable()
+- Vector2
+    - TryParse(string text, out Vector2 result) <= not Extension Methods

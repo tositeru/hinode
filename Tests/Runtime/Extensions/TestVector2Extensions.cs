@@ -7,9 +7,14 @@ using UnityEngine.TestTools.Utils;
 
 namespace Hinode.Tests.Extensions
 {
+    /// <summary>
+    /// <seealso cref="Vector2Extensions"/>
+    /// </summary>
     public class TestVector2Extensions : TestBase
     {
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="Vector2Extensions.TryParse(string, out Vector2)"/>
+        /// </summary>
         [Test]
         public void TryParsePasses()
         {

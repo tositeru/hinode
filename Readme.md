@@ -23,6 +23,9 @@ Appache Licence Version 2.0
     - Serializer
         - Json Serializer
     - Text Resource
+- [Unityの便利クラス]
+    - ChildObject
+    - SceneObject
 - Editor拡張
     - [テキストテンプレートエンジン](./Docs/TextTemplateEngine.md)
 - [Test Tools/Library](./Docs/TestToolsAndLibrary.md)

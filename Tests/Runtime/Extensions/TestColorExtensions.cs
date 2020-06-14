@@ -11,6 +11,9 @@ namespace Hinode.Tests.Extensions
     /// </summary>
     public class TestColorExtensions
     {
+        /// <summary>
+        /// <seealso cref="ColorExtensions.HSVToRGBA(float, float, float, float, bool)"/>
+        /// </summary>
         [Test]
         public void HSVToRGBAPasses()
         {

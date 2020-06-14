@@ -7,8 +7,16 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.Extensions
 {
+    /// <summary>
+    /// <seealso cref="GameObjectExtensions"/>
+    /// </summary>
     public class TestGameObjectExtensions : TestBase
     {
+        /// <summary>
+        /// <seealso cref="GameObjectExtensions.GetOrAddComponent{T}(GameObject)"/>
+        /// <seealso cref="GameObjectExtensions.GetOrAddComponent(GameObject, System.Type)"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator GetOrAddComponentPasses()
         {
@@ -25,7 +33,11 @@ namespace Hinode.Tests.Extensions
             Assert.AreSame(box2, box);
         }
 
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="GameObjectExtensions.Create(string, Transform)"/>
+        /// <seealso cref="GameObjectExtensions.Create(CreateGameObjectParam, List{GameObject})"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator CreateGameObjectPasses()
         {
@@ -83,6 +95,11 @@ namespace Hinode.Tests.Extensions
             }
         }
 
+        /// <summary>
+        /// <seealso cref="GameObjectExtensions.Create(string, Transform)"/>
+        /// <seealso cref="GameObjectExtensions.Create(CreateGameObjectParam, List{GameObject})"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator CreateGameObjectCallbackPasses()
         {

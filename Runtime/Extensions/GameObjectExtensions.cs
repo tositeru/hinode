@@ -4,8 +4,17 @@ using UnityEngine;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Extensions.TestGameObjectExtensions"/>
+    /// </summary>
     public static class GameObjectExtensions
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.GetOrAddComponentPasses()"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public static T GetOrAddComponent<T>(this GameObject target) where T : Component
         {
             if(target.TryGetComponent<T>(out var com))
@@ -18,6 +27,30 @@ namespace Hinode
             }
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.GetOrAddComponentPasses()"/>
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="componentType"></param>
+        /// <returns></returns>
+        public static Component GetOrAddComponent(this GameObject target, System.Type componentType)
+        {
+            if (target.TryGetComponent(componentType, out var com))
+            {
+                return com;
+            }
+            else
+            {
+                return target.AddComponent(componentType);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.CreateGameObjectPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
         public static GameObject Create(string name, Transform parent)
         {
             var obj = new GameObject(name);
@@ -25,6 +58,13 @@ namespace Hinode
             return obj;
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.CreateGameObjectPasses()"/>
+        /// <seealso cref="Hinode.Tests.Extensions.CreateGameObjectCallbackPasses()"/>
+        /// </summary>
+        /// <param name="rootParam"></param>
+        /// <param name="outAdditionOrderList"></param>
+        /// <returns></returns>
         public static GameObject Create(CreateGameObjectParam rootParam, List<GameObject> outAdditionOrderList)
         {
             var obj = new GameObject(rootParam.name);
@@ -36,6 +76,9 @@ namespace Hinode
         }
     }
 
+    /// <summary>
+    /// <seealso cref="GameObjectExtensions.Create(CreateGameObjectParam, List{GameObject})"/>
+    /// </summary>
     public class CreateGameObjectParam
     {
         public string name;

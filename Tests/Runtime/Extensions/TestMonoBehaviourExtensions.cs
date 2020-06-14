@@ -6,7 +6,10 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.Extensions
 {
-    public class TestMonoBehaviourExtensions
+    /// <summary>
+    /// <seealso cref="MonoBehaviourExtensions"/>
+    /// </summary>
+    public class TestMonoBehaviourExtensions : TestBase
     {
         class AssertObjectReferenceTest : MonoBehaviour
         {
@@ -33,8 +36,11 @@ namespace Hinode.Tests.Extensions
             public GameObject Obj2 { get => obj2; set => obj2 = value; }
         }
 
-        [Test]
-        public void AssertObjectReferencePasses()
+        /// <summary>
+        /// <seealso cref="MonoBehaviourExtensions.AssertObjectReference(MonoBehaviour, HashSet{object})"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AssertObjectReferencePasses()
         {
             var obj = new GameObject("obj");
 
@@ -50,6 +56,45 @@ namespace Hinode.Tests.Extensions
             test.serializableObj.obj = obj;
             test.serializableObj.Obj2 = new GameObject("inst2");
             Assert.DoesNotThrow(() => test.AssertObjectReference());
+            yield return null;
+        }
+
+        class SafeStartCoroutineMonoBehaviour : MonoBehaviour
+        {
+            public int Value { get; set; }
+            public bool IsFinishCoroutine { get; set; }
+
+            public IEnumerator TestEnumerator(int value)
+            {
+                IsFinishCoroutine = false;
+                yield return null;
+                yield return null;
+
+                Value = value;
+                IsFinishCoroutine = true;
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="MonoBehaviourExtensions.SafeStartCoroutine(MonoBehaviour, ref Coroutine, IEnumerator)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator SafeStartCoroutinePasses()
+        {
+            var obj = new GameObject("obj");
+            var behaviour = obj.AddComponent<SafeStartCoroutineMonoBehaviour>();
+            Coroutine coroutine = null;
+            behaviour.SafeStartCoroutine(ref coroutine, behaviour.TestEnumerator(100));
+            Assert.IsNotNull(coroutine);
+
+            behaviour.SafeStartCoroutine(ref coroutine, behaviour.TestEnumerator(200)); // <- Stop Prev Coroutine
+
+            yield return null;
+            yield return null;
+            yield return null;
+
+            Assert.AreEqual(200, behaviour.Value);
         }
     }
 }

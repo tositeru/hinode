@@ -19,6 +19,12 @@ namespace Hinode.Tests.Extensions
             Assert.IsNotNull(bundle, $"Failed to load Test AssetBundle... filepath={filepath}");
             return bundle;
         }
+
+        /// <summary>
+        /// <seealso cref="AssetBundleExtensions.LoadGameObjectComponent(AssetBundle, string, System.Type)"/>
+        /// <seealso cref="AssetBundleExtensions.LoadGameObjectComponent{T}(AssetBundle, string)"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator LoadGameObjectComponentPasses()
         {
