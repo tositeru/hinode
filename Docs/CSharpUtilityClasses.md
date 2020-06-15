@@ -4,7 +4,6 @@ Hinodeには以下のC#の便利クラスを提供しています。
 
 - SmartDelegate
 - ISingleton
-- TypeListCache
 - Type Referection Cache(RefCache)
 - Value Update Observer
 - Serializer
@@ -21,6 +20,37 @@ Hinodeには以下のC#の便利クラスを提供しています。
 
 シングルトンパターンを提供するクラスになります。
 
-### TypeListCache
+### Type Referection Cache(RefCache)
 
-現在読み込まれているAssemblyの中から
+指定したTypeのReflection情報をキャッシュします。
+
+```cshape
+class TestClass
+{
+    int Field1;
+    public string Prop1 {get; set;}
+
+    public TestClass(int value) { Field1 = value; }
+
+    public int Func1(int a, int b) => a + b;
+}
+
+var refCache = new RefCache(typeof(TestClass));
+//Constructor
+var inst = refCache.CreateInstance(321);
+
+//Field
+var field = refCache.GetField(inst, "Field1");
+refCache.SetField(inst, "Field1", 432);
+
+//Property
+var prop = refCache.GetProp(inst, "Prop1");
+refCache.SetProp(inst, "Prop1", "apple");
+
+//Method
+var returnValue = refCache.Invoke(inst, "Func1", 100, 200);
+```
+
+### Value Update Observer
+
+

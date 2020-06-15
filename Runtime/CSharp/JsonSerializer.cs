@@ -85,7 +85,7 @@ namespace Hinode
                 bool doAppendCamma = false;
                 foreach (var element in enumerable)
                 {
-                    if(doAppendCamma) stream.Write(",");
+                    if (doAppendCamma) stream.Write(",");
                     doAppendCamma = true;
                     WriteValue(stream, element, element.GetType());
                 }
@@ -103,14 +103,14 @@ namespace Hinode
             if (!stream.MoveTo('{')) return;
             if (!stream.SkipTo(SPACE_CHARS)) return;
 
-            while(!stream.IsMatchPeek('}'))
+            while (!stream.IsMatchPeek('}'))
             {
                 // read key
                 var key = ReadString(stream);
                 Assert.IsTrue(stream.SkipTo(SPACE_CHARS));
 
                 System.Type valueType;
-                if(outInfo.ObjectType.Equals(DEFAULT_TYPE))
+                if (outInfo.ObjectType.Equals(DEFAULT_TYPE))
                 {
                     valueType = DEFAULT_TYPE;
                 }
@@ -119,7 +119,7 @@ namespace Hinode
                     valueType = (keyAndTypeDict != null && keyAndTypeDict.ContainsKey(key))
                         ? keyAndTypeDict[key]
                         : null;
-                    if(valueType == null)
+                    if (valueType == null)
                     {
                         var f = outInfo.ObjectType.GetFieldInHierarchy(key, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                         Assert.IsNotNull(f, $"Don't found '{key}' field...");
@@ -149,7 +149,7 @@ namespace Hinode
 
         object ReadValue(TextReader stream, System.Type valueType)
         {
-            if(valueType.IsEnum)
+            if (valueType.IsEnum)
             {
                 return ReadEnum(stream, valueType);
             }
@@ -211,7 +211,7 @@ namespace Hinode
 
             var elementType = arrayType.GetArrayElementType();
             var refCache = GetListTypeCache(elementType);
-            var addMethodInfo = refCache.GetMethodInfo("Add");
+            var addMethodInfo = refCache.GetCachedMethodInfo("Add");
 
             var tmpList = refCache.CreateInstanceWithCache("ctor", null);
             while (!stream.IsMatchPeek(']'))
@@ -220,7 +220,7 @@ namespace Hinode
                 addMethodInfo.Invoke(tmpList, new object[] { value });
 
                 Assert.IsTrue(stream.SkipTo(SPACE_CHARS));
-                if(SkipNextCamma(stream))
+                if (SkipNextCamma(stream))
                 {
                     Assert.IsTrue(stream.SkipTo(SPACE_CHARS));
                 }
@@ -228,13 +228,13 @@ namespace Hinode
             stream.Read(); // skip ']' if not end of string
 
             //instanceをarrayTypeへキャストする
-            if(arrayType.IsArray)
+            if (arrayType.IsArray)
             {
                 var count = (tmpList as IList).Count;
                 var arrayCtor = arrayType.GetConstructor(new System.Type[] { typeof(int) });
                 var arrayInst = arrayCtor.Invoke(new object[] { count });
 
-                var toArrayMethod = refCache.GetMethodInfo("ToArray");
+                var toArrayMethod = refCache.GetCachedMethodInfo("ToArray");
                 var srcArray = (System.Array)toArrayMethod.Invoke(tmpList, new object[] { });
                 System.Array.Copy(srcArray, (System.Array)arrayInst, count);
                 return arrayInst;
@@ -256,7 +256,8 @@ namespace Hinode
             {
                 var ch = (char)stream.Read();
                 str += ch;
-                if ('\\' == ch) {
+                if ('\\' == ch)
+                {
                     str += stream.Read();
                 }
             }
@@ -264,7 +265,7 @@ namespace Hinode
             return str;
         }
 
-        string ReadKeyword(TextReader stream, Regex usedRegex=null)
+        string ReadKeyword(TextReader stream, Regex usedRegex = null)
         {
             if (usedRegex == null) usedRegex = IS_KEYWORD_CHAR_REGEX;
             Assert.IsTrue(stream.IsMatchPeek(usedRegex));
@@ -280,7 +281,7 @@ namespace Hinode
 
         bool ReadBool(TextReader stream)
         {
-            switch(char.ToLower((char)stream.Peek()))
+            switch (char.ToLower((char)stream.Peek()))
             {
                 case 't':
                     var keyword = ReadKeyword(stream).ToLower();
@@ -294,17 +295,17 @@ namespace Hinode
             }
         }
 
-        object ReadNumber(TextReader stream, System.Type type=null)
+        object ReadNumber(TextReader stream, System.Type type = null)
         {
             var keyword = ReadKeyword(stream, IS_NUMBER_CHAR_REGEX);
 
-            if(type == null)
+            if (type == null)
             {
-                if(int.TryParse(keyword, out var integer))
+                if (int.TryParse(keyword, out var integer))
                 {
                     return integer;
                 }
-                else if(double.TryParse(keyword, out var number))
+                else if (double.TryParse(keyword, out var number))
                 {
                     return number;
                 }
@@ -328,14 +329,14 @@ namespace Hinode
         object ReadEnum(TextReader stream, System.Type type)
         {
             Assert.IsTrue(type.IsEnum);
-            if(stream.Peek() == '"')
+            if (stream.Peek() == '"')
             {
                 var str = ReadString(stream);
-                if(type.GetCustomAttribute<System.FlagsAttribute>() != null)
+                if (type.GetCustomAttribute<System.FlagsAttribute>() != null)
                 {
                     var tokens = str.Replace(" ", "").Replace("　", "").Split(',', '|');
                     var v = 0;
-                    foreach(var t in tokens)
+                    foreach (var t in tokens)
                     {
                         v |= (int)System.Enum.Parse(type, t);
                     }
