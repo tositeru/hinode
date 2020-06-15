@@ -53,4 +53,89 @@ var returnValue = refCache.Invoke(inst, "Func1", 100, 200);
 
 ### Value Update Observer
 
+IUpdateObserver interfaceは自身が持つ値が変更されたことを通知する機能を持つクラスになります。
+
+Hinodeでは以下の二つの派生クラスを提供しています。
+
+- UpdateObserver<T>
+- PredicateUpdateObserver<T>
+
+#### UpdateObserver<T>
+
+T型の値を持つIUpdateObserverになります。
+
+```csharp
+var v = new UpdateObserver<int>();
+Assert.IsFalse(v.DidUpdated);
+
+v.Value = 100;
+Assert.AreEqual(100, v.Value);
+Assert.IsTrue(v.DidUpdated);
+
+v.Value = -100;
+Assert.AreEqual(-100, v.Value);
+Assert.IsTrue(v.DidUpdated);
+
+var prevValue = v.Value;
+v.Reset();
+Assert.AreEqual(prevValue, v.Value);
+Assert.IsFalse(v.DidUpdated);
+
+var counter = 0;
+var recievedValue = 0;
+v.OnChangedValue.Add((_v) => {
+    counter++;
+    recievedValue = _v;
+});
+v.Value = 2000; // <- Call OnChangedValue!
+
+```
+#### PredicateUpdateObserver<T>
+
+コンストラクタに指定したdelegateが返す値の変更を監視するIUpdateObserverになります。
+
+```csharp
+var observer = new PredicateUpdateObserver<int>(() => {
+    counter++;
+    return value;
+});
+
+//値が変更された時のコールバックの登録
+var counter = 0;
+var recievedValue = 0;
+observer.OnChangedValue.Add((_v) => {
+    counter++;
+    recievedValue = _v;
+});
+
+{//Predicateが返す値が変わった時のテスト
+    value = 1;
+    var errorMessage = "PredicateUpdateObserver#Updateが呼ばれるまでValue/RawValueは更新されないようにしてください";
+    Assert.AreNotEqual(value, observer.RawValue, errorMessage);
+    Assert.AreNotEqual(value, observer.Value, errorMessage);
+    Assert.AreEqual(1, counter, "PredicateUpdateObserver#Updateが呼ばれるまで設定したPredicateを呼び出さないようにしてください");
+
+    counter = 0;
+    Assert.IsTrue(observer.Update());
+    Assert.IsTrue(observer.DidUpdated);
+    errorMessage = "PredicateUpdateObserver#Updateが呼ばれた時、値が変更されていた時はValue/RawValueも更新するようにしてください";
+    Assert.AreEqual(value, observer.RawValue, errorMessage);
+    Assert.AreEqual(value, observer.Value, errorMessage);
+    Assert.AreEqual(1, counter, "PredicateUpdateObserver#Updateが呼び出された時に設定したPredicateを呼び出すようにしてください");
+
+    // 一度PredicateUpdateObserver#DidUpdateddがtrueになった後の挙動テスト
+    counter = 0;
+    Assert.IsFalse(observer.Update());
+    Assert.IsFalse(observer.DidUpdated);
+    Assert.AreEqual(1, counter, "PredicateUpdateObserver#Updateが呼ばれる度に設定したPredicateを呼び出すようにしてください。");
+    Assert.AreEqual(value, observer.RawValue);
+    Assert.AreEqual(value, observer.Value);
+}
+```
+
+### Serializer
+
+- Json Serializer
+
+### Text Resource
 

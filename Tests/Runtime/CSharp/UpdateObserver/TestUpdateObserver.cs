@@ -11,6 +11,11 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
 	/// </summary>
     public class TestUpdateObserver
     {
+        /// <summary>
+        /// <seealso cref="UpdateObserver{T}.DidUpdated"/>
+        /// <seealso cref="UpdateObserver{T}.Value"/>
+        /// <seealso cref="UpdateObserver{T}.Reset"/>
+        /// </summary>
         [Test]
         public void BasicUsagePasses()
         {
@@ -29,6 +34,32 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
             v.Reset();
             Assert.AreEqual(prevValue, v.Value);
             Assert.IsFalse(v.DidUpdated);
+        }
+
+        [Test]
+        public void OnChangedValuePasses()
+        {
+            var v = new UpdateObserver<int>(0);
+            var counter = 0;
+            var recievedValue = 0;
+            v.OnChangedValue.Add((i) => {
+                counter++;
+                recievedValue = i;
+            });
+
+            {
+                v.Value = 100;
+                Assert.AreEqual(1, counter);
+                Assert.AreEqual(v.Value, recievedValue);
+            }
+            Debug.Log($"Success to Call OnChangedValue Callback!");
+
+            {
+                v.Value = v.Value;
+                Assert.AreEqual(1, counter);
+                Assert.AreEqual(v.Value, recievedValue);
+            }
+            Debug.Log($"Success not to Call OnChangedValue Callback when not update UpdateObserver#Value!");
         }
 
     }
