@@ -16,13 +16,12 @@ Appache Licence Version 2.0
 - [セレクタ機能付きLogger](./Docs/Logger.md)
 - [C#の便利クラス](./Docs/CSharpUtilityClasses.md)
     - [SmartDelegate](./Docs/CSharpUtilityClasses.md#SmartDelegate)
-    - ISingleton
-    - TypeListCache
-    - Type Referection Cache(RefCache)
-    - Value Update Observer
-    - Serializer
+    - [ISingleton](./Docs/CSharpUtilityClasses.md#ISingleton)
+    - [Type Referection Cache(RefCache)](./Docs/CSharpUtilityClasses.md#Type Referection Cache\(RefCache\))
+    - [Value Update Observer](./Docs/CSharpUtilityClasses.md#Value Update Observer)
+    - [Serializer](./Docs/CSharpUtilityClasses.md#Serializer \(namespace Hinode.Sizerialzation\))
         - Json Serializer
-    - Text Resources
+    - Text Resources(./Docs/CSharpUtilityClasses.md#Text Resources)
 - [Unityの便利クラス]
     - ChildObject
     - SceneObject
