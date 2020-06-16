@@ -4,11 +4,22 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.TextResource
+namespace Hinode.Tests.CSharp.TextResource
 {
+    /// <summary>
+    /// <seealso cref="TextResources"/>
+    /// </summary>
     public class TestTextResources
     {
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="TextResources.Add(string, string)"/>
+        /// <seealso cref="TextResources.Contains(string)"/>
+        /// <seealso cref="TextResources.Count"/>
+        /// <seealso cref="TextResources.Get(string)"/>
+        /// <seealso cref="TextResources.Get(string, object[])"/>
+        /// <seealso cref="TextResources.Dispose()"/>
+        /// 
+        /// </summary>
         [Test]
         public void BasicUsagePasses()
         {

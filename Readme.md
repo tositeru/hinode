@@ -15,14 +15,14 @@ Appache Licence Version 2.0
 - [C#/Unity Componentsの拡張メソッド](./Docs/CSharpUnityExtensions.md)
 - [セレクタ機能付きLogger](./Docs/Logger.md)
 - [C#の便利クラス](./Docs/CSharpUtilityClasses.md)
-    - SmartDelegate
+    - [SmartDelegate](./Docs/CSharpUtilityClasses.md#SmartDelegate)
     - ISingleton
     - TypeListCache
     - Type Referection Cache(RefCache)
     - Value Update Observer
     - Serializer
         - Json Serializer
-    - Text Resource
+    - Text Resources
 - [Unityの便利クラス]
     - ChildObject
     - SceneObject
