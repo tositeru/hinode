@@ -8,8 +8,13 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.CSharp
+using Hinode.Serialization;
+
+namespace Hinode.Tests.CSharp.Serialization
 {
+    /// <summary>
+    /// <seealso cref="ISerializer"/>
+    /// </summary>
     public class TestJsonSerializer
     {
         [System.Serializable]
@@ -78,7 +83,10 @@ namespace Hinode.Tests.CSharp
             }
         }
 
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="JsonSerializer.Serialize(object)"/>
+        /// <seealso cref="JsonSerializer.Deserialize(string, System.Type)"/>
+        /// </summary>
         [Test, Description("TextWriter/TextReaderのテスト")]
         public void BasicPasses()
         {
@@ -123,6 +131,10 @@ namespace Hinode.Tests.CSharp
 #pragma warning restore CS0649
         }
 
+        /// <summary>
+        /// <seealso cref="JsonSerializer.Serialize(object)"/>
+        /// <seealso cref="JsonSerializer.Deserialize(string, System.Type)"/>
+        /// </summary>
         [Test]
         public void EnumPasses()
         {
@@ -169,6 +181,10 @@ namespace Hinode.Tests.CSharp
 #pragma warning restore CS0649
         }
 
+        /// <summary>
+        /// <seealso cref="JsonSerializer.Serialize(object)"/>
+        /// <seealso cref="JsonSerializer.Deserialize(string, System.Type)"/>
+        /// </summary>
         [Test]
         public void BoolPasses()
         {
@@ -205,6 +221,11 @@ namespace Hinode.Tests.CSharp
             public Quaternion quaternion;
         }
 
+        /// <summary>
+        /// <seealso cref="ISerializer.IInstanceCreator"/>
+        /// <seealso cref="JsonSerializer.Serialize(object)"/>
+        /// <seealso cref="JsonSerializer.Deserialize(string, System.Type)"/>
+        /// </summary>
         [Test, Description("ISerializer#DefaultInstanceCreatorのテスト")]
         public void InstanceCreatorPasses()
         {
@@ -278,6 +299,8 @@ namespace Hinode.Tests.CSharp
 
         /// <summary>
         /// 使用している数値型へ正確にDeserializeしているか確認するためのテスト
+        /// <seealso cref="JsonSerializer.Serialize(object)"/>
+        /// <seealso cref="JsonSerializer.Deserialize(string, System.Type)"/>
         /// </summary>
         [Test, Description("数値型の変換テスト")]
         public void NumericTypeDeserializePasses()

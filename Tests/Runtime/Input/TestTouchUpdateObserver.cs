@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Hinode.Serialization;
 
 namespace Hinode.Tests.Input
 {

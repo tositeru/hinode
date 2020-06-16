@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace Hinode
+namespace Hinode.Serialization
 {
     /// <summary>
     /// 
@@ -26,6 +26,14 @@ namespace Hinode
         {
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BasicPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.EnumPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BoolPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.NumericTypeDeserializePasses()"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public string Serialize(object obj)
         {
             using (var writer = new StringWriter())
@@ -35,6 +43,15 @@ namespace Hinode
             }
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BasicPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.EnumPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BoolPasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.NumericTypeDeserializePasses()"/>
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public object Deserialize(string json, System.Type type)
         {
             using (var reader = new StringReader(json))

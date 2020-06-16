@@ -133,9 +133,95 @@ observer.OnChangedValue.Add((_v) => {
 }
 ```
 
-### Serializer
+### Serializer (namespace Hinode.Sizerialzation)
+
+Hinodeは自前のシリアライザーを提供しています。(Hinode.Sizerialzation.ISerializer interface)
+
+System.Runtime.Serialization.ISerializableおよびUnityのJsonUtilityでシリアライズされるものをサポートしています。
+
+シリアライズのルールに付きましては下にある「シリアライズのルール」の方を参照してください。
+
+以下のフォーマットの入出力に対応しています。
 
 - Json Serializer
+
+```csharp
+var src = new TestBasicClass()
+{
+    v1 = 1,
+    sub = new TestBasicSubClass { v1 = -1, v2 = "v2 in sub" },
+    sub2 = new TestBasicSubClass2 { v1 = 111, v2 = "vvvidv" },
+    arr = new int[] { -1, -2, -3 },
+    list = new List<string> { "App", "Ora" },
+};
+
+//Serialize to Json
+var serializer = new JsonSerializer();
+var stringWriter = new StringWriter();
+serializer.Serialize(stringWriter, src);
+var json = stringWriter.ToString();
+
+//Deserialize From Json
+var reader = new StringReader(json);
+var dest = serializer.Deserialize(reader, typeof(TestBasicClass)) as TestBasicClass;
+
+```
+
+#### シリアライズのルール
+
+型のシリアライズ・デシリアライズを行う時は以下の方法に従います。
+複数の方法と一致している場合は上に書かれているものが優先されます。
+
+1. ISerializerに設定されているISerializer.IInstanceCreatorが対応していた場合 -> それを使用する(シリアライズ処理の拡張)
+1. System.Runtime.Serialization.ISerializableを継承してる場合 -> ISerializableを使用する
+1. System.SerializableAttributeが指定されている場合 ->　publicなフィールドとUnityEngine.SerializeFieldが指定されているフィールドのみ処理対象になる(Unityのシリアライズと同じ)
+1. 構造体の場合 -> System.SerializableAttributeと同じ
+1. その他 -> 処理は行わない
+
+
+#### ISerializer.IInstanceCreator
+
+ISerializer.IInstanceCreatorを使用することでISerializerが対応できる型を追加できたり、シリアライズの挙動を変更するなどシリアライズ処理を拡張することができます。
+(拡張する際は`DefaultInstanceCreator`から派生することを推奨します。)
+
+拡張する際は以下の3つの関数を実装してください。
+
+- Desrialize
+- Serialize
+- GetFieldKeyAndTypeDict
+
+```csharp
+public interface ISerializer.IInstanceCreator
+{
+    //Desrializeの時に使用されます。
+    object Desrialize(System.Type type, SerializationInfo info, StreamingContext context);
+
+    //Serializeの時に使用されます。
+    bool Serialize(object target, SerializationInfo info, StreamingContext context);
+
+    //引数に渡された型と対応するシリアライズ対象のメンバの辞書を返すようにしてください。
+    //もし引数に渡した型と一致する辞書がなければ、その型がHasKeyAndTypeDictionaryGetterAttributeを指定されているか確認し、
+    // 指定されている場合はそのAttributeから辞書を取得するよう試みます。
+    IReadOnlyDictionary<string, System.Type> GetFieldKeyAndTypeDict(System.Type type);
+}
+```
+
+##### ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict(System.Type type)
+
+ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict()は渡された型のシリアライズされた時のメンバのキー名とその型のペアを表す辞書を返すこと期待されます。
+
+この関数を使用することで、シリアライズされる際に元のクラスのフィールド名とは異なるキー名をつけることができます。
+
+実装の際はISerializer.IInstanceCreator.Serialize()の処理内容と一致するように辞書を作成してください。
+ISerializerではこの二つの実装内容が一致しているかどうかの判定は行いませんので注意してください。
+
+#### HasKeyAndTypeDictionaryGetterAttribute
+
+ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict(System.Type type)が対応していない型の場合はISerializerはその型にHasKeyAndTypeDictionaryGetterAttributeが指定されていないか確認します。
+
+もし指定されていた場合は、HasKeyAndTypeDictionaryGetterAttributeからシリアライズされた時のメンバのキー名とその型のペアを表す辞書を取得します。
+
+このAttributeを指定することで指定した型のDefaultの辞書を定義することができます。
 
 ### Text Resource
 

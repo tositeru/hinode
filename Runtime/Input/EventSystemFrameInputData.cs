@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Hinode.Serialization;
 
 namespace Hinode
 {
