@@ -8,13 +8,21 @@ using System.IO;
 
 namespace Hinode.Tests.Editors.Tools
 {
+    /// <summary>
+    /// <seealso cref="TextTemplateEngine"/>
+    /// </summary>
     public class TestTextTemplateEngine : TestBase
     {
-        // A Test behaves as an ordinary method
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// </summary>
         [Test]
         public void SimpleUsagePasses()
         {
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = @"This $Item$ is $Condition$.";
 
@@ -26,10 +34,17 @@ namespace Hinode.Tests.Editors.Tools
             Assert.AreEqual("This Pen is Good.", templateEngine.Generate(), "Matched keywords replace it's value.");
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// </summary>
         [Test]
         public void KeywordWithMultipleValueUsagePasses()
         {
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = @"This $Item$ is $Condition$.";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -43,10 +58,18 @@ namespace Hinode.Tests.Editors.Tools
                 + "This Grass is Nice.", generatedText);
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// </summary>
         [Test]
         public void IgnorePairPasses()
         {
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = @"This $Item$ is $Condition$.";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -61,10 +84,18 @@ namespace Hinode.Tests.Editors.Tools
                 + "This Grass is Nice.", generatedText);
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// </summary>
         [Test, Description("値が設定されていない無視リストがある時のテスト")]
         public void EmptyIgnorePairPasses()
         {
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = @"This $Item$ is $Condition$.";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -79,14 +110,23 @@ namespace Hinode.Tests.Editors.Tools
             Assert.AreEqual("This $Item$ is $Condition$.", generatedText);
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// </summary>
         [Test]
         public void EmbbedTemplatePasses()
         {
-            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var embbedTemplate = TextTemplateEngine.Create();
             embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
             embbedTemplate.AddKeyword("Word", "Apple");
 
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -101,14 +141,23 @@ namespace Hinode.Tests.Editors.Tools
                 + "This Grass is Nice. Apple! Apple! Apple!.", templateEngine.Generate());
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// </summary>
         [Test, Description("キー名が空または値が設定されていない埋め込みテキストがあったときのテスト")]
         public void EmptyEmbbedTemplatePasses()
         {
-            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var embbedTemplate = TextTemplateEngine.Create();
             embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
             embbedTemplate.AddKeyword("Word", "Apple");
 
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -125,14 +174,23 @@ namespace Hinode.Tests.Editors.Tools
                 + "This Grass is Nice. %Yell%", templateEngine.Generate());
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate(TextTemplateEngine)"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// </summary>
         [Test, Description("他のTextTemplateEngineのキーワードと無視リストを使用する時のテスト")]
         public void UseOtherTextTemplatePasses()
         {
-            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var embbedTemplate = TextTemplateEngine.Create();
             embbedTemplate.TemplateText = "$Word$! $Word$! $Word$!.";
             embbedTemplate.AddKeyword("Word", "Apple");
 
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
 
             templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
@@ -140,7 +198,7 @@ namespace Hinode.Tests.Editors.Tools
             templateEngine.AddIgnorePair(("Item", "Grass"), ("Condition", "Good"));
             templateEngine.AddEmbbed("Yell", embbedTemplate);
 
-            var otherTemplateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var otherTemplateEngine = TextTemplateEngine.Create();
             otherTemplateEngine.TemplateText = "";
             otherTemplateEngine.AddKeyword("Item", "Tom", "Kumi");
             otherTemplateEngine.AddKeyword("Condition", "Hot", "Cool");
@@ -152,21 +210,31 @@ namespace Hinode.Tests.Editors.Tools
                 + "This Kumi is Cool. Apple! Apple! Apple!.", templateEngine.Generate(otherTemplateEngine));
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// <seealso cref="TextTemplateEngine.DoShareKaywords"/>
+        /// </summary>
         [Test, Description("埋め込みTextTemplateEngineを展開する時、設定されているキーワード等を共有する場合テスト")]
         public void DoShareKeywordsPasses()
         {
-            var childEmbbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var childEmbbedTemplate = TextTemplateEngine.Create();
             childEmbbedTemplate.TemplateText = "?$Key$?";
             childEmbbedTemplate.AddKeyword("Key", "Apple");
 
-            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var embbedTemplate = TextTemplateEngine.Create();
             embbedTemplate.TemplateText = "$Item$=>$Condition$! $NotExpanded$!. %Yell%;";
             embbedTemplate.AddKeyword("Item", "Cat");
             embbedTemplate.AddKeyword("Condition", "Sleep");
             embbedTemplate.AddKeyword("NotExpanded", "Apple"); // <- これは使用されない
             embbedTemplate.AddEmbbed("Yell", childEmbbedTemplate); // <- embbedTemplate.DoShareKaywords=falseの時はこちらは使用される。
 
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
             templateEngine.TemplateText = "This $Item$ is $Condition$. %Yell%";
             templateEngine.AddKeyword("Item", "Pen", "Grass");
             templateEngine.AddKeyword("Condition", "Good", "Nice");
@@ -182,10 +250,20 @@ namespace Hinode.Tests.Editors.Tools
                 + $"This Grass is Nice. {expanedText}", templateEngine.Generate());
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddIgnorePair((string, string)[])"/>
+        /// <seealso cref="TextTemplateEngine.AddSingleKeywordPair(IEnumerable{string})"/>
+        /// <seealso cref="TextTemplateEngine.IsSingleKeywordPairMode"/>
+        /// </summary>
         [Test, Description("単一のキーワードのペアを指定するモードのテスト")]
         public void IsSingleKeywordPairPasses()
         {
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
             templateEngine.TemplateText = "This $Item$ is $Condition$.";
             templateEngine.AddKeyword("Item");
             templateEngine.AddKeyword("Condition");
@@ -205,14 +283,26 @@ namespace Hinode.Tests.Editors.Tools
                 + $"This Cat is Animals.", templateEngine.Generate());
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.Generate()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.NewLineStr"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// <seealso cref="TextTemplateEngine.AddSingleKeywordPair(IEnumerable{string})"/>
+        /// <seealso cref="TextTemplateEngine.IsSingleKeywordPairMode"/>
+        /// <seealso cref="TextTemplateEngine.DoShareKaywords"/>
+        /// <seealso cref="TextTemplateEngine.IsOnlyEmbbed"/>
+        /// </summary>
         [Test, Description("単一のキーワードのペアを指定するモードのテスト")]
         public void IsOnlyEmbbedPasses()
         {
-            var embbedTemplate = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var embbedTemplate = TextTemplateEngine.Create();
             embbedTemplate.TemplateText = "$Word$! $Word$!.";
             embbedTemplate.AddKeyword("Word", "Apple");
 
-            var templateEngine = ScriptableObject.CreateInstance<TextTemplateEngine>();
+            var templateEngine = TextTemplateEngine.Create();
             templateEngine.DoShareKaywords = true;
             templateEngine.IsSingleKeywordPairMode = true;
             templateEngine.IsOnlyEmbbed = true;

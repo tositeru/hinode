@@ -26,8 +26,8 @@ Appache Licence Version 2.0
     - [ChildObject](./Docs/UnityUtiliryClaesses.md#ChildObject)
     - [SceneObject](./Docs/UnityUtiliryClaesses.md#SceneObject)
     - [LabelObject](./Docs/UnityUtiliryClaesses.md#LabelObject)
-- Editor拡張
-    - [テキストテンプレートエンジン](./Docs/TextTemplateEngine.md)
+- [Editor拡張](./Docs/Editor.md)
+    - [テキストテンプレートエンジン](./Docs/Editor/TextTemplateEngine.md)
 - 仮想Input機能
 - [Test Tools/Library](./Docs/TestToolsAndLibrary.md)
     - Snapshot テスト

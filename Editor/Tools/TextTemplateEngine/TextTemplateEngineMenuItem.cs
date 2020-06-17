@@ -8,6 +8,9 @@ using UnityEngine;
 
 namespace Hinode.Editors
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngineMenuItem"/>
+    /// </summary>
     public class TextTemplateEngineMenuItem
     {
         static readonly string EXPANDED_TEXT_TEMPLATE_KEYWORD = "////@@";
@@ -46,6 +49,14 @@ namespace Hinode.Editors
             }
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngineMenuItem.BasicCasePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngineMenuItem.AlreadyExpanededPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngineMenuItem.ExpanedMultiplePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngineMenuItem.EdgeCasePasses()"/>
+        /// </summary>
+        /// <param name="srcText"></param>
+        /// <returns></returns>
         public static (string text, bool isEdit) ExpandTextTemplate(string srcText)
         {
             bool isEdit = false;

@@ -9,9 +9,29 @@ using System.IO;
 
 namespace Hinode.Editors
 {
+    /// <summary>
+    /// Text Template Engine
+    ///
+    /// 元となるテキスト(Template)にパラメータを指定することでテキストを生成することができるクラスになります。
+    ///
+    /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine"/>
+    /// </summary>
     [CreateAssetMenu(fileName = "TextTemplateEngine", menuName = "Hinode/Create TextTemplate")]
     public class TextTemplateEngine : ScriptableObject
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.SimpleUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.KeywordWithMultipleValueUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
+        /// <returns></returns>
         public static TextTemplateEngine Create()
         {
             return ScriptableObject.CreateInstance<TextTemplateEngine>();
@@ -35,22 +55,54 @@ namespace Hinode.Editors
         [SerializeField] Newline _newline = Newline.Newline;
 #pragma warning restore CS0649
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
         public bool IsOnlyEmbbed { get => _isOnlyEmbbed; set => _isOnlyEmbbed = value; }
         /// <summary>
         /// 埋め込みTextTemplateがある時、自身のキーワード、無視リストなどのパラメータを使用するかどうかのフラグ。
         /// trueの時は、埋め込みTextTemplateが持つパラメータは使用されないため、
         /// 埋め込みTextTemplateのテンプレートにあるキーワードで自身のパラメータと一致しないものは展開されない場合が出てきますので注意してください。
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
         /// </summary>
         public bool DoShareKaywords { get => _doShareKaywords; set => _doShareKaywords = value;}
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
         public bool IsSingleKeywordPairMode { get => _isSingleKeywordPairMode; set => _isSingleKeywordPairMode = value;}
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.SimpleUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.KeywordWithMultipleValueUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
         public string TemplateText { get => _templateText; set => _templateText = value; }
         public IEnumerable<Keyword> Keywords { get => _keywords; }
         public IEnumerable<IgnorePair> IgnorePairs { get => _ignorePairs; }
         public IEnumerable<EmbbedTemplate> EmbbedTemplates { get => _embbedTemplates; }
         public IEnumerable<SingleKeywordPair> SingleKeywordPairList { get => _singleKeywordPairList; }
 
-        //public IEnumerable<KeyValuePair<string, TextTemplateEngine>> EmbbedTemplates { get => _embbedDict; }
-
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.KeywordWithMultipleValueUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
         public string NewLineStr
         {
             get
@@ -65,6 +117,20 @@ namespace Hinode.Editors
             }
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.SimpleUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.KeywordWithMultipleValueUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="values"></param>
         public void AddKeyword(string key, params string[] values)
         {
             var keyword = _keywords.FirstOrDefault(_k => _k.key == key);
@@ -93,6 +159,16 @@ namespace Hinode.Editors
             _keywords.Clear();
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// </summary>
+        /// <param name="pairs"></param>
         public void AddIgnorePair(params (string, string)[] pairs)
         {
             _ignorePairs.Add(new IgnorePair(pairs));
@@ -108,6 +184,14 @@ namespace Hinode.Editors
             _ignorePairs.Clear();
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="embbedTarget"></param>
         public void AddEmbbed(string key, TextTemplateEngine embbedTarget)
         {
             Assert.AreNotEqual(embbedTarget, this, "Don't set self () embbed...");
@@ -115,6 +199,11 @@ namespace Hinode.Editors
             _embbedTemplates.Add(new EmbbedTemplate(key, embbedTarget));
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
+        /// <param name="pairs"></param>
         public void AddSingleKeywordPair(params string[] pairs)
             => AddSingleKeywordPair(pairs.AsEnumerable());
         public void AddSingleKeywordPair(IEnumerable<string> pairs)
@@ -122,9 +211,26 @@ namespace Hinode.Editors
             _singleKeywordPairList.Add(new SingleKeywordPair(pairs));
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.SimpleUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.KeywordWithMultipleValueUsagePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyIgnorePairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// </summary>
+        /// <returns></returns>
         public string Generate()
             => Generate(this);
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.UseOtherTextTemplatePasses()"/>
+        /// </summary>
+        /// <param name="useTextTemplate"></param>
+        /// <returns></returns>
         public string Generate(TextTemplateEngine useTextTemplate)
         {
             if(IsOnlyEmbbed)
