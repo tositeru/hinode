@@ -4,13 +4,20 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests
+namespace Hinode.Tests.Unity
 {
     /// <summary>
     /// <seealso cref="ChildObject{T}"/>
     /// </summary>
     public class TestChildObject : TestBase
     {
+        /// <summary>
+        /// <seealso cref="ChildObject{T}.Instance"/>
+        /// <seealso cref="ChildObject{T}.Transform"/>
+        /// <seealso cref="ChildObject{T}.GameObject"/>
+        /// <seealso cref="ChildObject{T}.GetComponent{U}"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator BasicUsagePasses()
         {
@@ -35,6 +42,10 @@ namespace Hinode.Tests
             });
         }
 
+        /// <summary>
+        /// <seealso cref="ChildObject{T}.GetOrCreate(ref ChildObject{T}, Transform, string)"/>
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator GetOrCreatePasses()
         {

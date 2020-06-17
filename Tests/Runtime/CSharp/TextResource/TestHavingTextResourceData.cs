@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.TextResource
+namespace Hinode.Tests.CSharp.TextResource
 {
     /// <summary>
 	/// <seealso cref="HavingTextResourceData"/>
