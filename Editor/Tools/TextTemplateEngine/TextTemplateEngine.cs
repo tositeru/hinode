@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.Assertions;
 using System.Runtime.Serialization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Hinode.Editors
 {
@@ -30,6 +31,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         /// <returns></returns>
         public static TextTemplateEngine Create()
@@ -43,6 +45,7 @@ namespace Hinode.Editors
             ReturnAndNewline,
         }
 #pragma warning disable CS0649
+        [SerializeField] TextTemplateEngine _replacementKeywords;
         [SerializeField] bool _isOnlyEmbbed;
         [SerializeField] bool _doShareKaywords;
         [SerializeField] bool _isSingleKeywordPairMode;
@@ -56,21 +59,34 @@ namespace Hinode.Editors
 #pragma warning restore CS0649
 
         /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
+        /// </summary>
+        public TextTemplateEngine ReplacemenetKeywords { get => _replacementKeywords; set => _replacementKeywords = value; }
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
+        /// </summary>
+        public bool ContainsReplacementKeywords { get => ReplacemenetKeywords != null; }
+
+        /// <summary>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
         /// </summary>
         public bool IsOnlyEmbbed { get => _isOnlyEmbbed; set => _isOnlyEmbbed = value; }
+
         /// <summary>
         /// 埋め込みTextTemplateがある時、自身のキーワード、無視リストなどのパラメータを使用するかどうかのフラグ。
         /// trueの時は、埋め込みTextTemplateが持つパラメータは使用されないため、
         /// 埋め込みTextTemplateのテンプレートにあるキーワードで自身のパラメータと一致しないものは展開されない場合が出てきますので注意してください。
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         public bool DoShareKaywords { get => _doShareKaywords; set => _doShareKaywords = value;}
 
         /// <summary>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         public bool IsSingleKeywordPairMode { get => _isSingleKeywordPairMode; set => _isSingleKeywordPairMode = value;}
 
@@ -85,6 +101,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         public string TemplateText { get => _templateText; set => _templateText = value; }
         public IEnumerable<Keyword> Keywords { get => _keywords; }
@@ -102,6 +119,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         public string NewLineStr
         {
@@ -128,6 +146,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         /// <param name="key"></param>
         /// <param name="values"></param>
@@ -189,6 +208,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.EmptyEmbbedTemplatePasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         /// <param name="key"></param>
         /// <param name="embbedTarget"></param>
@@ -221,6 +241,7 @@ namespace Hinode.Editors
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.DoShareKeywordsPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsSingleKeywordPairPasses()"/>
         /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.IsOnlyEmbbedPasses()"/>
+        /// <seealso cref="Hinode.Tests.Editors.Tools.TestTextTemplateEngine.ReplacemenetParamPasses()"/>
         /// </summary>
         /// <returns></returns>
         public string Generate()
@@ -233,16 +254,19 @@ namespace Hinode.Editors
         /// <returns></returns>
         public string Generate(TextTemplateEngine useTextTemplate)
         {
-            if(IsOnlyEmbbed)
+            var useKeywords = useTextTemplate.ContainsReplacementKeywords
+                ? useTextTemplate.ReplacemenetKeywords
+                : useTextTemplate;
+            if (IsOnlyEmbbed)
             {
                 var text = _templateText;
                 return ExpandEmbbedText(text, useTextTemplate);
             }
-            else if(useTextTemplate.IsSingleKeywordPairMode)
+            else if(useKeywords.IsSingleKeywordPairMode)
             {
-                var keywordListEnumerable = useTextTemplate.SingleKeywordPairList
+                var keywordListEnumerable = useKeywords.SingleKeywordPairList
                         .Select(_pairList =>
-                            _pairList.List.Zip(useTextTemplate.Keywords, (_p, _k) => (_k.key, _p))
+                            _pairList.List.Zip(useKeywords.Keywords, (_p, _k) => (_k.key, _p))
                         );
                 string text = "";
                 foreach (var keywordList in keywordListEnumerable)
@@ -255,21 +279,44 @@ namespace Hinode.Editors
             else
             {
                 var keywordEnumerable = new AllKeywordEnumerable(useTextTemplate);
-                if (!keywordEnumerable.Any() || useTextTemplate.IgnorePairs.Any(_i => !_i.IsValid))
+                if (!keywordEnumerable.Any() || useKeywords.IgnorePairs.Any(_i => !_i.IsValid))
                 {
                     Debug.LogWarning($"キーワードまたは値が設定されていない無視リストのアイテムが存在しています。変換は行わずに出力します。");
                     return _templateText;
                 }
 
+                var enableKeywords = SerachEnableKeywords(_templateText);
                 string text = "";
                 var keywordListEnumerable = keywordEnumerable
-                        .Where(_l => !useTextTemplate.IgnorePairs.Any(_igPair => _igPair.DoIgnore(_l)));
-                foreach (var keywordList in keywordListEnumerable)
+                        .Where(_l => !useKeywords.IgnorePairs.Any(_igPair => _igPair.DoIgnore(_l)))
+                        .Select(_l => _l.Where(_k => enableKeywords.Contains(_k.Item1)))
+                        ;
+                // IEnumerableだと値が固定化されないので、IEnumerable.Distinct()がうまく動作しなかったので、直接キャッシュするようにしている。
+                var cacheKeywordList = new HashSet<IEnumerable<(string, string)>>();
+                foreach (var keywordList in keywordListEnumerable
+                    .Where(_l => !cacheKeywordList.Contains(_l, new CahcedKeywordListEqualityComparer()))
+                    )
                 {
+                    //Debug.Log($"{name} -- keys=>{keywordList.Select(_t => $"{_t.Item1}:{_t.Item2}").Aggregate((_s, _c) => _s + "; " + _c)}");
                     text += (text.Length <= 0 ? "" : NewLineStr)
                         + Generate(useTextTemplate, _templateText, keywordList);
+                    cacheKeywordList.Add(keywordList.ToArray()); // <- must need ToArray()!
                 }
+                //Debug.Log($"{name} keywordList Count={cacheKeywordList.Count}");
                 return text;
+            }
+        }
+
+        class CahcedKeywordListEqualityComparer : IEqualityComparer<IEnumerable<(string, string)>>
+        {
+            public bool Equals(IEnumerable<(string, string)> x, IEnumerable<(string, string)> y)
+            {
+                return x.All(_k => y.Any(_y => _k.Item1 == _y.Item1 && _k.Item2 == _y.Item2));
+            }
+
+            public int GetHashCode(IEnumerable<(string, string)> obj)
+            {
+                return obj.GetHashCode();
             }
         }
 
@@ -289,6 +336,22 @@ namespace Hinode.Editors
             }
 
             return ExpandEmbbedText(text, useTextTemplate);
+        }
+
+        readonly Regex _keywordRegex = new Regex(@"\$([^¥$]+)+?\$");
+        HashSet<string> SerachEnableKeywords(string templateText)
+        {
+            HashSet<string> keywords = new HashSet<string>();
+            foreach(Match m in _keywordRegex.Matches(templateText))
+            {
+                var key = m.Groups[1].Value;
+                if (!keywords.Contains(key))
+                {
+                    keywords.Add(key);
+                }
+            }
+            //Debug.Log($"{name} enable Key: {keywords.Aggregate("", (_s, _c) => _s + _c + "; ")}");
+            return keywords;
         }
 
         string ExpandEmbbedText(string text, TextTemplateEngine useTextTemplate)
@@ -324,33 +387,45 @@ namespace Hinode.Editors
 
             public IEnumerator<IEnumerable<(string, string)>> GetEnumerator()
             {
-                var usedKeywordEnumerable = _target._keywords
-                    .Where(_k => _k.key != "" && _k.values.Count > 0)
-                    .Select(_k => {
-                        var e = _k.GetEnumerable().GetEnumerator();
-                        e.MoveNext();
-                        return e;
-                    })
-                    .Where(_e => _e.Current != default);
-                if (!usedKeywordEnumerable.Any()) yield break;
+                var keywords = _target.ContainsReplacementKeywords
+                    ? _target.ReplacemenetKeywords.Keywords
+                        //_targetにあるKeyのみを使用する
+                        .Where(_k => _target.Keywords.Any(_t => _t.key == _k.key))
+                    : _target._keywords;
 
-                var enumeratorList = usedKeywordEnumerable.ToList();
-                while(enumeratorList[enumeratorList.Count - 1] != null)
+                var keyAndValueLists = keywords.Where(_k => _k.key != "" && _k.values.Count > 0)
+                    .Select(_key => _key.values.Select(_v => (key: _key.key, value: _v)))
+                    .ToList();
+
+                var indexList = Enumerable.Repeat(0, keyAndValueLists.Count())
+                    .Zip(keyAndValueLists, (_i, _list) => (index: _i, list: _list, len: _list.Count()))
+                    .ToList();
+
+                if (indexList.Count <= 0) yield break;
+                while(indexList[0].index < indexList[0].len)
                 {
-                    yield return enumeratorList.Select(_e => _e.Current);
+                    yield return indexList.Select(_i => _i.list.ElementAt(_i.index));
 
-                    // 次の組み合わせに移動する
-                    foreach (var e in enumeratorList)
+                    //後ろにあるリストの添字から動かしていく
+                    for(var i=indexList.Count()-1; 0 <= i; --i)
                     {
-                        if (e.MoveNext()) break;
-                        if(e == enumeratorList[enumeratorList.Count - 1])
+                        var t = indexList[i];
+                        t.index += 1;
+                        if(t.index < t.len)
                         {
-                            //Loop終了
-                            enumeratorList[enumeratorList.Count - 1] = null;
+                            indexList[i] = t;
                             break;
                         }
-                        e.Reset();
-                        e.MoveNext();
+                        else if(i == 0)
+                        {
+                            indexList[i] = t;
+                            break;
+                        }
+                        else
+                        {
+                            t.index = 0;
+                            indexList[i] = t;
+                        }
                     }
                 }
             }

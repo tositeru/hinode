@@ -146,7 +146,7 @@ Kumi is Boy
 
 ただし、Keywordの組み合わせが膨大になり、Ignore Pairsの設定が難しくなる場合はIs Single Keyword Pair Modeを有効にすることで設定しやすくなるかもしれませんので、そちらを利用してください。
 
-####Is Single Keyword Pair Mode
+#### Is Single Keyword Pair Mode
 
 Inspector上のIs Single Keyword Pair Modeを有効にすると、Keywordの単一の組み合わせを指定することができます。
 
@@ -268,7 +268,6 @@ Kumi is Girl !!
 - Is Only Embbed: このText Template EngineのKeywordsを展開せず、埋め込みテンプレートのみを展開するかどうか？
 - Do Share Keywords: このText Template Engineのパラメータを埋め込まれたテンプレートのパラメータとして使用するかどうか?
 
-
 ####Is Only Embbed
 
 このText Template EngineのKeywordsを展開せず、埋め込みテンプレートのみを展開するかどうかの設定になります。
@@ -284,6 +283,14 @@ Kumi is Girl !!
 これが有効化されている場合に埋め込みテンプレートを展開する時は埋め込みテンプレートに設定されているパラメータは使用されず、このText Template Engineのパラメータが使用されます。
 
 その時、使用されるKeywordsは埋め込みテンプレート側に存在するKeywordsのみになりますので、埋め込みテンプレート側のKeywordsの設定も忘れずに行ってください。
+
+#### Replacement Keywords
+
+他のText Template EngineのKeywordsを使用したい時に設定してください。
+
+もし、このパラメータが設定されていた場合は、Keywordsとそれに関連するパラメータ(Ignore Pairs, Is Single Keyword Pair Mode and etx...)がこれに設定されているText Template Engineのものに置き換わります。
+
+埋め込みテンプレートおよびそれに関連するパラメータは置き換わらないので注意してください。
 
 ####Newline
 

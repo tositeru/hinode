@@ -53,8 +53,8 @@ namespace Hinode.Tests.Editors.Tools
             var generatedText = templateEngine.Generate();
             var newline = templateEngine.NewLineStr;
             Assert.AreEqual("This Pen is Good." + newline
-                + "This Grass is Good." + newline
                 + "This Pen is Nice." + newline
+                + "This Grass is Good." + newline
                 + "This Grass is Nice.", generatedText);
         }
 
@@ -200,14 +200,14 @@ namespace Hinode.Tests.Editors.Tools
 
             var otherTemplateEngine = TextTemplateEngine.Create();
             otherTemplateEngine.TemplateText = "";
-            otherTemplateEngine.AddKeyword("Item", "Tom", "Kumi");
+            otherTemplateEngine.AddKeyword("Item", "Kumi", "Tom");
             otherTemplateEngine.AddKeyword("Condition", "Hot", "Cool");
             otherTemplateEngine.AddIgnorePair(("Item", "Tom"), ("Condition", "Hot"));
 
             var newline = templateEngine.NewLineStr;
             Assert.AreEqual("This Kumi is Hot. Apple! Apple! Apple!." + newline
-                + "This Tom is Cool. Apple! Apple! Apple!." + newline
-                + "This Kumi is Cool. Apple! Apple! Apple!.", templateEngine.Generate(otherTemplateEngine));
+                + "This Kumi is Cool. Apple! Apple! Apple!." + newline
+                + "This Tom is Cool. Apple! Apple! Apple!.", templateEngine.Generate(otherTemplateEngine));
         }
 
         /// <summary>
@@ -319,5 +319,56 @@ namespace Hinode.Tests.Editors.Tools
                 + "Nice! Nice!.", templateEngine.Generate());
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngine.Create()"/>
+        /// <seealso cref="TextTemplateEngine.AddKeyword(string, string[])"/>
+        /// <seealso cref="TextTemplateEngine.AddSingleKeywordPair(IEnumerable{string})"/>
+        /// <seealso cref="TextTemplateEngine.AddEmbbed(string, TextTemplateEngine)"/>
+        /// <seealso cref="TextTemplateEngine.IsSingleKeywordPairMode"/>
+        /// <seealso cref="TextTemplateEngine.DoShareKaywords"/>
+        /// <seealso cref="TextTemplateEngine.TemplateText"/>
+        /// <seealso cref="TextTemplateEngine.ReplacemenetParam"/>
+        /// <seealso cref="TextTemplateEngine.ContainsReplacementParam"/>
+        /// </summary>
+        [Test]
+        public void ReplacemenetParamPasses()
+        {
+            var template = TextTemplateEngine.Create();
+            template.TemplateText = "$Item1$ is $Item2$. %Embbed%";
+            template.IsSingleKeywordPairMode = true;
+            template.DoShareKaywords = true;
+            template.AddKeyword("Item1");
+            template.AddKeyword("Item2");
+            template.AddSingleKeywordPair("Apple", "Good");
+            template.AddSingleKeywordPair("Grape", "Nice");
+
+            var embbedTemplate = TextTemplateEngine.Create();
+            embbedTemplate.TemplateText = "$Item1$-$Item1$";
+            template.AddEmbbed("Embbed", embbedTemplate);
+
+            // initialize use Parameter!
+            var replaceParam = TextTemplateEngine.Create();
+            replaceParam.AddKeyword("Item1", "Banana", "Orange");
+            replaceParam.AddKeyword("Item2", "yellow", "orange");
+            replaceParam.AddKeyword("notMatch", "A", "B");
+
+
+            Assert.IsFalse(template.ContainsReplacementKeywords);
+            template.ReplacemenetKeywords = replaceParam;
+            Assert.IsTrue(template.ContainsReplacementKeywords);
+            Assert.AreSame(replaceParam, template.ReplacemenetKeywords);
+
+            var newline = template.NewLineStr;
+            Assert.AreEqual(
+                "Banana is yellow. Banana-Banana" + newline +
+                "Orange-Orange" + newline +
+                "Banana is orange. Banana-Banana" + newline +
+                "Orange-Orange" + newline +
+                "Orange is yellow. Banana-Banana" + newline +
+                "Orange-Orange" + newline +
+                "Orange is orange. Banana-Banana" + newline +
+                "Orange-Orange"
+                , template.Generate());
+        }
     }
 }

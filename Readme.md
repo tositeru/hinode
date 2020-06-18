@@ -28,7 +28,7 @@ Appache Licence Version 2.0
     - [LabelObject](./Docs/UnityUtiliryClaesses.md#LabelObject)
 - [Editor拡張](./Docs/Editor.md)
     - [テキストテンプレートエンジン](./Docs/Editor/TextTemplateEngine.md)
-- 仮想Input機能
+- [仮想Input機能](./Docs/VirtualInput.md)
 - [Test Tools/Library](./Docs/TestToolsAndLibrary.md)
     - Snapshot テスト
     - UnityTest Attributeを指定されたテストのStep By Step実行機能
