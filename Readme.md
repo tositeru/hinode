@@ -30,9 +30,8 @@ Appache Licence Version 2.0
     - [テキストテンプレートエンジン](./Docs/Editor/TextTemplateEngine.md)
 - [仮想Input機能](./Docs/VirtualInput.md)
     - [ReplayableInput](./Docs/VirtualInput.md#ReplayableInput)
-    - [InputViewer](./Docs/VirtualInput.md#InputViewer)
     - [InputRecorder](./Docs/VirtualInput.md#InputRecorder)
-    - [ReplayableInputBase](./Docs/VirtualInput.md#ReplayableInputBase)
+    - [InputViewer](./Docs/VirtualInput.md#InputViewer)
 - [Test Tools/Library](./Docs/TestToolsAndLibrary.md)
     - Snapshot テスト
     - UnityTest Attributeを指定されたテストのStep By Step実行機能

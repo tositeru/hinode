@@ -44,5 +44,56 @@ foreach (InputDefines.MouseButton btn in System.Enum.GetValues(typeof(InputDefin
 
 ### InputRecorder
 
+InputRecorderを使うことでReplayableInputの入力データを記録・再生を行うことができます。
+
+以下のクラスを使用します。
+
+- InputRecorder : ReplayableInputの記録・再生を行うためのComponent
+- InputRecord : 入力データを表すScriptableObject
+- InputRecorder.IFrameDataRecorder : 入力データのフレーム単位の処理を行うインターフェイス
+
+使用するにあたっては、基本的に以下の手順を踏みます。
+
+1. InputRecorderをシーン上に作成し、フレーム単位の処理を行うInputRecorder.IFrameDataRecorderをそれに設定します。
+1. 記録対象または再生対象となるInputRecordをInputRecorderに登録
+1. 記録・再生処理を行う
+
+InputRecorder.IFrameDataRecorderのデフォルト実装として`FrameInputData`クラスを提供していますので、そちらを利用してください。
+(FrameInputDataはInputRecorderに初期化に設定されています。)
+
+```csharp
+var recorderObj = new GameObject("__recorder",
+    typeof(InputRecorder));
+var recorder = recorderObj.GetComponent<InputRecorder>();
+
+//入力データのインスタンス
+var inputRecord = InputRecord.Create(new Vector2Int(Screen.width, Screen.height));
+
+//入力データの記録・再生を行うクラス(InputRecorder.IFrameDataRecorder interface)
+recorder.FrameDataRecorder = new DummyFrameDataRecorder();
+
+{//Record Sample
+    //Start Record
+    recorder.StartRecord(inputRecord);
+
+    //Stop Record
+    recorder.StopRecord();
+
+    //Sase Record Data To inputRecord
+    recorder.SaveToTarget();
+}
+
+{//Replay Sample
+    //Start Replay
+    recorder.StartReplay(inputRecord);
+
+    //Pause Replay
+    recorder.PauseReplay();
+
+    //Stop Replay
+    recorder.StopReplay();
+}
+```
+
 ### InputViewer
 

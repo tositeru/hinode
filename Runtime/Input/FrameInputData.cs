@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using UnityEngine;
-using UnityEngine.EventSystems;
+using System.Text.RegularExpressions;
 using Hinode.Serialization;
+using UnityEngine;
 
 namespace Hinode
 {
@@ -12,14 +12,34 @@ namespace Hinode
     /// UnityEngine.EventSystemの1フレームにおける入力データを記録するためのもの
     /// 一つ前と変化がないデータはシリアライズの対象にならないようになっています。
     /// </summary>
-    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(EventSystemFrameInputData))]
-    public class EventSystemFrameInputData : BaseInputRecorder.IFrameDataRecorder, ISerializable
+    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(FrameInputData))]
+    public class FrameInputData : InputRecorder.IFrameDataRecorder, ISerializable
     {
-        public static readonly int LIMIT_TOUCH_COUNT = 8;
+        public static readonly int LIMIT_TOUCH_COUNT = 16;
 
-        [SerializeField] UpdateObserver<string> _compositionString = new UpdateObserver<string>();
-        [SerializeField] UpdateObserver<IMECompositionMode> _imeCompositionMode = new UpdateObserver<IMECompositionMode>();
-        [SerializeField] UpdateObserver<Vector2> _compositionCursorPos = new UpdateObserver<Vector2>();
+        public class KeyValue
+        {
+            public string Key { get; }
+            public IUpdateObserver Value { get; }
+            public KeyValue(string key, IUpdateObserver value)
+            {
+                Key = key;
+                Value = value;
+            }
+
+            public static implicit operator KeyValue((string key, IUpdateObserver value) data)
+                => new KeyValue(data.key, data.value);
+            public static implicit operator (string key, IUpdateObserver value)(KeyValue data)
+                => (data.Key, data.Value);
+        }
+
+        public interface IChildFrameInputData
+        {
+            void ResetInputDatas();
+            void UpdateInputDatas(ReplayableInput input);
+            IEnumerable<KeyValue> GetValuesEnumerable();
+        }
+
         [SerializeField] UpdateObserver<bool> _mousePresent = new UpdateObserver<bool>();
         [SerializeField]
         UpdateObserver<InputDefines.ButtonCondition>[] _mouseButtons = new UpdateObserver<InputDefines.ButtonCondition>[3] {
@@ -27,31 +47,18 @@ namespace Hinode
                 new UpdateObserver<InputDefines.ButtonCondition>(InputDefines.ButtonCondition.Free),
                 new UpdateObserver<InputDefines.ButtonCondition>(InputDefines.ButtonCondition.Free),
             };
-        [SerializeField] UpdateObserver<Vector2> _mousePosition = new UpdateObserver<Vector2>();
+        [SerializeField] UpdateObserver<Vector3> _mousePosition = new UpdateObserver<Vector3>();
         [SerializeField] UpdateObserver<Vector2> _mouseScrollDelta = new UpdateObserver<Vector2>();
+
         [SerializeField] UpdateObserver<bool> _touchSupported = new UpdateObserver<bool>();
         [SerializeField] UpdateObserver<int> _touchCount = new UpdateObserver<int>();
         [SerializeField] TouchUpdateObserver[] _touches;
 
+        [SerializeField] Dictionary<KeyCode, UpdateObserver<InputDefines.ButtonCondition>> _keyButtonsDict = new Dictionary<KeyCode, UpdateObserver<InputDefines.ButtonCondition>>();
+
         JsonSerializer _jsonSerializer = new JsonSerializer();
 
-        public string CompositionString
-        {
-            get => _compositionString.Value;
-            set { _compositionString.Value = value; }
-        }
-
-        public IMECompositionMode IMECompositionMode
-        {
-            get => _imeCompositionMode.Value;
-            set => _imeCompositionMode.Value = value;
-        }
-
-        public Vector2 CompositionCursorPos
-        {
-            get => _compositionCursorPos.Value;
-            set => _compositionCursorPos.Value = value;
-        }
+        #region Mouse Property
         public bool MousePresent
         {
             get => _mousePresent.Value;
@@ -68,7 +75,7 @@ namespace Hinode
             return _mouseButtons[(int)btnType].Value;
         }
 
-        public Vector2 MousePosition
+        public Vector3 MousePosition
         {
             get => _mousePosition.Value;
             set => _mousePosition.Value = value;
@@ -79,7 +86,9 @@ namespace Hinode
             get => _mouseScrollDelta.Value;
             set => _mouseScrollDelta.Value = value;
         }
+        #endregion
 
+        #region Touch
         public bool TouchSupported
         {
             get => _touchSupported.Value;
@@ -123,24 +132,45 @@ namespace Hinode
                 return _touches;
             }
         }
+        #endregion
 
-        public EventSystemFrameInputData()
+        #region Key Buttons
+        //_keyButtonsDict
+        public void SetKeyButton(KeyCode keyCode, InputDefines.ButtonCondition condition)
+        {
+            if(!_keyButtonsDict.ContainsKey(keyCode))
+            {
+                _keyButtonsDict.Add(keyCode, new UpdateObserver<InputDefines.ButtonCondition>(condition));
+            }
+            _keyButtonsDict[keyCode].Value = condition;
+        }
+        public InputDefines.ButtonCondition GetKeyButton(KeyCode keyCode)
+            => _keyButtonsDict.ContainsKey(keyCode)
+            ? _keyButtonsDict[keyCode].Value
+            : InputDefines.ButtonCondition.Free;
+
+        public IReadOnlyDictionary<KeyCode, UpdateObserver<InputDefines.ButtonCondition>> KeyButtons { get => _keyButtonsDict; }
+        #endregion
+
+        public FrameInputData()
         {
         }
 
         public void Reset()
         {
-            _compositionString.Reset();
-            _imeCompositionMode.Reset();
-            _compositionCursorPos.Reset();
-
             _mousePresent.Reset();
             _mousePosition.Reset();
             _mouseScrollDelta.Reset();
             foreach (var btn in _mouseButtons) { btn.Reset(); }
+
             _touchSupported.Reset();
             _touchCount.Reset();
             foreach (var t in Touches) { t.Reset(); }
+
+            foreach(var key in _keyButtonsDict.Values)
+            {
+                key.Reset();
+            }
         }
 
         /// <summary>
@@ -149,12 +179,9 @@ namespace Hinode
         /// 設定される値は更新済みのものだけになります。
         /// </summary>
         /// <param name="other"></param>
-        public void UpdateTo(EventSystemFrameInputData other)
+        public void UpdateTo(FrameInputData other)
         {
             //ime
-            if (_compositionString.DidUpdated) other._compositionString.Value = _compositionString.Value;
-            if (_imeCompositionMode.DidUpdated) other._imeCompositionMode.Value = _imeCompositionMode.Value;
-            if (_compositionCursorPos.DidUpdated) other._compositionCursorPos.Value = _compositionCursorPos.Value;
             //mouse
             if (_mousePresent.DidUpdated) other._mousePresent.Value = _mousePresent.Value;
             for (var i = 0; i < _mouseButtons.Length; ++i)
@@ -170,15 +197,21 @@ namespace Hinode
             {
                 if (Touches[i].DidUpdated) other.Touches[i] = Touches[i];
             }
+            //key
+            foreach (var (keyCode, condition) in _keyButtonsDict
+                .Where(_t => _t.Value.DidUpdated)
+                .Select(_t => (keyCode: _t.Key, condition: _t.Value)))
+            {
+                other.SetKeyButton(keyCode, condition.Value);
+            }
         }
 
         #region InputRecorder.IFrameDataRecorder
-        public void ClearRecorder()
+        /// <summary>
+        /// <see cref="InputRecorder.IFrameDataRecorder.ResetDatas()"/>
+        /// </summary>
+        public void ResetDatas()
         {
-            _compositionString.SetDefaultValue(true);
-            _imeCompositionMode.SetDefaultValue(true);
-            _compositionCursorPos.SetDefaultValue(true);
-
             _mousePresent.SetDefaultValue(true);
             _mousePosition.SetDefaultValue(true);
             _mouseScrollDelta.SetDefaultValue(true);
@@ -186,44 +219,58 @@ namespace Hinode
             _touchSupported.SetDefaultValue(true);
             _touchCount.SetDefaultValue(true);
             foreach (var t in Touches) { t.SetDefaultValue(true); }
+
+            _keyButtonsDict.Clear();
         }
 
-        public InputRecord.Frame Update(BaseInput baseInput)
+        /// <summary>
+        /// <see cref="InputRecorder.IFrameDataRecorder.Update(ReplayableInput)"/>
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public InputRecord.Frame Update(ReplayableInput input)
         {
             Reset();
 
             {//値の更新
-                CompositionString = baseInput.compositionString;
-                IMECompositionMode = baseInput.imeCompositionMode;
-                CompositionCursorPos = baseInput.compositionCursorPos;
-
-                MousePresent = baseInput.mousePresent;
-                MousePosition = baseInput.mousePosition;
-                MouseScrollDelta = baseInput.mouseScrollDelta;
+                MousePresent = input.MousePresent;
+                MousePosition = input.MousePos;
+                MouseScrollDelta = input.MouseScrollDelta;
                 foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
                 {
-                    InputDefines.ButtonCondition condition = InputDefines.ButtonCondition.Free;
-                    if (baseInput.GetMouseButtonDown((int)btn))
-                    {
-                        condition = InputDefines.ButtonCondition.Down;
-                    }
-                    else if (baseInput.GetMouseButtonUp((int)btn))
-                    {
-                        condition = InputDefines.ButtonCondition.Up;
-                    }
-                    else if (baseInput.GetMouseButton((int)btn))
-                    {
-                        condition = InputDefines.ButtonCondition.Push;
-                    }
+                    InputDefines.ButtonCondition condition = input.GetMouseButton(btn);
                     SetMouseButton(btn, condition);
                 }
 
-                TouchSupported = baseInput.touchSupported;
-                TouchCount = baseInput.touchCount;
-                for (var i = 0; i < baseInput.touchCount; ++i)
+                TouchSupported = input.TouchSupported;
+                TouchCount = input.TouchCount;
+                for (var i = 0; i < input.TouchCount; ++i)
                 {
-                    var t = baseInput.GetTouch(i);
+                    var t = input.GetTouch(i);
                     SetTouch(i, t);
+                }
+
+                if(input.AnyKey)
+                {
+                    foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
+                    {
+                        var condition = input.GetKeyDown(keyCode)
+                            ? InputDefines.ButtonCondition.Down
+                            : input.GetKeyUp(keyCode)
+                                ? InputDefines.ButtonCondition.Up
+                                : input.GetKey(keyCode)
+                                    ? InputDefines.ButtonCondition.Push
+                                    : InputDefines.ButtonCondition.Free;
+                        SetKeyButton(keyCode, condition);
+                    }
+                }
+                else
+                {
+                    foreach(var condition in _keyButtonsDict.Values
+                        .Where(_c => _c.Value == InputDefines.ButtonCondition.Free))
+                    {
+                        condition.Value = InputDefines.ButtonCondition.Free;
+                    }
                 }
             }
 
@@ -233,49 +280,53 @@ namespace Hinode
         }
 
         /// <summary>
-        /// フレームのデータを復元する
+        /// フレームのデータを復元します
+        /// この関数を呼び出した後は、このインスタンスとReplayableInputのパラメータがFrameのものへ更新されます。
+        /// <see cref="InputRecorder.IFrameDataRecorder.RecoverFrame(ReplayableInput, InputRecord.Frame)"/>
         /// </summary>
-        /// <param name="baseInput"></param>
+        /// <param name="input"></param>
         /// <param name="frame"></param>
-        public void RecoverFrame(ReplayableBaseInput baseInput, InputRecord.Frame frame)
+        public void RecoverFrame(ReplayableInput input, InputRecord.Frame frame)
         {
-            var recoverInput = _jsonSerializer.Deserialize<EventSystemFrameInputData>(frame.InputText);
+            var recoverInput = _jsonSerializer.Deserialize<FrameInputData>(frame.InputText);
 
             recoverInput.UpdateTo(this);
 
-            baseInput.recordedCompositionString = CompositionString;
-            baseInput.recordedIMECompositionMode = IMECompositionMode;
-            baseInput.recordedCompositionCursorPos = CompositionCursorPos;
-
-            baseInput.recordedMousePresent = MousePresent;
-            baseInput.recordedMousePosition = MousePosition;
-            baseInput.recordedMouseScrollDelta = MouseScrollDelta;
+            input.RecordedMousePresent = MousePresent;
+            input.RecordedMousePos = MousePosition;
+            input.RecordedMouseScrollDelta = MouseScrollDelta;
             foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
             {
-                baseInput.SetRecordedMouseButton((int)btn, GetMouseButton(btn));
+                input.SetRecordedMouseButton((int)btn, GetMouseButton(btn));
             }
 
-            baseInput.recordedTouchSupported = TouchSupported;
-            baseInput.recordedTouchCount = TouchCount;
+            input.RecordedTouchSupported = TouchSupported;
+            input.RecordedTouchCount = TouchCount;
             for (var i = 0; i < TouchCount; ++i)
             {
-                baseInput.SetRecordedTouch(i, (Touch)GetTouch(i));
+                input.SetRecordedTouch(i, (Touch)GetTouch(i));
+            }
+
+            foreach(var (keyCode, condition) in _keyButtonsDict.Select(_t => (_t.Key, _t.Value)))
+            {
+                input.SetRecordedKeyButton(keyCode, condition.Value);
             }
         }
 
         #endregion
 
         #region ISerializable
-        const string KeyCompositionString = "comStr";
-        const string KeyIMECompositionMode = "comMode";
-        const string KeyCompositionCursorPos = "comCurPos";
+        //Mouse
         const string KeyMousePresent = "musPre";
         const string KeyMouseButton = "mus";
         const string KeyMousePosition = "musPos";
         const string KeyMouseScrollDelta = "musSclDel";
+
+        //Touch
         const string KeyTouchSupported = "tchSpt";
         const string KeyTouchCount = "tchCnt";
         const string KeyTouch = "tch";
+        const string KeyButtonPrefix = "k";
 
         static Dictionary<string, System.Type> _keyAndTypeDict;
         [KeyAndTypeDictionaryGetter]
@@ -285,9 +336,6 @@ namespace Hinode
             {
                 _keyAndTypeDict = new Dictionary<string, System.Type>
                 {
-                    { KeyCompositionString, typeof(string) },
-                    { KeyIMECompositionMode, typeof(IMECompositionMode) },
-                    { KeyCompositionCursorPos, typeof(string) },
                     { KeyMousePresent, typeof(bool) },
                     { KeyMousePosition, typeof(string)},
                     { KeyMouseScrollDelta, typeof(string) },
@@ -302,24 +350,24 @@ namespace Hinode
                 {
                     _keyAndTypeDict.Add(KeyTouch + i.ToString(), typeof(TouchUpdateObserver));
                 }
+                foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
+                {
+                    _keyAndTypeDict.Add($"{KeyButtonPrefix}{(int)keyCode}", typeof(int));
+                }
             }
             return _keyAndTypeDict;
         }
 
-        public EventSystemFrameInputData(SerializationInfo info, StreamingContext context)
+        readonly Regex _keyButtonKeyRegex = new Regex(@"^k[0-9]+$");
+        public FrameInputData(SerializationInfo info, StreamingContext context)
             : this()
         {
             var e = info.GetEnumerator();
             while (e.MoveNext())
             {
+                Vector2 v;
                 switch (e.Name)
                 {
-                    case KeyCompositionString: _compositionString.Value = (string)e.Value; break;
-                    case KeyIMECompositionMode: _imeCompositionMode.Value = (IMECompositionMode)e.Value; break;
-                    case KeyCompositionCursorPos:
-                        if (Vector2Extensions.TryParse((string)e.Value, out var v))
-                            _compositionCursorPos.Value = v;
-                        break;
                     case KeyMousePresent: _mousePresent.Value = (bool)e.Value; break;
                     case KeyMousePosition:
                         if (Vector2Extensions.TryParse((string)e.Value, out v))
@@ -346,6 +394,13 @@ namespace Hinode
                                 SetTouch(index, (TouchUpdateObserver)e.Value);
                             }
                         }
+                        else if(_keyButtonKeyRegex.IsMatch(e.Name))
+                        {
+                            if (int.TryParse(e.Name.Substring(KeyButtonPrefix.Length), out var keyCodeValue))
+                            {
+                                SetKeyButton((KeyCode)keyCodeValue, (InputDefines.ButtonCondition)e.Value);
+                            }
+                        }
                         break;
                 }
 
@@ -354,10 +409,6 @@ namespace Hinode
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            //ime
-            if (_compositionString.DidUpdated) info.AddValue(KeyCompositionString, _compositionString.Value);
-            if (_imeCompositionMode.DidUpdated) info.AddValue(KeyIMECompositionMode, _imeCompositionMode.Value);
-            if (_compositionCursorPos.DidUpdated) info.AddValue(KeyCompositionCursorPos, _compositionCursorPos.Value.ToString("F4"));
             //mouse
             if (_mousePresent.DidUpdated) info.AddValue(KeyMousePresent, _mousePresent.Value);
             for (var i = 0; i < _mouseButtons.Length; ++i)
@@ -373,6 +424,13 @@ namespace Hinode
             {
                 if (Touches[i].DidUpdated) info.AddValue(KeyTouch + i.ToString(), Touches[i]);
             }
+            //Key Button
+            foreach(var (keyCode, condition) in _keyButtonsDict
+                .Select(_t => (keyCode: _t.Key, condition:_t.Value))
+                .Where(_t => _t.condition.DidUpdated))
+            {
+                info.AddValue($"{KeyButtonPrefix}{(int)keyCode}", (int)condition.Value);
+            }
         }
         #endregion
 
@@ -384,8 +442,8 @@ namespace Hinode
 
         class UpdatedValueEnumerable : IEnumerable<IUpdateObserver>, IEnumerable
         {
-            EventSystemFrameInputData _target;
-            public UpdatedValueEnumerable(EventSystemFrameInputData target)
+            FrameInputData _target;
+            public UpdatedValueEnumerable(FrameInputData target)
             {
                 _target = target;
             }
@@ -399,10 +457,10 @@ namespace Hinode
 
             class Enumerator : IEnumerator<IUpdateObserver>, IEnumerator, System.IDisposable
             {
-                EventSystemFrameInputData _target;
+                FrameInputData _target;
                 IEnumerator<IUpdateObserver> _enmuerator;
 
-                public Enumerator(EventSystemFrameInputData target)
+                public Enumerator(FrameInputData target)
                 {
                     _target = target;
                     Reset();
@@ -415,10 +473,7 @@ namespace Hinode
 
                 IEnumerator<IUpdateObserver> GetEnumerator()
                 {
-                    if (_target._compositionString.DidUpdated) yield return _target._compositionString;
-                    if (_target._compositionCursorPos.DidUpdated) yield return _target._compositionCursorPos;
-                    if (_target._imeCompositionMode.DidUpdated) yield return _target._imeCompositionMode;
-
+                    //Mouse
                     if (_target._mousePresent.DidUpdated) yield return _target._mousePresent;
                     if (_target._mousePosition.DidUpdated) yield return _target._mousePosition;
                     if (_target._mouseScrollDelta.DidUpdated) yield return _target._mouseScrollDelta;
@@ -428,6 +483,7 @@ namespace Hinode
                         yield return btn;
                     }
 
+                    //Touch
                     if (_target._touchSupported.DidUpdated) yield return _target._touchSupported;
                     if (_target._touchCount.DidUpdated) yield return _target._touchCount;
 
@@ -435,11 +491,18 @@ namespace Hinode
                     {
                         yield return t;
                     }
+
+                    //Key Buttons
+                    foreach(var (key, condition) in _target.KeyButtons
+                        .Select(_t => (keyCode : _t.Key, condition: _t.Value))
+                        .Where(_t => _t.condition.DidUpdated))
+                    {
+                        yield return condition;
+                    }
                 }
             }
         }
 
         #endregion
     }
-
 }

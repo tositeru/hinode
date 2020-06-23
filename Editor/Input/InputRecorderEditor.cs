@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace Hinode.Editors
 {
-    [CustomEditor(typeof(InputRecorder))]
+    [CustomEditor(typeof(BaseInputRecorder))]
     public class InputRecorderEditor : Editor
     {
         enum Props
@@ -30,13 +30,13 @@ namespace Hinode.Editors
                 return;
             }
 
-            var inst = target as InputRecorder;
+            var inst = target as BaseInputRecorder;
             EditorGUILayout.LabelField($"Current State => {inst.CurrentState}");
             using (var scope = new EditorGUILayout.HorizontalScope())
             {
                 switch (inst.CurrentState)
                 {
-                    case InputRecorder.State.Recording:
+                    case BaseInputRecorder.State.Recording:
                         if (GUILayout.Button("Finish Record"))
                         {
                             inst.DoneInGameView(() => {
@@ -46,7 +46,7 @@ namespace Hinode.Editors
                             });
                         }
                         break;
-                    case InputRecorder.State.Replaying:
+                    case BaseInputRecorder.State.Replaying:
                         if (GUILayout.Button("Stop Replay"))
                         {
                             inst.DoneInGameView(() => {
@@ -60,7 +60,7 @@ namespace Hinode.Editors
                             });
                         }
                         break;
-                    case InputRecorder.State.PauseingReplay:
+                    case BaseInputRecorder.State.PauseingReplay:
                         if (GUILayout.Button("Stop Replay"))
                         {
                             inst.DoneInGameView(() => {

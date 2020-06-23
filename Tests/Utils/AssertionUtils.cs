@@ -10,21 +10,23 @@ namespace Hinode.Tests
 {
     public static class AssertionUtils
     {
-        public static void AssertEnumerable<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message)
+        public static void AssertEnumerable<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message, System.Func<T, T, bool> comparer = null)
         {
             if (gots == null && corrects == null) return;
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots !=null}");
 
+            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
+
             var index = 0;
             foreach (var (t, correct) in gots.Zip(corrects, (_t, _c) => (t: _t, c: _c)))
             {
-                Assert.AreEqual(correct, t, $"{message}: don't be same... index=>{index}, correct={correct}, got={t}");
+                Assert.IsTrue(comparer(correct, t), $"{message}: don't be same... index=>{index}, correct={correct}, got={t}");
                 index++;
             }
             Assert.AreEqual(corrects.Count(), index, $"{message}: Don't Equal count...");
         }
 
-        public static void AssertEnumerableByUnordered<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message)
+        public static void AssertEnumerableByUnordered<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message, System.Func<T, T, bool> comparer =null)
         {
             if (gots == null && corrects == null) return;
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots != null}");
@@ -32,10 +34,11 @@ namespace Hinode.Tests
             var correctList = corrects.ToList();
             Assert.AreEqual(corrects.Count(), gots.Count(), $"{message}: Don't Equal count...");
 
-            foreach(var g in gots)
+            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
+            foreach (var g in gots)
             {
-                Assert.IsTrue(correctList.Any(_o => _o.Equals(g)), $"{message}: Don't exist {g}...");
-                correctList.Remove(correctList.First(_o => _o.Equals(g)));
+                Assert.IsTrue(correctList.Any(_o => comparer(_o, g)), $"{message}: Don't exist {g}...");
+                correctList.Remove(correctList.First(_o => comparer(_o, g)));
             }
             Assert.IsTrue(0 == correctList.Count(), $"{message}: Don't match elements...");
         }

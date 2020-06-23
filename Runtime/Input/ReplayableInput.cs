@@ -38,22 +38,20 @@ namespace Hinode
         //Input.backButtonLeavesApp; // <- not support
         //Input.compass // <- not support
 
-        readonly InputDefines.ButtonCondition[] _recordedMouseButtons = new InputDefines.ButtonCondition[3] {
-                InputDefines.ButtonCondition.Free,
-                InputDefines.ButtonCondition.Free,
-                InputDefines.ButtonCondition.Free,
-            };
-        readonly List<Touch> _recordedTouches = new List<Touch>();
-
-        readonly Dictionary<KeyCode, InputDefines.ButtonCondition> _recordedKeyboardButtons = new Dictionary<KeyCode, InputDefines.ButtonCondition>();
-
-        readonly Dictionary<string, InputDefines.ButtonCondition> _recordedButtons = new Dictionary<string, InputDefines.ButtonCondition>();
-
         /// <summary>
         /// trueの時はInputはrecordedXXXプロパティに設定された値を返すようになります
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.MouseInputPasses()"/>
         /// </summary>
         public bool IsReplaying { get; set; } = false;
+
+        public ReplayableInput() { }
+
+        #region Mouse
+        readonly InputDefines.ButtonCondition[] _recordedMouseButtons = new InputDefines.ButtonCondition[3] {
+                InputDefines.ButtonCondition.Free,
+                InputDefines.ButtonCondition.Free,
+                InputDefines.ButtonCondition.Free,
+            };
 
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.MouseInputPasses()"/>
@@ -70,16 +68,6 @@ namespace Hinode
         /// </summary>
         public bool RecordedMousePresent { get; set; } = false;
 
-        public int RecordedTouchCount { get; set; } = 0;
-        public bool RecordedTouchSupported { get; set; } = false;
-        public bool RecordedTouchPressureSupported { get; set; } = false;
-        public bool RecordedMultiTouchEnabled { get; set; } = false;
-        public bool RecordedSimulateMouseWithTouches { get; set; } = false;
-        public bool RecordedStylusTouchSupported { get; set; } = false;
-
-        public ReplayableInput() { }
-
-        #region Mouse
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.MouseInputPasses()"/>
         /// </summary>
@@ -160,6 +148,15 @@ namespace Hinode
         #endregion
 
         #region Touch
+        readonly List<Touch> _recordedTouches = new List<Touch>();
+
+        public int RecordedTouchCount { get; set; } = 0;
+        public bool RecordedTouchSupported { get; set; } = false;
+        public bool RecordedTouchPressureSupported { get; set; } = false;
+        public bool RecordedMultiTouchEnabled { get; set; } = false;
+        public bool RecordedSimulateMouseWithTouches { get; set; } = false;
+        public bool RecordedStylusTouchSupported { get; set; } = false;
+
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.TouchInputPasses()"/>
         /// </summary>
@@ -249,6 +246,7 @@ namespace Hinode
         #endregion
 
         #region Keyboard
+        readonly Dictionary<KeyCode, InputDefines.ButtonCondition> _recordedKeyboardButtons = new Dictionary<KeyCode, InputDefines.ButtonCondition>();
 
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.KeyPasses()"/>
@@ -353,6 +351,7 @@ namespace Hinode
         //Input.GetButton(name);
         //Input.GetButtonDown(name);
         //Input.GetButtonUp(name);
+        readonly Dictionary<string, InputDefines.ButtonCondition> _recordedButtons = new Dictionary<string, InputDefines.ButtonCondition>();
 
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.ButtonPasses()"/>
@@ -433,7 +432,7 @@ namespace Hinode
 
         #endregion
 
-        #region Buttons
+        #region Axis
         //Input.GetAxis(axisName);
         readonly Dictionary<string, float> _recordedAxis = new Dictionary<string, float>();
 

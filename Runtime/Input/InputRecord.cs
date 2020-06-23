@@ -18,14 +18,14 @@ namespace Hinode
     /// 入力データを保存する時は以下のケースを想定しています。
     /// - 文字列へ変換するものを用意し、InputRecord#Frame#InputTextを直接使用する。
     /// - InputRecord#Frame#SetInputTextByJSON()とInputRecord#Frame#ConvertFromJsonInputText()を使用する。
-    /// <seealso cref="InputRecorder"/>
+    /// <seealso cref="BaseInputRecorder"/>
     /// <seealso cref="Hinode.Tests.Input.TestInputRecord"/>
     /// </summary>
     [CreateAssetMenu(menuName = "Hinode/Input Record")]
     public class InputRecord : ScriptableObject
     {
-		[SerializeField] Vector2Int _screenSize;
-		[SerializeField] List<Frame> _frames = new List<Frame>();
+        [SerializeField] Vector2Int _screenSize;
+        [SerializeField] List<Frame> _frames = new List<Frame>();
 
         public Vector2Int ScreenSize { get => _screenSize; set => _screenSize = value; }
         public IEnumerable<Frame> Frames { get => _frames != null ? _frames : _frames; }
@@ -71,10 +71,10 @@ namespace Hinode
         /// </summary>
         [System.Serializable]
         public class Frame
-		{
+        {
             [SerializeField] uint _frameNo = 0;
-			[SerializeField] float _deltaSecond;
-			[SerializeField] string _inputText;
+            [SerializeField] float _deltaSecond;
+            [SerializeField] string _inputText;
 
             public Frame() : this(0, 0f) { }
             public Frame(uint frameNo, float deltaSecond)
@@ -143,5 +143,5 @@ namespace Hinode
             }
         }
         #endregion
-	}
+    }
 }
