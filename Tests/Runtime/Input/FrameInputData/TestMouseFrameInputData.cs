@@ -70,7 +70,7 @@ namespace Hinode.Tests.Input.FrameInputData
         /// <summary>
         /// <seealso cref="MouseFrameInputData.GetValuesEnumerable()"/>
         /// </summary>
-        [Test, Order(-1)]
+        [Test]
         public void GetValuesEnumerablePasses()
         {
             var data = new MouseFrameInputData();

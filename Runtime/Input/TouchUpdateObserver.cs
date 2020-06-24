@@ -8,10 +8,13 @@ namespace Hinode
 {
     /// <summary>
     /// UnityEngine.Touchの値の更新を監視するクラス
+    /// <seealso cref="Hinode.Tests.Input.TestTouchUpdateObserver"/>
     /// </summary>
     [System.Serializable]
     [HasKeyAndTypeDictionaryGetter(typeof(TouchUpdateObserver))]
     public class TouchUpdateObserver : ISerializable, IUpdateObserver
+        , System.IEquatable<TouchUpdateObserver>
+        , System.IEquatable<Touch>
     {
         public enum ValueKey
         {
