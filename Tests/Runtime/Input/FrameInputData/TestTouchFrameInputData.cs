@@ -118,30 +118,29 @@ namespace Hinode.Tests.Input.FrameInputData
 
         /// <summary>
         /// <seealso cref="TouchFrameInputData.GetValuesEnumerable()"/>
-        /// <seealso cref="TouchFrameInputData.GetKeyAndTypeDictionary()"/>
+        /// <seealso cref="TouchFrameInputData.GetKeyType(string)"/>
         /// </summary>
         [Test]
-        public void GetKeyAndTypeDictionaryPasses()
+        public void GetKeyTypePasses()
         {
             var data = new TouchFrameInputData();
 
-            AssertionUtils.AssertEnumerableByUnordered(
-                data.GetValuesEnumerable()
+            var testData = data.GetValuesEnumerable()
                     .Select(_t => {
-                        if(int.TryParse(_t.Key, out var _))
+                        if (int.TryParse(_t.Key, out var _))
                         {
-                            return (_t.Key, _t.Value.GetType());
+                            return (key: _t.Key, type: _t.Value.GetType());
                         }
                         else
                         {
-                            return (_t.Key, _t.Value.RawValue.GetType());
+                            return (key: _t.Key, type: _t.Value.RawValue.GetType());
                         }
-                    })
-                , TouchFrameInputData.GetKeyAndTypeDictionary()
-                    .Select(_t => (_t.Key, _t.Value))
-                , "Don't match key and Type..."
-            //, (x, y) => x.Key == y.Key && x.Item2.IsSameOrInheritedType(y.Item2)
-            );
+                    });
+            foreach(var d in testData)
+            {
+                var errorMessage = $"Don't match key and Type... key={d.key}";
+                Assert.AreEqual(d.type, TouchFrameInputData.GetKeyType(d.key), errorMessage);
+            }
         }
 
         /// <summary>

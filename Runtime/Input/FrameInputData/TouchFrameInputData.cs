@@ -13,7 +13,7 @@ namespace Hinode
     /// <see cref="InputRecorder.IFrameDataRecorder"/>
     /// <seealso cref="FrameInputData.IChildFrameInputData"/>
     /// </summary>
-    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(TouchFrameInputData))]
+    [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(TouchFrameInputData))]
     public class TouchFrameInputData : InputRecorder.IFrameDataRecorder
         , ISerializable
         , FrameInputData.IChildFrameInputData
@@ -280,26 +280,29 @@ namespace Hinode
         #endregion
 
         static Dictionary<string, System.Type> _keyAndTypeDict;
-        [KeyAndTypeDictionaryGetter]
-        public static IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary()
+        [SerializationKeyTypeGetter]
+        public static System.Type GetKeyType(string key)
         {
-            if (_keyAndTypeDict == null)
+            if(KeyTouchSupported == key
+                || KeyTouchPressureSupported == key
+                || KeyStylusTouchSupported == key
+                || KeyMultiTouchEnabled == key
+                || KeySimulateMouseWithTouches == key)
             {
-                _keyAndTypeDict = new Dictionary<string, System.Type>
-                {
-                    { KeyTouchSupported, typeof(bool) },
-                    { KeyTouchCount, typeof(int) },
-                    { KeyTouchPressureSupported, typeof(bool) },
-                    { KeyStylusTouchSupported, typeof(bool) },
-                    { KeyMultiTouchEnabled, typeof(bool) },
-                    { KeySimulateMouseWithTouches, typeof(bool) },
-                };
-                for (var i = 0; i < LIMIT_TOUCH_COUNT; ++i)
-                {
-                    _keyAndTypeDict.Add(i.ToString(), typeof(TouchUpdateObserver));
-                }
+                return typeof(bool);
             }
-            return _keyAndTypeDict;
+            else if(KeyTouchCount == key)
+            {
+                return typeof(int);
+            }
+            else if(int.TryParse(key, out var _))
+            {
+                return typeof(TouchUpdateObserver);
+            }
+            else
+            {
+                return null;
+            }
         }
 
     }

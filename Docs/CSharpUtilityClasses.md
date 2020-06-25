@@ -188,7 +188,7 @@ ISerializer.IInstanceCreatorを使用することでISerializerが対応でき�
 
 - Desrialize
 - Serialize
-- GetFieldKeyAndTypeDict
+- GetKeyTypeGetter
 
 ```csharp
 public interface ISerializer.IInstanceCreator
@@ -199,29 +199,53 @@ public interface ISerializer.IInstanceCreator
     //Serializeの時に使用されます。
     bool Serialize(object target, SerializationInfo info, StreamingContext context);
 
-    //引数に渡された型と対応するシリアライズ対象のメンバの辞書を返すようにしてください。
-    //もし引数に渡した型と一致する辞書がなければ、その型がHasKeyAndTypeDictionaryGetterAttributeを指定されているか確認し、
-    // 指定されている場合はそのAttributeから辞書を取得するよう試みます。
-    IReadOnlyDictionary<string, System.Type> GetFieldKeyAndTypeDict(System.Type type);
+    //引数に渡された型と対応するISerializationKeyTypeGetterを返すようにしてください。
+    //もし引数に渡した型と一致する辞書がなければ、その型がContainsSerializationKeyTypeGetterAttributeを指定されているか確認し、
+    // 指定されている場合はそのAttributeからISerializationKeyTypeGetterを取得するよう試みます。
+    ISerializationKeyTypeGetter GetKeyTypeGetter(System.Type type)
 }
 ```
 
-##### ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict(System.Type type)
+##### ISerializer.IInstanceCreator.GetKeyTypeGetter(System.Type type)
 
-ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict()は渡された型のシリアライズされた時のメンバのキー名とその型のペアを表す辞書を返すこと期待されます。
+ISerializer.IInstanceCreator.GetKeyTypeGetter()は渡された型のシリアライズされた時のメンバのキー名とその型のペアを表す辞書を返すこと期待されます。
 
 この関数を使用することで、シリアライズされる際に元のクラスのフィールド名とは異なるキー名をつけることができます。
 
 実装の際はISerializer.IInstanceCreator.Serialize()の処理内容と一致するように辞書を作成してください。
 ISerializerではこの二つの実装内容が一致しているかどうかの判定は行いませんので注意してください。
 
-#### HasKeyAndTypeDictionaryGetterAttribute
+#### ContainsSerializationKeyTypeGetterAttribute
 
-ISerializer.IInstanceCreator.GetFieldKeyAndTypeDict(System.Type type)が対応していない型の場合はISerializerはその型にHasKeyAndTypeDictionaryGetterAttributeが指定されていないか確認します。
+ISerializer.IInstanceCreator.GetKeyTypeGetter(System.Type type)が対応していない型の場合はISerializerはその型にContainsSerializationKeyTypeGetterAttributeが指定されていないか確認します。
 
-もし指定されていた場合は、HasKeyAndTypeDictionaryGetterAttributeからシリアライズされた時のメンバのキー名とその型のペアを表す辞書を取得します。
+もし指定されていた場合は、ContainsSerializationKeyTypeGetterAttributeからISerializationKeyTypeGetterを取得します。
 
-このAttributeを指定することで指定した型のDefaultの辞書を定義することができます。
+このAttributeを指定することで指定した型のDefaultのISerializationKeyTypeGetterを定義することができます。
+
+指定した場合はキーとそれに対応する型を返す関数にSerializationKeyTypeGetterAttributeを指定してください。
+
+SerializationKeyTypeGetterAttributeが指定された関数は戻り値がSystem.Typeで引数にstringを受け取るようにしてください。
+
+```csharp
+[ContainsSerializationKeyTypeGetter(typeof(TestClass))]
+class TestClass
+{
+    [SerializationKeyTypeGetter]
+    static System.Type GetKeyType(string key)
+    {
+        //...
+    }
+}
+```
+
+もし、ContainsSerializationKeyTypeGetterAttributeが指定されたクラスの親クラスにもContainsSerializationKeyTypeGetterAttributeが指定されていた場合、キーが一致していない場合は親クラスのものも探すようになっています。
+
+優先順位としては以下のようになります。
+
+1. Attributeが指定されたクラスのSerializationKeyTypeGetterAttributeが指定されたメソッド
+1. クラス階層が近いものが優先として、親クラスの内、ContainsSerializationKeyTypeGetterAttributeが指定されているクラスのSerializationKeyTypeGetterAttributeが指定されたメソッド
+1. どれも一致しない場合はnullを返します。
 
 ### Text Resources
 

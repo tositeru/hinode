@@ -407,6 +407,33 @@ namespace Hinode.Tests.Input
         }
 
         /// <summary>
+        /// <seealso cref="ReplayableInput.SetRecordedButton(string, InputDefines.ButtonCondition)"/>
+        /// <seealso cref="ReplayableInput.GetButtonCondition(string)"/>
+        /// </summary>
+        [Test]
+        public void GetButtonConditionPasses()
+        {
+            var input = ReplayableInput.Instance;
+            input.IsReplaying = true;
+            var buttonNames = new string[] {
+                "Fire1",
+                "Fire2",
+                "Jump",
+            };
+
+            foreach (var name in buttonNames)
+            {
+                foreach (var condition in System.Enum.GetValues(typeof(InputDefines.ButtonCondition))
+                    .OfType<InputDefines.ButtonCondition>())
+                {
+                    var errorMessage = $"Failed Button({name}) and Condition({condition})...";
+                    input.SetRecordedButton(name, condition);
+                    Assert.AreEqual(condition, input.GetButtonCondition(name), errorMessage);
+                }
+            }
+        }
+
+        /// <summary>
         /// <seealso cref="ReplayableInput.GetAxis(string)"/>
         /// <seealso cref="ReplayableInput.ContainsRecordedAxis(string)"/>
         /// <seealso cref="ReplayableInput.GetRecordedAxis(string)"/>

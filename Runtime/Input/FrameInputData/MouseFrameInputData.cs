@@ -11,7 +11,7 @@ namespace Hinode
     /// UnityEngine.EventSystemの1フレームにおける入力データを記録するためのもの
     /// 一つ前と変化がないデータはシリアライズの対象にならないようになっています。
     /// </summary>
-    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(MouseFrameInputData))]
+    [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(MouseFrameInputData))]
     public class MouseFrameInputData : InputRecorder.IFrameDataRecorder
         , ISerializable
         , FrameInputData.IChildFrameInputData
@@ -223,24 +223,26 @@ namespace Hinode
         }
         #endregion
 
-        static Dictionary<string, System.Type> _keyAndTypeDict;
-        [KeyAndTypeDictionaryGetter]
-        public static IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary()
+        [SerializationKeyTypeGetter]
+        public static System.Type GetKeyType(string key)
         {
-            if (_keyAndTypeDict == null)
+            if(KeyMousePresent == key)
             {
-                _keyAndTypeDict = new Dictionary<string, System.Type>
-                {
-                    { KeyMousePresent, typeof(bool) },
-                    { KeyMousePosition, typeof(string)},
-                    { KeyMouseScrollDelta, typeof(string) },
-                };
-                foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
-                {
-                    _keyAndTypeDict.Add(((int)btn).ToString(), typeof(InputDefines.ButtonCondition));
-                }
+                return typeof(bool);
             }
-            return _keyAndTypeDict;
+            else if(KeyMousePosition == key
+                || KeyMouseScrollDelta == key)
+            {
+                return typeof(string);
+            }
+            else if(int.TryParse(key, out var _))
+            {
+                return typeof(InputDefines.ButtonCondition);
+            }
+            else
+            {
+                return null;
+            }
         }
 
     }

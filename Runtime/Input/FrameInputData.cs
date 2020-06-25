@@ -12,7 +12,7 @@ namespace Hinode
     /// UnityEngine.EventSystemの1フレームにおける入力データを記録するためのもの
     /// 一つ前と変化がないデータはシリアライズの対象にならないようになっています。
     /// </summary>
-    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(FrameInputData))]
+    [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(FrameInputData))]
     public class FrameInputData : InputRecorder.IFrameDataRecorder, ISerializable
     {
         public static readonly int LIMIT_TOUCH_COUNT = 16;
@@ -329,33 +329,34 @@ namespace Hinode
         const string KeyButtonPrefix = "k";
 
         static Dictionary<string, System.Type> _keyAndTypeDict;
-        [KeyAndTypeDictionaryGetter]
-        public static IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary()
+        [SerializationKeyTypeGetter]
+        public static System.Type GetKeyAndTypeDictionary(string key)
         {
-            if (_keyAndTypeDict == null)
-            {
-                _keyAndTypeDict = new Dictionary<string, System.Type>
-                {
-                    { KeyMousePresent, typeof(bool) },
-                    { KeyMousePosition, typeof(string)},
-                    { KeyMouseScrollDelta, typeof(string) },
-                    { KeyTouchSupported, typeof(bool) },
-                    { KeyTouchCount, typeof(int) },
-                };
-                foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
-                {
-                    _keyAndTypeDict.Add(KeyMouseButton + ((int)btn).ToString(), typeof(InputDefines.ButtonCondition));
-                }
-                for (var i = 0; i < LIMIT_TOUCH_COUNT; ++i)
-                {
-                    _keyAndTypeDict.Add(KeyTouch + i.ToString(), typeof(TouchUpdateObserver));
-                }
-                foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
-                {
-                    _keyAndTypeDict.Add($"{KeyButtonPrefix}{(int)keyCode}", typeof(int));
-                }
-            }
-            return _keyAndTypeDict;
+            throw new System.NotImplementedException();
+            //if (_keyAndTypeDict == null)
+            //{
+            //    _keyAndTypeDict = new Dictionary<string, System.Type>
+            //    {
+            //        { KeyMousePresent, typeof(bool) },
+            //        { KeyMousePosition, typeof(string)},
+            //        { KeyMouseScrollDelta, typeof(string) },
+            //        { KeyTouchSupported, typeof(bool) },
+            //        { KeyTouchCount, typeof(int) },
+            //    };
+            //    foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
+            //    {
+            //        _keyAndTypeDict.Add(KeyMouseButton + ((int)btn).ToString(), typeof(InputDefines.ButtonCondition));
+            //    }
+            //    for (var i = 0; i < LIMIT_TOUCH_COUNT; ++i)
+            //    {
+            //        _keyAndTypeDict.Add(KeyTouch + i.ToString(), typeof(TouchUpdateObserver));
+            //    }
+            //    foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
+            //    {
+            //        _keyAndTypeDict.Add($"{KeyButtonPrefix}{(int)keyCode}", typeof(int));
+            //    }
+            //}
+            //return _keyAndTypeDict;
         }
 
         readonly Regex _keyButtonKeyRegex = new Regex(@"^k[0-9]+$");

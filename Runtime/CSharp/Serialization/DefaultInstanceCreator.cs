@@ -18,10 +18,10 @@ namespace Hinode.Serialization
             public delegate object DesirializeInstancePredication(SerializationInfo info, StreamingContext context);
             public delegate bool SerializeInstancePredication(object instance, SerializationInfo info, StreamingContext context);
 
-            public static TypeInfo Create<T>(DesirializeInstancePredication desirializeInstance, SerializeInstancePredication serializeInstance, IReadOnlyDictionary<string, System.Type> fieldKeyAndTypeDict)
-                => Create(typeof(T), desirializeInstance, serializeInstance, fieldKeyAndTypeDict);
+            public static TypeInfo Create<T>(DesirializeInstancePredication desirializeInstance, SerializeInstancePredication serializeInstance, ISerializationKeyTypeGetter keyTypeGetter)
+                => Create(typeof(T), desirializeInstance, serializeInstance, keyTypeGetter);
 
-            public static TypeInfo Create(System.Type target, DesirializeInstancePredication desirializeInstance, SerializeInstancePredication serializeInstance, IReadOnlyDictionary<string, System.Type> fieldKeyAndTypeDict)
+            public static TypeInfo Create(System.Type target, DesirializeInstancePredication desirializeInstance, SerializeInstancePredication serializeInstance, ISerializationKeyTypeGetter keyTypeGetter)
             {
                 Assert.IsNotNull(target);
                 Assert.IsNotNull(desirializeInstance);
@@ -31,13 +31,13 @@ namespace Hinode.Serialization
                     Target = target,
                     DesirializeInstance = desirializeInstance,
                     SerializeInstance = serializeInstance,
-                    FieldKeyAndTypeDict = fieldKeyAndTypeDict,
+                    KeyTypeGetter = keyTypeGetter,
                 };
             }
             public System.Type Target { get; private set; }
             public DesirializeInstancePredication DesirializeInstance { get; private set; }
             public SerializeInstancePredication SerializeInstance { get; private set; }
-            public IReadOnlyDictionary<string, System.Type> FieldKeyAndTypeDict { get; private set; }
+            public ISerializationKeyTypeGetter KeyTypeGetter { get; private set; }
 
             TypeInfo()
             {}
@@ -73,16 +73,12 @@ namespace Hinode.Serialization
             return _typeInfoDict[type].SerializeInstance?.Invoke(target, info, context) ?? false;
         }
 
-        /// <summary>
-        /// typeに対応したキー名と型の辞書を返す
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public IReadOnlyDictionary<string, System.Type> GetFieldKeyAndTypeDict(System.Type type)
+        public ISerializationKeyTypeGetter GetKeyTypeGetter(System.Type type)
         {
             if (!_typeInfoDict.ContainsKey(type)) return null;
-            return _typeInfoDict[type].FieldKeyAndTypeDict;
+            return _typeInfoDict[type].KeyTypeGetter;
         }
+
         #endregion
 
         static DefaultInstanceCreator()
@@ -115,10 +111,14 @@ namespace Hinode.Serialization
                     info.AddValue("y", vec2.y);
                     return true;
                 },
-                new Dictionary<string, System.Type> {
-                    {"x", typeof(int)},
-                    {"y", typeof(int)},
-                })
+                new PredicateSerializationKeyTypeGetter((string key) => {
+                    switch(key)
+                    {
+                        case "x":
+                        case "y": return typeof(int);
+                        default: return null;
+                    }
+                }))
             );
 
             _typeInfoDict.Add(typeof(Vector3), TypeInfo.Create<Vector3>(
@@ -151,11 +151,15 @@ namespace Hinode.Serialization
                     info.AddValue("z", vec.z);
                     return true;
                 },
-                new Dictionary<string, System.Type> {
-                    {"x", typeof(int)},
-                    {"y", typeof(int)},
-                    {"z", typeof(int)},
-                })
+                new PredicateSerializationKeyTypeGetter((string key) => {
+                    switch (key)
+                    {
+                        case "x":
+                        case "y":
+                        case "z": return typeof(int);
+                        default: return null;
+                    }
+                }))
             );
 
             _typeInfoDict.Add(typeof(Vector4), TypeInfo.Create<Vector4>(

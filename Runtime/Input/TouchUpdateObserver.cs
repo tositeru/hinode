@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using UnityEngine;
+using Hinode.Serialization;
 
 namespace Hinode
 {
@@ -11,7 +12,7 @@ namespace Hinode
     /// <seealso cref="Hinode.Tests.Input.TestTouchUpdateObserver"/>
     /// </summary>
     [System.Serializable]
-    [HasKeyAndTypeDictionaryGetter(typeof(TouchUpdateObserver))]
+    [ContainsSerializationKeyTypeGetter(typeof(TouchUpdateObserver))]
     public class TouchUpdateObserver : ISerializable, IUpdateObserver
         , System.IEquatable<TouchUpdateObserver>
         , System.IEquatable<Touch>
@@ -374,30 +375,36 @@ namespace Hinode
         }
 
         static Dictionary<string, System.Type> _keyAndTypeDict;
-        [KeyAndTypeDictionaryGetter]
-        static IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary()
+        [SerializationKeyTypeGetter]
+        static System.Type GetKeyType(string key)
         {
-            if(_keyAndTypeDict == null)
+            if(int.TryParse(key, out var number))
             {
-                _keyAndTypeDict = new Dictionary<string, System.Type>
+                var valueKey = (ValueKey)System.Enum.ToObject(typeof(ValueKey), number);
+                switch (valueKey)
                 {
-                    { ((int)ValueKey.AltitudeAngle).ToString(), typeof(float) },
-                    { ((int)ValueKey.AzimuthAngle).ToString(), typeof(float) },
-                    { ((int)ValueKey.FingerId).ToString(), typeof(int) },
-                    { ((int)ValueKey.MaximumPossiblePressure).ToString(), typeof(float) },
-                    { ((int)ValueKey.Phase).ToString(), typeof(TouchPhase) },
-                    { ((int)ValueKey.Position).ToString(), typeof(Vector2) },
-                    { ((int)ValueKey.DeltaPosition).ToString(), typeof(Vector2) },
-                    { ((int)ValueKey.Pressure).ToString(), typeof(float) },
-                    { ((int)ValueKey.Radius).ToString(), typeof(float) },
-                    { ((int)ValueKey.RadiusVariance).ToString(), typeof(float) },
-                    { ((int)ValueKey.RawPosition).ToString(), typeof(Vector2) },
-                    { ((int)ValueKey.TapCount).ToString(), typeof(int) },
-                    { ((int)ValueKey.DeltaTime).ToString(), typeof(float) },
-                    { ((int)ValueKey.Type).ToString(), typeof(TouchType) },
-                };
+                    case ValueKey.AltitudeAngle:
+                    case ValueKey.AzimuthAngle:
+                    case ValueKey.MaximumPossiblePressure:
+                    case ValueKey.Pressure:
+                    case ValueKey.Radius:
+                    case ValueKey.RadiusVariance:
+                    case ValueKey.DeltaTime:
+                        return typeof(float);
+                    case ValueKey.FingerId:
+                    case ValueKey.TapCount:
+                        return typeof(int);
+                    case ValueKey.Phase:
+                        return typeof(TouchPhase);
+                    case ValueKey.Position:
+                    case ValueKey.DeltaPosition:
+                    case ValueKey.RawPosition:
+                        return typeof(Vector2);
+                    case ValueKey.Type:
+                        return typeof(TouchType);
+                }
             }
-            return _keyAndTypeDict;
+            return null;
         }
         #endregion
     }

@@ -188,22 +188,23 @@ namespace Hinode.Tests.Input.FrameInputData
 
         /// <summary>
         /// <seealso cref="KeyboardFrameInputData.GetValuesEnumerable()"/>
-        /// <seealso cref="KeyboardFrameInputData.GetKeyAndTypeDictionary()"/>
+        /// <seealso cref="KeyboardFrameInputData.GetKeyType(string)"/>
         /// </summary>
         [Test]
-        public void GetKeyAndTypeDictionaryPasses()
+        public void GetKeyTypePasses()
         {
             var data = new KeyboardFrameInputData();
 
             var allKeyCodes = System.Enum.GetValues(typeof(KeyCode))
                 .OfType<KeyCode>();
-            AssertionUtils.AssertEnumerableByUnordered(
-                allKeyCodes.Select(_k => (((int)_k).ToString(), typeof(int)))
-                    .Distinct()
-                , KeyboardFrameInputData.GetKeyAndTypeDictionary()
-                    .Select(_t => (_t.Key, _t.Value))
-                , "Don't match key and Type..."
-            );
+
+            var testData = allKeyCodes.Select(_k => (key: ((int)_k).ToString(), type: typeof(int)))
+                    .Distinct();
+            foreach(var d in testData)
+            {
+                var errorMessage = $"Don't match key and Type... key={d.key}";
+                Assert.AreEqual(d.type, KeyboardFrameInputData.GetKeyType(d.key), errorMessage);
+            }
         }
 
         /// <summary>

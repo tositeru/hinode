@@ -383,6 +383,24 @@ namespace Hinode
             ? GetRecordedButton(name) == InputDefines.ButtonCondition.Up
             : Input.GetButtonUp(name);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public InputDefines.ButtonCondition GetButtonCondition(string name)
+        {
+            return IsReplaying
+                ? GetRecordedButton(name)
+                : Input.GetButtonDown(name)
+                    ? InputDefines.ButtonCondition.Down
+                    : Input.GetButtonUp(name)
+                        ? InputDefines.ButtonCondition.Up
+                        : Input.GetButton(name)
+                            ? InputDefines.ButtonCondition.Push
+                            : InputDefines.ButtonCondition.Free;
+        }
+
         #region Recorded Value Methods
         /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.ButtonPasses()"/>

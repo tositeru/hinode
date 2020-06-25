@@ -114,7 +114,7 @@ namespace Hinode.Serialization
             }
         }
 
-        protected override void ReadTo(TextReader stream, SerializationInfo outInfo, IReadOnlyDictionary<string, System.Type> keyAndTypeDict)
+        protected override void ReadTo(TextReader stream, SerializationInfo outInfo, ISerializationKeyTypeGetter keyTypeGetter)
         {
             if (!stream.SkipTo(SPACE_CHARS)) return;
             if (!stream.MoveTo('{')) return;
@@ -133,8 +133,8 @@ namespace Hinode.Serialization
                 }
                 else
                 {
-                    valueType = (keyAndTypeDict != null && keyAndTypeDict.ContainsKey(key))
-                        ? keyAndTypeDict[key]
+                    valueType = (keyTypeGetter != null)
+                        ? keyTypeGetter.Get(key)
                         : null;
                     if (valueType == null)
                     {

@@ -15,7 +15,7 @@ namespace Hinode
     ///     KeyCode.LeftApple => KeyCode.LeftCommand
     ///     KeyCode.RightApple => KeyCode.RightCommand
     /// </summary>
-    [System.Serializable, HasKeyAndTypeDictionaryGetter(typeof(KeyboardFrameInputData))]
+    [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(KeyboardFrameInputData))]
     public class KeyboardFrameInputData : InputRecorder.IFrameDataRecorder
         , ISerializable
         , FrameInputData.IChildFrameInputData
@@ -240,20 +240,16 @@ namespace Hinode
         }
         #endregion
 
-        static Dictionary<string, System.Type> _keyAndTypeDict;
-        [KeyAndTypeDictionaryGetter]
-        public static IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary()
+        [SerializationKeyTypeGetter]
+        public static System.Type GetKeyType(string key)
         {
-            if (_keyAndTypeDict == null)
+            if(int.TryParse(key, out var number))
             {
-                _keyAndTypeDict = new Dictionary<string, System.Type>();
-                foreach (var keyCode in AllKeyCodes
-                    .Where(_k => !_keyAndTypeDict.ContainsKey(((int)_k).ToString())))
-                {
-                    _keyAndTypeDict.Add(((int)keyCode).ToString(), typeof(int));
-                }
+                return null != System.Enum.ToObject(typeof(KeyCode), number)
+                    ? typeof(int)
+                    : null;
             }
-            return _keyAndTypeDict;
+            return null;
         }
 
     }

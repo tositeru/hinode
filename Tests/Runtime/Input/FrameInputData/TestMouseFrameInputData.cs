@@ -91,31 +91,27 @@ namespace Hinode.Tests.Input.FrameInputData
 
         /// <summary>
         /// <seealso cref="MouseFrameInputData.GetValuesEnumerable()"/>
-        /// <seealso cref="MouseFrameInputData.GetKeyAndTypeDictionary()"/>
+        /// <seealso cref="MouseFrameInputData.GetKeyType()"/>
         /// </summary>
         [Test]
-        public void GetKeyAndTypeDictionaryPasses()
+        public void GetKeyTypePasses()
         {
             var data = new MouseFrameInputData();
 
-            AssertionUtils.AssertEnumerableByUnordered(
-                data.GetValuesEnumerable()
-                    .Select(_t => {
-                        if(_t.Key == MouseFrameInputData.KeyMousePosition
-                        || _t.Key == MouseFrameInputData.KeyMouseScrollDelta)
-                        {
-                            return (_t.Key, typeof(string));
-                        }
-                        else
-                        {
-                            return (_t.Key, _t.Value.RawValue.GetType());
-                        }
-                    })
-                , MouseFrameInputData.GetKeyAndTypeDictionary()
-                    .Select(_t => (_t.Key, _t.Value))
-                , "Don't match key and Type..."
-                //, (x, y) => x.Key == y.Key && x.Item2.IsSameOrInheritedType(y.Item2)
+            var testData = new (string key, System.Type type)[]
+            {
+                (MouseFrameInputData.KeyMousePresent, typeof(bool)),
+                (MouseFrameInputData.KeyMousePosition, typeof(string)),
+                (MouseFrameInputData.KeyMouseScrollDelta, typeof(string)),
+            }.Concat(System.Enum.GetValues(typeof(InputDefines.MouseButton))
+                .OfType<InputDefines.MouseButton>()
+                .Select(_b => (key: ((int)_b).ToString(), type: typeof(InputDefines.ButtonCondition)))
             );
+            foreach(var d in testData)
+            {
+                var errorMessage = $"Don't match key and Type... key={d.key}";
+                Assert.AreEqual(d.type, MouseFrameInputData.GetKeyType(d.key), errorMessage);
+            }
         }
 
         /// <summary>

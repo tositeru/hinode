@@ -16,7 +16,6 @@ namespace Hinode.Serialization
     /// <seealso cref="System.Runtime.Serialization.ISerializable"/>。
     /// <seealso cref="System.SerializableAttribute"/>
     /// <seealso cref="UnityEngine.SerializeField"/>
-    /// <seealso cref="HasKeyAndTypeDictionaryGetterAttribute"/>
     /// <seealso cref="Hinode.Tests.CSharp.Serialization.TestJsonSerializer"/>
     /// </summary>
     public abstract class ISerializer
@@ -45,26 +44,24 @@ namespace Hinode.Serialization
             bool Serialize(object target, SerializationInfo info, StreamingContext context);
 
             /// <summary>
-            /// 引数に渡された型と対応するキー名と型の辞書を返すようにしてください。
-            /// この辞書を使用することで、フィールド名とは異なったキーを指定することができます。
+            /// 引数に渡された型と対応するISerializationKeyTypeGetterを返すようにしてください。
+            /// このISerializationKeyTypeGetterを使用することで、フィールド名とは異なったキーを指定することができます。
             /// 
-            /// 辞書のキーにはシリアライズされた時の名前となるstring型を、値はそれに対応する型を表します。
-            ///
             /// もし、ある型がこの関数が返す辞書と一致するキー名がない時は、
-            /// ISerialize内でその型がHasKeyAndTypeDictionaryGetterAttributeを持っているか判定し、
-            /// 持っている場合はそのAttributeから辞書を取得します。
+            /// ISerialize内でその型がContainsSerializationKeyTypeGetterAttributeを持っているか判定し、
+            /// 持っている場合はそのAttributeからISerializationKeyTypeGetterを取得します。
             /// ex) 
             /// </summary>
             /// <param name="type"></param>
             /// <returns></returns>
-            IReadOnlyDictionary<string, System.Type> GetFieldKeyAndTypeDict(System.Type type);
+            ISerializationKeyTypeGetter GetKeyTypeGetter(System.Type type);
         }
 
         protected static readonly System.Type DEFAULT_TYPE = typeof(Dictionary<string, object>);
 
         IInstanceCreator _instanceCreator = null;
 
-        protected abstract void ReadTo(TextReader stream, SerializationInfo outInfo, IReadOnlyDictionary<string, System.Type> keyAndTypeDict);
+        protected abstract void ReadTo(TextReader stream, SerializationInfo outInfo, ISerializationKeyTypeGetter keyTypeGetter);
         protected abstract void WriteTo(TextWriter stream, SerializationInfo srcInfo);
 
         public ISerializer(IInstanceCreator instanceCreator = null)
@@ -110,9 +107,9 @@ namespace Hinode.Serialization
 
         public object Deserialize(TextReader stream, System.Type type)
         {
-            var keyAndTypeDict = GetKeyAndTypeDictionary(type);
+            var keyTypeGetter = GetKeyTypeGetter(type);
             var (info, context) = CreateInfoAndContext(type);
-            ReadTo(stream, info, keyAndTypeDict);
+            ReadTo(stream, info, keyTypeGetter);
 
             object inst = _instanceCreator?.Desirialize(type, info, context);
             if (inst != null)
@@ -171,20 +168,19 @@ namespace Hinode.Serialization
         /// この辞書を使用することで、フィールド名とは異なったキーを指定することができます。
         ///
         /// 使用する辞書の優先順位としては以下のものになります。
-        /// 1. IInstanceCreator#GetKeyAndTypeDict
-        /// 1. typeに付けられたHasKeyAndTypeDictionaryGetterAttribute
+        /// 1. IInstanceCreator#GetKeyTypeGetter
+        /// 1. typeに付けられたContainsSerializationKeyTypeGetterAttribute
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        IReadOnlyDictionary<string, System.Type> GetKeyAndTypeDictionary(System.Type type)
+        ISerializationKeyTypeGetter GetKeyTypeGetter(System.Type type)
         {
-            var dict = _instanceCreator.GetFieldKeyAndTypeDict(type);
-            if (dict != null) return dict;
+            var getter = _instanceCreator.GetKeyTypeGetter(type);
+            if (getter != null) return getter;
 
-            var dictGetter = type.GetCustomAttribute<HasKeyAndTypeDictionaryGetterAttribute>();
-            return dictGetter?.GetDictionary(type) ?? null;
+            var attr = type.GetCustomAttribute<ContainsSerializationKeyTypeGetterAttribute>();
+            return attr?.CreateKeyTypeGetter(type) ?? null;
         }
-
     }
 }
 
