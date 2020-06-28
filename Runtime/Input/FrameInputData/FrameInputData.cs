@@ -1,0 +1,259 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using Hinode.Serialization;
+using UnityEngine;
+using UnityEngine.Assertions;
+
+namespace Hinode
+{
+    /// <summary>
+    /// UnityEngine.EventSystemの1フレームにおける入力データを記録するためのもの
+    /// 一つ前と変化がないデータはシリアライズの対象にならないようになっています。
+    /// 
+    /// <see cref="IFrameDataRecorder"/>
+    /// </summary>
+    [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(FrameInputData))]
+    public class FrameInputData : IFrameDataRecorder, ISerializable
+    {
+        //public interface IFrameDataRecorder : IFrameDataRecorder
+        //{
+        //    void ResetInputDatas();
+        //  void UpdateInputDatas(ReplayableInput input);
+        //  IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable();
+        //}
+
+        Dictionary<string, IFrameDataRecorder> _childFrameInputDatas = new Dictionary<string, IFrameDataRecorder>();
+
+        JsonSerializer _jsonSerializer = new JsonSerializer();
+
+        public IReadOnlyDictionary<string, IFrameDataRecorder> ChildFrameInputDatas { get => _childFrameInputDatas; }
+
+        public FrameInputData()
+        {
+        }
+
+        public FrameInputData AddChildFrameInputData(IFrameDataRecorder childFrameInputData)
+        {
+            Assert.IsTrue(ContainsChildFrameInputDataType(childFrameInputData.GetType()), $"This Type({childFrameInputData.GetType()}) don't regist by FrameInpuData#RegistChildFrameInputDataType()...");
+
+            var key = GetChildFrameInputDataKey(childFrameInputData.GetType());
+            _childFrameInputDatas.Add(key, childFrameInputData);
+            return this;
+        }
+
+        public FrameInputData RemoveChildFrameInputData(string key)
+        {
+            if (_childFrameInputDatas.ContainsKey(key))
+            {
+                _childFrameInputDatas.Remove(key);
+            }
+            return this;
+        }
+
+        public FrameInputData RemoveChildFrameInputData(System.Type type)
+            => RemoveChildFrameInputData(GetChildFrameInputDataKey(type));
+        public FrameInputData RemoveChildFrameInputData<T>()
+            where T : IFrameDataRecorder, ISerializable
+            => RemoveChildFrameInputData(GetChildFrameInputDataKey<T>());
+
+        /// <summary>
+        /// 他のインスタンスに自身の値を設定する。
+        ///
+        /// 設定される値は更新済みのものだけになります。
+        /// </summary>
+        /// <param name="other"></param>
+        public void CopyUpdatedDatasTo(IFrameDataRecorder other)
+        {
+            Assert.IsTrue(other is FrameInputData);
+            throw new System.NotImplementedException();
+            var otherInputData = other as FrameInputData;
+
+            foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))
+            {
+                var key = FrameInputData.GetChildFrameInputDataKey(child.GetType());
+                var otherChild = otherInputData.ChildFrameInputDatas.FirstOrDefault(_t => _t.Key == key);
+                child.CopyUpdatedDatasTo(otherChild.Value);
+            }
+        }
+
+        #region IFrameDataRecorder
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.ResetDatas()"/>
+        /// </summary>
+        public void ResetDatas()
+        {
+            foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))
+            {
+                child.ResetDatas();
+            }
+        }
+
+        public void RefleshUpdatedFlags()
+        {
+            foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))
+            {
+                child.RefleshUpdatedFlags();
+            }
+        }
+
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.Record(ReplayableInput)"/>
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public void Record(ReplayableInput input)
+        {
+            foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))
+            {
+                child.Record(input);
+            }
+        }
+
+        public void RecoverTo(ReplayableInput input)
+        {
+            foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))
+            {
+                child.RecoverTo(input);
+            }
+        }
+
+        public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
+        {
+            return new ValuesEnumerable(this);
+        }
+
+        class ValuesEnumerable : IEnumerable<FrameInputDataKeyValue>
+            , IEnumerable
+        {
+            FrameInputData _target;
+            public ValuesEnumerable(FrameInputData target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<FrameInputDataKeyValue> GetEnumerator()
+            {
+                return _target.GetChildFrameInputDataEnumerable()
+                    .SelectMany(_childT => _childT.child.GetValuesEnumerable()
+                            .Select(_t => new FrameInputDataKeyValue($"{_childT.key}.{_t.Key}", _t.Value))
+                    ).GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
+        #endregion
+
+        #region Child FrameInputData KeyType
+        readonly static Dictionary<string, System.Type> _keyTypeDict = new Dictionary<string, System.Type>();
+
+        public static IReadOnlyDictionary<string, System.Type> RegistedChildFrameInputDataTypes { get => _keyTypeDict; }
+
+        public static void ClearChildFrameInputDataType()
+        {
+            _keyTypeDict.Clear();
+        }
+
+        public static bool ContainsChildFrameInputDataType(string key)
+            => _keyTypeDict.ContainsKey(key);
+        public static bool ContainsChildFrameInputDataType(System.Type type)
+            => GetChildFrameInputDataKey(type) != null;
+        public static bool ContainsChildFrameInputDataType<T>()
+            where T : IFrameDataRecorder, ISerializable
+            => GetChildFrameInputDataKey(typeof(T)) != null;
+
+        public static System.Type GetChildFrameInputDataType(string key)
+            => ContainsChildFrameInputDataType(key)
+            ? _keyTypeDict[key]
+            : null;
+
+        public static string GetChildFrameInputDataKey(System.Type type)
+        {
+            return _keyTypeDict
+                .Where(_t => _t.Value.Equals(type))
+                .Select(_t => _t.Key)
+                .FirstOrDefault();
+        }
+        public static string GetChildFrameInputDataKey<T>()
+            where T : IFrameDataRecorder, ISerializable
+            => GetChildFrameInputDataKey(typeof(T));
+
+        public static void RegistChildFrameInputDataType(string key, System.Type type)
+        {
+            Assert.IsTrue(type.ContainsInterface<IFrameDataRecorder>(), $"Invalid type({type})...");
+            Assert.IsTrue(type.ContainsInterface<ISerializable>(), $"Invalid type({type})...");
+            Assert.IsFalse(_keyTypeDict.ContainsKey(key), $"already contains key({key})...");
+            Assert.IsFalse(_keyTypeDict.Any(_t => _t.Value.Equals(type)), $"already contains key({key})...");
+            _keyTypeDict.Add(key, type);
+        }
+
+        public static void RegistChildFrameInputDataType<T>(string key)
+            where T : IFrameDataRecorder, ISerializable
+            => RegistChildFrameInputDataType(key, typeof(T));
+
+        public static void UnregistChildFrameInputDataType(string key)
+        {
+            Assert.IsTrue(_keyTypeDict.ContainsKey(key), $"Key({key}) don't contians...");
+            _keyTypeDict.Remove(key);
+        }
+        #endregion
+
+        #region ISerializable
+        [SerializationKeyTypeGetter]
+        public static System.Type GetKeyType(string key)
+            => _keyTypeDict.ContainsKey(key)
+            ? _keyTypeDict[key]
+            : null;
+
+        public FrameInputData(SerializationInfo info, StreamingContext context)
+            : this()
+        {
+            var e = info.GetEnumerator();
+            while (e.MoveNext())
+            {
+                if (ContainsChildFrameInputDataType(e.Name))
+                {
+                    var childType = GetChildFrameInputDataType(e.Name);
+                    var cstr = childType.GetConstructor(new System.Type[] { typeof(SerializationInfo), typeof(StreamingContext) });
+                    Assert.IsNotNull(cstr);
+                    var inst = cstr.Invoke(new object[] { e.Value, context }) as IFrameDataRecorder;
+                    AddChildFrameInputData(inst);
+                }
+            }
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            foreach (var child in ChildFrameInputDatas)
+            {
+                var key = GetChildFrameInputDataKey(child.GetType());
+                info.AddValue(key, child);
+            }
+        }
+        #endregion
+
+        #region IEnumerable
+        public IEnumerable<(string key, IFrameDataRecorder child)> GetChildFrameInputDataEnumerable()
+        {
+            return new ChildFrameInputDataEnumerable(this);
+        }
+
+        class ChildFrameInputDataEnumerable : IEnumerable<(string key, IFrameDataRecorder child)>, IEnumerable
+        {
+            FrameInputData _target;
+            public ChildFrameInputDataEnumerable(FrameInputData target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<(string key, IFrameDataRecorder child)> GetEnumerator()
+                => _target.ChildFrameInputDatas.Select(_t => (key: _t.Key, child: _t.Value)).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+        #endregion
+    }
+}

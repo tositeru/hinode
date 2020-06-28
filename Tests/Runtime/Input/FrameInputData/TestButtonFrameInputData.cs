@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Input.FrameInputData
+namespace Hinode.Tests.Input.FrameInputDataRecorder
 {
     /// <summary>
     /// <seealso cref="ButtonFrameInputData"/>
@@ -70,10 +70,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="ButtonFrameInputData.UpdateInputDatas(ReplayableInput)"/>
+        /// <seealso cref="ButtonFrameInputData.Record(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdateInputDatasPasses()
+        public void RecordPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -84,7 +84,7 @@ namespace Hinode.Tests.Input.FrameInputData
                 "Fire2",
                 "Jump",
             };
-            foreach(var name in buttonNames)
+            foreach (var name in buttonNames)
             {
                 replayInput.SetRecordedButton(name, InputDefines.ButtonCondition.Down);
             }
@@ -98,7 +98,7 @@ namespace Hinode.Tests.Input.FrameInputData
             data.AddObservedButtonNames(observedButtonNames);
 
             //Update only observed Button
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
             foreach (var name in buttonNames)
             {
@@ -148,7 +148,7 @@ namespace Hinode.Tests.Input.FrameInputData
             Debug.Log($"Success to Serialization Value Count(Only Updated)!");
 
             {
-                foreach(var buttonName in data.ObservedButtonNames)
+                foreach (var buttonName in data.ObservedButtonNames)
                 {
                     Assert.AreEqual(data.GetButton(buttonName), dest.GetButton(buttonName), $"Failed to serialize Button({buttonName})...");
                 }
@@ -157,66 +157,14 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="ButtonFrameInputData.Update(ReplayableInput)"/>
+        /// <seealso cref="ButtonFrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdatePasses()
+        public void RecoverToPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
-
             replayInput.IsReplaying = true;
-            var buttonNames = new string[] {
-                "Fire1",
-                "Fire2",
-                "Jump",
-            };
-            foreach (var name in buttonNames)
-            {
-                replayInput.SetRecordedButton(name, InputDefines.ButtonCondition.Down);
-            }
-
-            //データが正しく設定されるか確認
-            var data = new ButtonFrameInputData();
-            var observedButtonNames = new string[] {
-                "Fire2",
-                "Jump",
-            };
-            data.AddObservedButtonNames(observedButtonNames);
-
-            var frame = data.Update(replayInput);
-
-            foreach (var name in buttonNames)
-            {
-                var errorMessage = $"Fail... ButtonName={name}";
-                if (observedButtonNames.Contains(name))
-                {
-                    Assert.AreEqual(replayInput.GetButtonCondition(name), data.GetButton(name), errorMessage);
-                }
-                else
-                {
-                    Assert.AreEqual(InputDefines.ButtonCondition.Free, data.GetButton(name), errorMessage);
-                }
-            }
-            Debug.Log($"Success to Update Input Datas!");
-
-            {
-                var jsonSerializer = new JsonSerializer();
-                var recoverInput = jsonSerializer.Deserialize<ButtonFrameInputData>(frame.InputText);
-                AssertionUtils.AssertEnumerable(
-                    data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , recoverInput.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , "Don't match Input Values..."
-                );
-            }
-            Debug.Log($"Success to Create InputRecord.Frame!");
-        }
-
-        [Test]
-        public void RecoverFramePasses()
-        {
-            //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
 
             var data = new ButtonFrameInputData();
             var buttonNames = new string[] {
@@ -229,19 +177,9 @@ namespace Hinode.Tests.Input.FrameInputData
                 data.SetButton(name, InputDefines.ButtonCondition.Down);
             }
 
-            var frameData = new InputRecord.Frame();
-            var serializer = new JsonSerializer();
-            frameData.InputText = serializer.Serialize(data);
-
             //データが正しく設定されるか確認
-            var recoveredData = new ButtonFrameInputData();
-            recoveredData.RecoverFrame(replayInput, frameData);
+            data.RecoverTo(replayInput);
 
-            AssertionUtils.AssertEnumerable(
-                data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , recoveredData.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , "Failed to Recover Input Datas..."
-            );
             Debug.Log($"Success to Recover Input Datas!");
 
             {
@@ -281,16 +219,54 @@ namespace Hinode.Tests.Input.FrameInputData
                 "Jump",
             };
             data.AddObservedButtonNames(observedButtonNames);
+            data.Record(replayInput);
 
-            data.UpdateInputDatas(replayInput);
+            data.ResetDatas(); // <- Test run here
 
-            data.ResetDatas();
             Assert.IsTrue(data.GetValuesEnumerable().All(_t => !_t.Value.DidUpdated), "Failed to reset DidUpdated...");
             AssertionUtils.AssertEnumerableByUnordered(
                 data.ObservedButtonNames.Select(_n => (key: _n, value: (object)default(InputDefines.ButtonCondition)))
                 , data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , "Don't match GetValuesEnumerable()..."
             );
+        }
+
+        /// <summary>
+        /// <see cref="ButtonFrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
+        [Test]
+        public void RefleshUpdatedFlagsPasses()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = ReplayableInput.Instance;
+
+            replayInput.IsReplaying = true;
+
+            var buttonNames = new string[] {
+                "Fire1",
+                "Fire2",
+                "Jump",
+            };
+            foreach (var name in buttonNames)
+            {
+                replayInput.SetRecordedButton(name, InputDefines.ButtonCondition.Down);
+            }
+
+            //データが正しく設定されるか確認
+            var data = new ButtonFrameInputData();
+            var observedButtonNames = new string[] {
+                "Fire1",
+                "Jump",
+            };
+            data.AddObservedButtonNames(observedButtonNames);
+            data.Record(replayInput);
+
+            data.RefleshUpdatedFlags(); // <- Test run here
+
+            foreach(var t in data.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
     }
 }

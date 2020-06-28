@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Input.FrameInputData
+namespace Hinode.Tests.Input.FrameInputDataRecorder
 {
     /// <summary>
     /// <seealso cref="KeyboardFrameInputData"/>
@@ -23,7 +23,7 @@ namespace Hinode.Tests.Input.FrameInputData
         {
             var data = new KeyboardFrameInputData();
 
-            foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
+            foreach (var keyCode in System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>())
             {
                 var errorMessage = $"Failed KeyButton... KeyCode={keyCode}";
                 Assert.AreEqual(InputDefines.ButtonCondition.Free, data.GetKeyButton(keyCode), errorMessage);
@@ -57,7 +57,7 @@ namespace Hinode.Tests.Input.FrameInputData
                 (KeyCode.RightApple, KeyCode.RightCommand),
             };
 
-            foreach(var d in testData)
+            foreach (var d in testData)
             {
                 var errorMessage = $"keyCode={d.use}, transformed={d.transform}";
                 data.SetKeyButton(d.use, InputDefines.ButtonCondition.Push);
@@ -95,12 +95,12 @@ namespace Hinode.Tests.Input.FrameInputData
             Debug.Log($"Success to SetEnabledKeyCode!");
 
             var allKeyCodes = KeyboardFrameInputData.AllKeyCodes;
-            foreach(var keyCode in allKeyCodes)
+            foreach (var keyCode in allKeyCodes)
             {
                 var condition = InputDefines.ButtonCondition.Push;
                 data.SetKeyButton(keyCode, condition);
 
-                if(enableKeyCodes.Contains(keyCode))
+                if (enableKeyCodes.Contains(keyCode))
                 {
                     Assert.AreEqual(condition, data.GetKeyButton(keyCode), $"Fail Filtering KeyCode({keyCode})...");
                 }
@@ -174,7 +174,7 @@ namespace Hinode.Tests.Input.FrameInputData
                 (KeyCode.LeftShift, InputDefines.ButtonCondition.Push),
             };
 
-            foreach(var (keyCode, condition) in testData)
+            foreach (var (keyCode, condition) in testData)
             {
                 data.SetKeyButton(keyCode, condition);
             }
@@ -200,7 +200,7 @@ namespace Hinode.Tests.Input.FrameInputData
 
             var testData = allKeyCodes.Select(_k => (key: ((int)_k).ToString(), type: typeof(int)))
                     .Distinct();
-            foreach(var d in testData)
+            foreach (var d in testData)
             {
                 var errorMessage = $"Don't match key and Type... key={d.key}";
                 Assert.AreEqual(d.type, KeyboardFrameInputData.GetKeyType(d.key), errorMessage);
@@ -208,10 +208,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="KeyboardFrameInputData.UpdateInputDatas(ReplayableInput)"/>
+        /// <seealso cref="KeyboardFrameInputData.Record(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdateInputDatasPasses()
+        public void RecordPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -221,7 +221,7 @@ namespace Hinode.Tests.Input.FrameInputData
             foreach (var keyCode in allKeyCodes)
             {
                 var n = (int)keyCode % 5;
-                if(n < 4)
+                if (n < 4)
                 {
                     var condition = (InputDefines.ButtonCondition)(n);
                     replayInput.SetRecordedKeyButton(keyCode, condition);
@@ -230,9 +230,9 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new KeyboardFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
-            foreach(var keyCode in allKeyCodes)
+            foreach (var keyCode in allKeyCodes)
             {
                 Assert.AreEqual(replayInput.GetRecordedKeyButton(keyCode), data.GetKeyButton(keyCode), $"Fail KeyCode({keyCode})");
             }
@@ -282,52 +282,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="KeyboardFrameInputData.Update(ReplayableInput)"/>
+        /// <seealso cref="KeyboardFrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdatePasses()
-        {
-            //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
-
-            replayInput.IsReplaying = true;
-
-            var allKeyCodes = System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>();
-            foreach (var keyCode in allKeyCodes)
-            {
-                var n = (int)keyCode % 5;
-                if (n < 4)
-                {
-                    var condition = (InputDefines.ButtonCondition)(n);
-                    replayInput.SetRecordedKeyButton(keyCode, condition);
-                }
-            }
-
-            //データが正しく設定されるか確認
-            var data = new KeyboardFrameInputData();
-            var frame = data.Update(replayInput);
-            //Mouse
-            foreach (var keyCode in allKeyCodes)
-            {
-                Assert.AreEqual(replayInput.GetRecordedKeyButton(keyCode), data.GetKeyButton(keyCode));
-            }
-            Debug.Log($"Success to Update Input Datas!");
-
-            {
-                var jsonSerializer = new JsonSerializer();
-                var recoverInput = jsonSerializer.Deserialize<KeyboardFrameInputData>(frame.InputText);
-                AssertionUtils.AssertEnumerable(
-                    new (string, object)[] { }
-                    , recoverInput.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , "Don't match Input Values..."
-                );
-            }
-            Debug.Log($"Success to Create InputRecord.Frame!");
-
-        }
-
-        [Test]
-        public void RecoverFramePasses()
+        public void RecoverToPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -345,22 +303,8 @@ namespace Hinode.Tests.Input.FrameInputData
                 }
             }
 
-            var frameData = new InputRecord.Frame();
-            var serializer = new JsonSerializer();
-            frameData.InputText = serializer.Serialize(data);
-
             //データが正しく設定されるか確認
-            var recoveredData = new KeyboardFrameInputData();
-            recoveredData.RecoverFrame(replayInput, frameData);
-
-            AssertionUtils.AssertEnumerableByUnordered(
-                data.GetValuesEnumerable()
-                    .Where(_t => (InputDefines.ButtonCondition)_t.Value.RawValue != InputDefines.ButtonCondition.Free)
-                    .Select(_t => (_t.Key, _t.Value.RawValue))
-                , recoveredData.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , "Failed to Recover Input Datas..."
-            );
-            Debug.Log($"Success to Recover Input Datas!");
+            data.RecoverTo(replayInput);
 
             {
                 var errorMessage = "Failed to Set Input Datas to ReplayableInput...";
@@ -396,15 +340,50 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new KeyboardFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
-            data.ResetDatas();
+            data.ResetDatas(); // <- Test run here
+
             Assert.IsTrue(data.GetValuesEnumerable().All(_t => !_t.Value.DidUpdated), "Failed to reset DidUpdated...");
             AssertionUtils.AssertEnumerableByUnordered(
                 new (string key, object value)[] { },
                 data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , "Don't match GetValuesEnumerable()..."
             );
+        }
+
+        /// <summary>
+        /// <see cref="KeyboardFrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
+        [Test]
+        public void RefleshUpdatedFlagsPasses()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = ReplayableInput.Instance;
+
+            replayInput.IsReplaying = true;
+
+            var allKeyCodes = System.Enum.GetValues(typeof(KeyCode)).OfType<KeyCode>();
+            foreach (var keyCode in allKeyCodes)
+            {
+                var n = (int)keyCode % 5;
+                if (n < 4)
+                {
+                    var condition = (InputDefines.ButtonCondition)(n);
+                    replayInput.SetRecordedKeyButton(keyCode, condition);
+                }
+            }
+
+            //データが正しく設定されるか確認
+            var data = new KeyboardFrameInputData();
+            data.Record(replayInput);
+
+            data.RefleshUpdatedFlags(); // <- Test run here
+
+            foreach (var t in data.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
     }
 }

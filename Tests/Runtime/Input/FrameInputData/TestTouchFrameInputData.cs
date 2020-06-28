@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Input.FrameInputData
+namespace Hinode.Tests.Input.FrameInputDataRecorder
 {
     /// <summary>
     /// <seealso cref="TouchFrameInputData"/>
@@ -78,10 +78,10 @@ namespace Hinode.Tests.Input.FrameInputData
             }
             Debug.Log($"Success to MultiTouchEnabled!");
 
-            for (int i=0; i<TouchFrameInputData.LIMIT_TOUCH_COUNT; ++i)
+            for (int i = 0; i < TouchFrameInputData.LIMIT_TOUCH_COUNT; ++i)
             {
                 var errorMessage = $"Failed Set/GetTouch()... index={i}";
-                data.SetTouch(i, new Touch { fingerId = i+10 });
+                data.SetTouch(i, new Touch { fingerId = i + 10 });
                 var observer = data.GetValuesEnumerable()
                     .First(_t => _t.Key == i.ToString())
                     .Value;
@@ -126,7 +126,8 @@ namespace Hinode.Tests.Input.FrameInputData
             var data = new TouchFrameInputData();
 
             var testData = data.GetValuesEnumerable()
-                    .Select(_t => {
+                    .Select(_t =>
+                    {
                         if (int.TryParse(_t.Key, out var _))
                         {
                             return (key: _t.Key, type: _t.Value.GetType());
@@ -136,7 +137,7 @@ namespace Hinode.Tests.Input.FrameInputData
                             return (key: _t.Key, type: _t.Value.RawValue.GetType());
                         }
                     });
-            foreach(var d in testData)
+            foreach (var d in testData)
             {
                 var errorMessage = $"Don't match key and Type... key={d.key}";
                 Assert.AreEqual(d.type, TouchFrameInputData.GetKeyType(d.key), errorMessage);
@@ -144,10 +145,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="TouchFrameInputData.UpdateInputDatas(ReplayableInput)"/>
+        /// <seealso cref="TouchFrameInputData.Record(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdateInputDatasPasses()
+        public void RecordPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -165,7 +166,7 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new TouchFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
             Assert.AreEqual(replayInput.TouchSupported, data.TouchSupported);
             Assert.AreEqual(replayInput.TouchPressureSupported, data.TouchPressureSupported);
@@ -173,7 +174,7 @@ namespace Hinode.Tests.Input.FrameInputData
             Assert.AreEqual(replayInput.StylusTouchSupported, data.StylusTouchSupported);
             Assert.AreEqual(replayInput.SimulateMouseWithTouches, data.SimulateMouseWithTouches);
             Assert.AreEqual(replayInput.TouchCount, data.TouchCount);
-            for (var i = 0; i< data.TouchCount; ++i)
+            for (var i = 0; i < data.TouchCount; ++i)
             {
                 Assert.AreEqual(replayInput.GetTouch(i), data.GetTouch(i), $"Failed Touch... index={i}");
             }
@@ -230,54 +231,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="TouchFrameInputData.Update(ReplayableInput)"/>
+        /// <seealso cref="TouchFrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdatePasses()
-        {
-            //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
-
-            replayInput.IsReplaying = true;
-            //Mouse
-            replayInput.RecordedMousePresent = true;
-            replayInput.RecordedMousePos = Vector2.one * 100f;
-            replayInput.RecordedMouseScrollDelta = Vector2.one * 2f;
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Middle, InputDefines.ButtonCondition.Up);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Right, InputDefines.ButtonCondition.Down);
-
-            //データが正しく設定されるか確認
-            var data = new TouchFrameInputData();
-            var frame = data.Update(replayInput);
-            //Touch
-            Assert.AreEqual(replayInput.TouchSupported, data.TouchSupported);
-            Assert.AreEqual(replayInput.TouchPressureSupported, data.TouchPressureSupported);
-            Assert.AreEqual(replayInput.MultiTouchEnabled, data.MultiTouchEnabled);
-            Assert.AreEqual(replayInput.StylusTouchSupported, data.StylusTouchSupported);
-            Assert.AreEqual(replayInput.SimulateMouseWithTouches, data.SimulateMouseWithTouches);
-            Assert.AreEqual(replayInput.TouchCount, data.TouchCount);
-            for (var i = 0; i < data.TouchCount; ++i)
-            {
-                Assert.AreEqual(replayInput.GetTouch(i), data.GetTouch(i));
-            }
-            Debug.Log($"Success to Update Input Datas!");
-
-            {
-                var jsonSerializer = new JsonSerializer();
-                var recoverInput = jsonSerializer.Deserialize<TouchFrameInputData>(frame.InputText);
-                AssertionUtils.AssertEnumerable(
-                    data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , recoverInput.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , "Don't match Input Values..."
-                );
-            }
-            Debug.Log($"Success to Create InputRecord.Frame!");
-
-        }
-
-        [Test]
-        public void RecoverFramePasses()
+        public void RecoverToPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -294,20 +251,8 @@ namespace Hinode.Tests.Input.FrameInputData
             replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
             replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
 
-            var frameData = new InputRecord.Frame();
-            var serializer = new JsonSerializer();
-            frameData.InputText = serializer.Serialize(data);
-
             //データが正しく設定されるか確認
-            var recoveredData = new TouchFrameInputData();
-            recoveredData.RecoverFrame(replayInput, frameData);
-
-            AssertionUtils.AssertEnumerable(
-                data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , recoveredData.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , "Failed to Recover Input Datas..."
-            );
-            Debug.Log($"Success to Recover Input Datas!");
+            data.RecoverTo(replayInput);
 
             {
                 var errorMessage = "Failed to Set Input Datas to ReplayableInput...";
@@ -347,9 +292,10 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new TouchFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
-            data.ResetDatas();
+            data.ResetDatas(); // <- Test run here
+
             Assert.IsTrue(data.GetValuesEnumerable().All(_t => !_t.Value.DidUpdated), "Failed to reset DidUpdated...");
             AssertionUtils.AssertEnumerableByUnordered(
                 new (string key, object value)[]
@@ -366,6 +312,38 @@ namespace Hinode.Tests.Input.FrameInputData
                 data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , "Don't match GetValuesEnumerable()..."
             );
+        }
+
+        /// <summary>
+        /// <see cref="TouchFrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
+        [Test]
+        public void RefleshUpdatedFlagsPasses()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = ReplayableInput.Instance;
+
+            replayInput.IsReplaying = true;
+            //Touch
+            replayInput.RecordedTouchSupported = true;
+            replayInput.RecordedTouchPressureSupported = true;
+            replayInput.RecordedMultiTouchEnabled = true;
+            replayInput.RecordedStylusTouchSupported = true;
+            replayInput.RecordedSimulateMouseWithTouches = true;
+            replayInput.RecordedTouchCount = 2;
+            replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
+            replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
+
+            //データが正しく設定されるか確認
+            var data = new TouchFrameInputData();
+            data.Record(replayInput);
+
+            data.RefleshUpdatedFlags(); // <- Test run here
+
+            foreach (var t in data.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
     }
 }

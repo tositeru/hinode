@@ -182,5 +182,51 @@ namespace Hinode.Serialization
             return attr?.CreateKeyTypeGetter(type) ?? null;
         }
     }
+
+    public static partial class ISerializerExtensions
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static string Serialize(this ISerializer serializer, object obj)
+        {
+            using (var writer = new StringWriter())
+            {
+                serializer.Serialize(writer, obj);
+                return writer.ToString();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serializer"></param>
+        /// <param name="json"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static object Deserialize(this ISerializer serializer, string json, System.Type type)
+        {
+            using (var reader = new StringReader(json))
+            {
+                return serializer.Deserialize(reader, type);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializer"></param>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        public static T Deserialize<T>(this ISerializer serializer, string json)
+        {
+            return (T)serializer.Deserialize(json, typeof(T));
+        }
+
+    }
 }
 

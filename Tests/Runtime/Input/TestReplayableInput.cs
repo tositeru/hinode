@@ -31,7 +31,7 @@ namespace Hinode.Tests.Input
         {
             yield return null;
 
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
 
             {//GetMouseButton
                 foreach (InputDefines.MouseButton btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)))
@@ -95,7 +95,7 @@ namespace Hinode.Tests.Input
         public IEnumerator TouchInputPasses()
         {
             yield return null;
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
 
             {//TouchSupported
                 input.IsReplaying = false;
@@ -168,7 +168,7 @@ namespace Hinode.Tests.Input
         public IEnumerator KeyPasses()
         {
             yield return null;
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
 
             {//ContainsRecordedKeyCode
 
@@ -306,7 +306,7 @@ namespace Hinode.Tests.Input
         public IEnumerator ButtonPasses()
         {
             yield return null;
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
             var buttonNames = new string[] {
                 "Fire1",
                 "Fire2",
@@ -413,7 +413,7 @@ namespace Hinode.Tests.Input
         [Test]
         public void GetButtonConditionPasses()
         {
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
             input.IsReplaying = true;
             var buttonNames = new string[] {
                 "Fire1",
@@ -444,7 +444,7 @@ namespace Hinode.Tests.Input
         public IEnumerator AxisPasses()
         {
             yield return null;
-            var input = ReplayableInput.Instance;
+            var input = new ReplayableInput();
             var axisNames = new string[] {
                 "Horizontal",
                 "Vertical",

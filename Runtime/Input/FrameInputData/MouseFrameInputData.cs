@@ -4,17 +4,20 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Hinode.Serialization;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode
 {
     /// <summary>
     /// UnityEngine.EventSystemの1フレームにおける入力データを記録するためのもの
     /// 一つ前と変化がないデータはシリアライズの対象にならないようになっています。
+    /// 
+    /// <see cref="IFrameDataRecorder"/>
+    /// <seealso cref="Hinode.Tests.Input.FrameInputDataRecorder.TestMouseFrameInputData"/>
     /// </summary>
     [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(MouseFrameInputData))]
-    public class MouseFrameInputData : InputRecorder.IFrameDataRecorder
+    public class MouseFrameInputData : IFrameDataRecorder
         , ISerializable
-        , FrameInputData.IChildFrameInputData
     {
         [SerializeField] UpdateObserver<bool> _mousePresent = new UpdateObserver<bool>();
         [SerializeField]
@@ -60,20 +63,19 @@ namespace Hinode
         {
         }
 
-        public void CopyUpdatedDatasTo(MouseFrameInputData other)
+        #region IFrameDataRecorder interface
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.ResetDatas()"/>
+        /// </summary>
+        public void ResetDatas()
         {
-            if (_mousePresent.DidUpdated) other._mousePresent.Value = _mousePresent.Value;
-            for (var i = 0; i < _mouseButtons.Length; ++i)
-            {
-                if (_mouseButtons[i].DidUpdated) other._mouseButtons[i].Value = _mouseButtons[i].Value;
-            }
-            if (_mousePosition.DidUpdated) other._mousePosition.Value = _mousePosition.Value;
-            if (_mouseScrollDelta.DidUpdated) other._mouseScrollDelta.Value = _mouseScrollDelta.Value;
-
+            _mousePresent.SetDefaultValue(true);
+            _mousePosition.SetDefaultValue(true);
+            _mouseScrollDelta.SetDefaultValue(true);
+            foreach (var btn in _mouseButtons) { btn.SetDefaultValue(true); }
         }
 
-        #region FrameInputData.IChildFrameInputData interface
-        public void ResetInputDatas()
+        public void RefleshUpdatedFlags()
         {
             _mousePresent.Reset();
             _mousePosition.Reset();
@@ -81,10 +83,13 @@ namespace Hinode
             foreach (var btn in _mouseButtons) { btn.Reset(); }
         }
 
-        public void UpdateInputDatas(ReplayableInput input)
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.Record(ReplayableInput)"/>
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public void Record(ReplayableInput input)
         {
-            ResetInputDatas();
-
             MousePresent = input.MousePresent;
             MousePosition = input.MousePos;
             MouseScrollDelta = input.MouseScrollDelta;
@@ -96,61 +101,8 @@ namespace Hinode
             }
         }
 
-        public IEnumerable<FrameInputData.KeyValue> GetValuesEnumerable()
+        public void RecoverTo(ReplayableInput input)
         {
-            return new ValuesEnumerable(this);
-        }
-
-        class ValuesEnumerable : IEnumerable<FrameInputData.KeyValue>
-            , IEnumerable
-        {
-            MouseFrameInputData _target;
-            public ValuesEnumerable(MouseFrameInputData target)
-            {
-                _target = target;
-            }
-
-            public IEnumerator<FrameInputData.KeyValue> GetEnumerator()
-            {
-                yield return (KeyMousePresent, _target._mousePresent);
-                yield return (KeyMousePosition,  _target._mousePosition);
-                yield return (KeyMouseScrollDelta, _target._mouseScrollDelta);
-                foreach(var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton))
-                    .OfType<InputDefines.MouseButton>())
-                {
-                    int btnNo = (int)btn;
-                    yield return (btnNo.ToString(), _target._mouseButtons[btnNo]);
-                }
-            }
-
-            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
-        }
-
-        #endregion
-
-        #region InputRecorder.IFrameDataRecorder interface
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.ResetDatas()"/>
-        /// </summary>
-        public void ResetDatas()
-        {
-            _mousePresent.SetDefaultValue(true);
-            _mousePosition.SetDefaultValue(true);
-            _mouseScrollDelta.SetDefaultValue(true);
-            foreach (var btn in _mouseButtons) { btn.SetDefaultValue(true); }
-        }
-
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.RecoverFrame(ReplayableInput, InputRecord.Frame)"/>
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="frame"></param>
-        public void RecoverFrame(ReplayableInput input, InputRecord.Frame frame)
-        {
-            var recoverInput = _jsonSerializer.Deserialize<MouseFrameInputData>(frame.InputText);
-
-            recoverInput.CopyUpdatedDatasTo(this);
-
             input.RecordedMousePresent = MousePresent;
             input.RecordedMousePos = MousePosition;
             input.RecordedMouseScrollDelta = MouseScrollDelta;
@@ -160,18 +112,57 @@ namespace Hinode
             }
         }
 
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.Update(ReplayableInput)"/>
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        public InputRecord.Frame Update(ReplayableInput input)
+        public void CopyUpdatedDatasTo(IFrameDataRecorder other)
         {
-            UpdateInputDatas(input);
+            if (other is MouseFrameInputData)
+            {
+                CopyUpdatedDatasTo(other as MouseFrameInputData);
+            }
+            else
+            {
+                Assert.IsTrue(false, $"Not Support type({other.GetType()})...");
+            }
+        }
 
-            var frame = new InputRecord.Frame();
-            frame.InputText = _jsonSerializer.Serialize(this);
-            return frame;
+        public void CopyUpdatedDatasTo(MouseFrameInputData other)
+        {
+            if (_mousePresent.DidUpdated) other._mousePresent.Value = _mousePresent.Value;
+            for (var i = 0; i < _mouseButtons.Length; ++i)
+            {
+                if (_mouseButtons[i].DidUpdated) other._mouseButtons[i].Value = _mouseButtons[i].Value;
+            }
+            if (_mousePosition.DidUpdated) other._mousePosition.Value = _mousePosition.Value;
+            if (_mouseScrollDelta.DidUpdated) other._mouseScrollDelta.Value = _mouseScrollDelta.Value;
+        }
+
+        public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
+        {
+            return new ValuesEnumerable(this);
+        }
+
+        class ValuesEnumerable : IEnumerable<FrameInputDataKeyValue>
+            , IEnumerable
+        {
+            MouseFrameInputData _target;
+            public ValuesEnumerable(MouseFrameInputData target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<FrameInputDataKeyValue> GetEnumerator()
+            {
+                yield return (KeyMousePresent, _target._mousePresent);
+                yield return (KeyMousePosition, _target._mousePosition);
+                yield return (KeyMouseScrollDelta, _target._mouseScrollDelta);
+                foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton))
+                    .OfType<InputDefines.MouseButton>())
+                {
+                    int btnNo = (int)btn;
+                    yield return (btnNo.ToString(), _target._mouseButtons[btnNo]);
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
         }
         #endregion
 

@@ -16,30 +16,49 @@ namespace Hinode.Tests.Input
         /// ダミー用のフレームレコーダ
         /// 簡単なデータを出力している
         /// </summary>
-        class DummyFrameDataRecorder : InputRecorder.IFrameDataRecorder
+        class DummyFrameDataRecorder : IFrameDataRecorder
         {
-            int _dummyData = 0;
-
-            public int DummyData { get => _dummyData; }
+            UpdateObserver<int> _dummyData = new UpdateObserver<int>();
+            public int DummyData { get => _dummyData.Value; }
 
             public void ResetDatas()
             {
-                _dummyData = 0;
+                _dummyData.SetDefaultValue(true);
             }
 
-            public void RecoverFrame(ReplayableInput input, InputRecord.Frame frame)
+            public void RefleshUpdatedFlags() { _dummyData.Reset(); }
+
+            public void Record(ReplayableInput input)
             {
-                var data = int.Parse(frame.InputText);
-                input.RecordedTouchCount = data; //手ごろなプロパティに設定しているだけで、特に意味はない処理
-                _dummyData = data;
+                _dummyData.Value = input.TouchCount;
             }
 
-            public InputRecord.Frame Update(ReplayableInput input)
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="frameDataRecorder"></param>
+            public void CopyUpdatedDatasTo(IFrameDataRecorder other)
             {
-                var frame = new InputRecord.Frame();
-                frame.InputText = _dummyData.ToString();
-                _dummyData++;
-                return frame;
+                var inst = other as DummyFrameDataRecorder;
+                inst._dummyData.Value = DummyData;
+            }
+
+            /// <summary>
+            /// この関数を呼び出した後は、このインスタンスとReplayableInputのパラメータがFrameのものへ更新されます。
+            /// </summary>
+            /// <param name="input"></param>
+            public void RecoverTo(ReplayableInput input)
+            {
+                input.RecordedTouchCount = DummyData; //手ごろなプロパティに設定しているだけで、特に意味はない処理
+            }
+
+            public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
+            {
+                return new FrameInputDataKeyValue[]
+                {
+                    new FrameInputDataKeyValue("touchCount", _dummyData),
+                };
+                throw new System.NotImplementedException();
             }
         }
 

@@ -14,8 +14,10 @@ namespace Hinode.Tests.Attributes.Extensions
     {
         class IsInRangePassesClass
 		{
+#pragma warning disable CS0649
             [UnityEngine.Range(-10, 10)] public float _f;
             [UnityEngine.Range(-20, 20)] public double _d;
+#pragma warning restore CS0649
         }
 
         // A Test behaves as an ordinary method

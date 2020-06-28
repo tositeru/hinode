@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Hinode.Serialization;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode
 {
@@ -14,11 +15,13 @@ namespace Hinode
     /// 以下のKeyCodeは他のKeyCodeと同じものと扱います。
     ///     KeyCode.LeftApple => KeyCode.LeftCommand
     ///     KeyCode.RightApple => KeyCode.RightCommand
+    ///     
+    /// <see cref="IFrameDataRecorder"/>
+    /// <seealso cref="Hinode.Tests.Input.FrameInputDataRecorder.TestKeyboardFrameInputData"/>
     /// </summary>
     [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(KeyboardFrameInputData))]
-    public class KeyboardFrameInputData : InputRecorder.IFrameDataRecorder
+    public class KeyboardFrameInputData : IFrameDataRecorder
         , ISerializable
-        , FrameInputData.IChildFrameInputData
     {
         public static IEnumerable<KeyCode> AllKeyCodes { get; } = System.Enum.GetValues(typeof(KeyCode))
             .OfType<KeyCode>();
@@ -31,7 +34,7 @@ namespace Hinode
 
         KeyCode TransformKeyCode(KeyCode keyCode)
         {
-            switch(keyCode)
+            switch (keyCode)
             {
                 case KeyCode.LeftApple: return KeyCode.LeftCommand;
                 case KeyCode.RightApple: return KeyCode.RightApple;
@@ -76,7 +79,7 @@ namespace Hinode
         #region Key Filter
         public void AddEnabledKeyCode(IEnumerable<KeyCode> enableKeyCodes)
         {
-            foreach(var k in enableKeyCodes
+            foreach (var k in enableKeyCodes
                 .Where(_k => !_enabledKeyCodeFilter.Contains(_k)))
             {
                 _enabledKeyCodeFilter.Add(k);
@@ -104,7 +107,6 @@ namespace Hinode
         }
         #endregion
 
-
         public void CopyUpdatedDatasTo(KeyboardFrameInputData other)
         {
             foreach (var (keyCode, condition) in KeyButtons
@@ -114,19 +116,31 @@ namespace Hinode
             }
         }
 
-        #region FrameInputData.IChildFrameInputData interface
-        public void ResetInputDatas()
+        #region IFrameDataRecorder interface
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.ResetDatas()"/>
+        /// </summary>
+        public void ResetDatas()
         {
-            foreach (var (key, observer) in KeyButtons)
+            _keyButtonsDict.Clear();
+        }
+
+        public void RefleshUpdatedFlags()
+        {
+            foreach (var (_, observer) in KeyButtons
+                .Where(_t => _t.observer.DidUpdated))
             {
                 observer.Reset();
             }
         }
 
-        public void UpdateInputDatas(ReplayableInput input)
+        /// <summary>
+        /// <see cref="IFrameDataRecorder.Record(ReplayableInput)"/>
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public void Record(ReplayableInput input)
         {
-            ResetInputDatas();
-
             if (input.AnyKey)
             {
                 foreach (var keyCode in EnabledKeyCodes)
@@ -151,12 +165,32 @@ namespace Hinode
             }
         }
 
-        public IEnumerable<FrameInputData.KeyValue> GetValuesEnumerable()
+        public void RecoverTo(ReplayableInput input)
+        {
+            foreach (var keyCode in AllKeyCodes)
+            {
+                input.SetRecordedKeyButton(keyCode, GetKeyButton(keyCode));
+            }
+        }
+
+        public void CopyUpdatedDatasTo(IFrameDataRecorder other)
+        {
+            if (other is KeyboardFrameInputData)
+            {
+                CopyUpdatedDatasTo(other as KeyboardFrameInputData);
+            }
+            else
+            {
+                Assert.IsTrue(false, $"Not Support type({other.GetType()})...");
+            }
+        }
+
+        public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
         {
             return new ValuesEnumerable(this);
         }
 
-        class ValuesEnumerable : IEnumerable<FrameInputData.KeyValue>
+        class ValuesEnumerable : IEnumerable<FrameInputDataKeyValue>
             , IEnumerable
         {
             KeyboardFrameInputData _target;
@@ -165,54 +199,12 @@ namespace Hinode
                 _target = target;
             }
 
-            public IEnumerator<FrameInputData.KeyValue> GetEnumerator()
+            public IEnumerator<FrameInputDataKeyValue> GetEnumerator()
                 => _target.KeyButtons
-                .Select(_t => new FrameInputData.KeyValue(((int)_t.keyCode).ToString(), _t.observer))
+                .Select(_t => new FrameInputDataKeyValue(((int)_t.keyCode).ToString(), _t.observer))
                 .GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
-        }
-
-        #endregion
-
-        #region InputRecorder.IFrameDataRecorder interface
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.ResetDatas()"/>
-        /// </summary>
-        public void ResetDatas()
-        {
-            _keyButtonsDict.Clear();
-        }
-
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.RecoverFrame(ReplayableInput, InputRecord.Frame)"/>
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="frame"></param>
-        public void RecoverFrame(ReplayableInput input, InputRecord.Frame frame)
-        {
-            var recoverInput = _jsonSerializer.Deserialize<KeyboardFrameInputData>(frame.InputText);
-
-            recoverInput.CopyUpdatedDatasTo(this);
-
-            foreach(var keyCode in AllKeyCodes)
-            {
-                input.SetRecordedKeyButton(keyCode, GetKeyButton(keyCode));
-            }
-        }
-
-        /// <summary>
-        /// <see cref="InputRecorder.IFrameDataRecorder.Update(ReplayableInput)"/>
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        public InputRecord.Frame Update(ReplayableInput input)
-        {
-            UpdateInputDatas(input);
-
-            var frame = new InputRecord.Frame();
-            frame.InputText = _jsonSerializer.Serialize(this);
-            return frame;
         }
         #endregion
 
@@ -222,7 +214,7 @@ namespace Hinode
             var e = info.GetEnumerator();
             while (e.MoveNext())
             {
-                if(int.TryParse(e.Name, out var keyCodeInt))
+                if (int.TryParse(e.Name, out var keyCodeInt))
                 {
                     var keyCode = (KeyCode)keyCodeInt;
                     SetKeyButton(keyCode, (InputDefines.ButtonCondition)e.Value);
@@ -232,7 +224,7 @@ namespace Hinode
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            foreach(var (keyCode, observer) in KeyButtons
+            foreach (var (keyCode, observer) in KeyButtons
                 .Where(_t => _t.observer.DidUpdated))
             {
                 info.AddValue(((int)keyCode).ToString(), (int)observer.Value);
@@ -243,7 +235,7 @@ namespace Hinode
         [SerializationKeyTypeGetter]
         public static System.Type GetKeyType(string key)
         {
-            if(int.TryParse(key, out var number))
+            if (int.TryParse(key, out var number))
             {
                 return null != System.Enum.ToObject(typeof(KeyCode), number)
                     ? typeof(int)

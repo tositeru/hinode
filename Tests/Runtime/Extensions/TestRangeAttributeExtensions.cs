@@ -14,8 +14,10 @@ namespace Hinode.Tests.Extensions
     {
         class TestAttributeClass
         {
+#pragma warning disable CS0649
             [UnityEngine.Range(0, 100)]
             public float rangeValue;
+#pragma warning restore CS0649
 
             public static UnityEngine.RangeAttribute GetRangeAttribute()
             {

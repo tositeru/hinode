@@ -26,44 +26,6 @@ namespace Hinode.Serialization
         {
         }
 
-        /// <summary>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BasicPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.EnumPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BoolPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.NumericTypeDeserializePasses()"/>
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public string Serialize(object obj)
-        {
-            using (var writer = new StringWriter())
-            {
-                Serialize(writer, obj);
-                return writer.ToString();
-            }
-        }
-
-        /// <summary>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BasicPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.EnumPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.BoolPasses()"/>
-        /// <seealso cref="Hinode.Tests.CSharp.TestJsonSerializer.NumericTypeDeserializePasses()"/>
-        /// </summary>
-        /// <param name="json"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public object Deserialize(string json, System.Type type)
-        {
-            using (var reader = new StringReader(json))
-            {
-                return Deserialize(reader, type);
-            }
-        }
-        public T Deserialize<T>(string json)
-        {
-            return (T)Deserialize(json, typeof(T));
-        }
-
         protected override void WriteTo(TextWriter stream, SerializationInfo srcInfo)
         {
             stream.Write('{');

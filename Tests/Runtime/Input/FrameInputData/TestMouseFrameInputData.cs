@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Input.FrameInputData
+namespace Hinode.Tests.Input.FrameInputDataRecorder
 {
     /// <summary>
     /// <seealso cref="MouseFrameInputData"/>
@@ -55,7 +55,7 @@ namespace Hinode.Tests.Input.FrameInputData
             }
             Debug.Log($"Success to MouseScrollDelta!");
 
-            foreach(var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
+            foreach (var btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)).OfType<InputDefines.MouseButton>())
             {
                 data.SetMouseButton(btn, InputDefines.ButtonCondition.Push);
                 var observer = data.GetValuesEnumerable()
@@ -107,7 +107,7 @@ namespace Hinode.Tests.Input.FrameInputData
                 .OfType<InputDefines.MouseButton>()
                 .Select(_b => (key: ((int)_b).ToString(), type: typeof(InputDefines.ButtonCondition)))
             );
-            foreach(var d in testData)
+            foreach (var d in testData)
             {
                 var errorMessage = $"Don't match key and Type... key={d.key}";
                 Assert.AreEqual(d.type, MouseFrameInputData.GetKeyType(d.key), errorMessage);
@@ -115,10 +115,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="MouseFrameInputData.UpdateInputDatas(ReplayableInput)"/>
+        /// <seealso cref="MouseFrameInputData.Record(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdateInputDatasPasses()
+        public void RecordPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -134,7 +134,7 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new MouseFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
             Assert.AreEqual(replayInput.RecordedMousePresent, data.MousePresent);
             Assert.AreEqual(replayInput.RecordedMousePos, data.MousePosition);
@@ -193,51 +193,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="MouseFrameInputData.Update(ReplayableInput)"/>
+        /// <seealso cref="MouseFrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdatePasses()
-        {
-            //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
-
-            replayInput.IsReplaying = true;
-            //Mouse
-            replayInput.RecordedMousePresent = true;
-            replayInput.RecordedMousePos = Vector2.one * 100f;
-            replayInput.RecordedMouseScrollDelta = Vector2.one * 2f;
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Middle, InputDefines.ButtonCondition.Up);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Right, InputDefines.ButtonCondition.Down);
-
-            //データが正しく設定されるか確認
-            var data = new MouseFrameInputData();
-            var frame = data.Update(replayInput);
-            //Mouse
-            Assert.AreEqual(replayInput.RecordedMousePresent, data.MousePresent);
-            Assert.AreEqual(replayInput.RecordedMousePos, data.MousePosition);
-            Assert.AreEqual(replayInput.RecordedMouseScrollDelta, data.MouseScrollDelta);
-            foreach (InputDefines.MouseButton btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)))
-            {
-                Assert.AreEqual(replayInput.GetRecordedMouseButton(btn), data.GetMouseButton(btn));
-            }
-            Debug.Log($"Success to Update Input Datas!");
-
-            {
-                var jsonSerializer = new JsonSerializer();
-                var recoverInput = jsonSerializer.Deserialize<MouseFrameInputData>(frame.InputText);
-                AssertionUtils.AssertEnumerable(
-                    data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , recoverInput.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , "Don't match Input Values..."
-                );
-            }
-            Debug.Log($"Success to Create InputRecord.Frame!");
-
-        }
-
-        [Test]
-        public void RecoverFramePasses()
+        public void RecoverToPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -251,20 +210,8 @@ namespace Hinode.Tests.Input.FrameInputData
             data.SetMouseButton(InputDefines.MouseButton.Middle, InputDefines.ButtonCondition.Up);
             data.SetMouseButton(InputDefines.MouseButton.Right, InputDefines.ButtonCondition.Down);
 
-            var frameData = new InputRecord.Frame();
-            var serializer = new JsonSerializer();
-            frameData.InputText = serializer.Serialize(data);
-
             //データが正しく設定されるか確認
-            var recoveredData = new MouseFrameInputData();
-            recoveredData.RecoverFrame(replayInput, frameData);
-
-            AssertionUtils.AssertEnumerable(
-                data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , recoveredData.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , "Failed to Recover Input Datas..."
-            );
-            Debug.Log($"Success to Recover Input Datas!");
+            data.RecoverTo(replayInput);
 
             {
                 var errorMessage = "Failed to Set Input Datas to ReplayableInput...";
@@ -299,9 +246,10 @@ namespace Hinode.Tests.Input.FrameInputData
 
             //データが正しく設定されるか確認
             var data = new MouseFrameInputData();
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
-            data.ResetDatas();
+            data.ResetDatas(); // <- Test run here
+
             Assert.IsTrue(data.GetValuesEnumerable().All(_t => !_t.Value.DidUpdated), "Failed to reset DidUpdated...");
             AssertionUtils.AssertEnumerableByUnordered(
                 new (string key, object value)[]
@@ -316,6 +264,36 @@ namespace Hinode.Tests.Input.FrameInputData
                 data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , "Don't match GetValuesEnumerable()..."
             );
+        }
+
+        /// <summary>
+        /// <see cref="MouseFrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
+        [Test]
+        public void RefleshUpdatedFlagsPasses()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = ReplayableInput.Instance;
+
+            replayInput.IsReplaying = true;
+            //Mouse
+            replayInput.RecordedMousePresent = true;
+            replayInput.RecordedMousePos = Vector2.one * 100f;
+            replayInput.RecordedMouseScrollDelta = Vector2.one * 2f;
+            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Middle, InputDefines.ButtonCondition.Up);
+            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Right, InputDefines.ButtonCondition.Down);
+
+            //データが正しく設定されるか確認
+            var data = new MouseFrameInputData();
+            data.Record(replayInput);
+
+            data.RefleshUpdatedFlags(); // <- Test run here
+
+            foreach (var t in data.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
     }
 }

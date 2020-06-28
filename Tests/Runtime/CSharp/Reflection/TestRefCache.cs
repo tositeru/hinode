@@ -15,7 +15,7 @@ namespace Hinode.Tests.CSharp.Reflection
     {
         class InstanceSample
 		{
-#pragma warning disable CS0414
+#pragma warning disable CS0414, CS0649
 			public const int literalField = 111;
             int field = 1;
 			public int Func(int a, int b) { return a + b; }
@@ -28,7 +28,7 @@ namespace Hinode.Tests.CSharp.Reflection
 			public int GetterOnlyProp { get => _getterOnlyProp; }
 			int _setterOnlyProp;
 			public int SetterOnlyProp { set => _setterOnlyProp = value; }
-#pragma warning restore CS0414
+#pragma warning restore CS0414, CS0649
 
 			public InstanceSample() { }
 			public InstanceSample(int field)

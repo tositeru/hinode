@@ -1,17 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Hinode.Serialization;
 using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace Hinode
 {
     /// <summary>
-    /// 入力データを保存することができるBaseInput
+    /// 入力データを保存することができるComponent
     /// 
     /// 入力データはInputRecordクラスへ保存されます
     /// 
     /// IFrameDataRecorderを使用して1フレームのデータを記録しています。
-    /// デフォルトではEventSystemFrameInputDataクラスが設定されています。
     ///
     /// 記録するデータを変更したい場合は記録を停止した状態でFrameDataRecorderを変更してください。
     /// 
@@ -38,29 +38,6 @@ namespace Hinode
     /// </summary>
     public class InputRecorder : MonoBehaviour
     {
-        public interface IFrameDataRecorder
-        {
-            /// <summary>
-            /// 初期状態に戻す
-            /// </summary>
-            void ResetDatas();
-
-            /// <summary>
-            /// 1フレームのReplayableInputのデータを記録します
-            /// </summary>
-            /// <param name="input"></param>
-            /// <returns></returns>
-            InputRecord.Frame Update(ReplayableInput input);
-
-            /// <summary>
-            /// フレームのデータを復元します
-            /// この関数を呼び出した後は、このインスタンスとReplayableInputのパラメータがFrameのものへ更新されます。
-            /// </summary>
-            /// <param name="input"></param>
-            /// <param name="frame"></param>
-            void RecoverFrame(ReplayableInput input, InputRecord.Frame frame);
-        }
-
         public enum State
         {
             Stop,
@@ -79,7 +56,7 @@ namespace Hinode
         IFrameDataRecorder _frameDataRecorder = new FrameInputData();
         List<InputRecord.Frame> _recordFrames = new List<InputRecord.Frame>();
         Coroutine _updateCoroutine;
-
+        JsonSerializer _jsonSerializer = new JsonSerializer();
         [SerializeField] InputRecord _target;
 
         public State CurrentState
@@ -188,7 +165,9 @@ namespace Hinode
 
             _deltaTime += Time.deltaTime;
 
-            var frame = _frameDataRecorder.Update(ReplayableInput.Instance);
+            _frameDataRecorder.RefleshUpdatedFlags();
+            _frameDataRecorder.Record(ReplayableInput.Instance);
+            var frame = _frameDataRecorder.WriteToFrame(_jsonSerializer);
             if (!frame.IsEmptyInputText)
             {
                 frame.FrameNo = (uint)_currentFrameNo;
@@ -283,7 +262,8 @@ namespace Hinode
                 //Debug.Log($"debug -- frameNo={curFrame.FrameNo}, curFrameIndex={_currentFrameNo}");
                 if (curFrame.FrameNo == _currentFrameNo)
                 {
-                    _frameDataRecorder.RecoverFrame(ReplayableInput.Instance, curFrame);
+                    _frameDataRecorder.RecoverFromFrame(curFrame, _jsonSerializer);
+                    _frameDataRecorder.RecoverTo(ReplayableInput.Instance);
 
                     if (!replayingFrameEnumerator.MoveNext())
                     {

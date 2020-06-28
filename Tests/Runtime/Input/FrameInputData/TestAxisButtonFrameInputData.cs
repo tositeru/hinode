@@ -6,7 +6,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Hinode.Tests.Input.FrameInputData
+namespace Hinode.Tests.Input.FrameInputDataRecorder
 {
     /// <summary>
     /// <seealso cref="AxisButtonFrameInputData"/>
@@ -72,10 +72,10 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="AxisButtonFrameInputData.UpdateInputDatas(ReplayableInput)"/>
+        /// <seealso cref="AxisButtonFrameInputData.Record(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdateInputDatasPasses()
+        public void RecordPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
@@ -99,7 +99,7 @@ namespace Hinode.Tests.Input.FrameInputData
             data.AddObservedButtonNames(observedButtonNames);
 
             //Update only observed Button
-            data.UpdateInputDatas(replayInput);
+            data.Record(replayInput);
 
             foreach (var name in buttonNames)
             {
@@ -148,7 +148,7 @@ namespace Hinode.Tests.Input.FrameInputData
             Debug.Log($"Success to Serialization Value Count(Only Updated)!");
 
             {
-                foreach(var buttonName in data.ObservedButtonNames)
+                foreach (var buttonName in data.ObservedButtonNames)
                 {
                     Assert.AreEqual(data.GetAxis(buttonName), dest.GetAxis(buttonName), $"Failed to serialize Button({buttonName})...");
                 }
@@ -157,65 +157,14 @@ namespace Hinode.Tests.Input.FrameInputData
         }
 
         /// <summary>
-        /// <seealso cref="AxisButtonFrameInputData.Update(ReplayableInput)"/>
+        /// <seealso cref="AxisButtonFrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
         [Test]
-        public void UpdatePasses()
+        public void RecoverToPasses()
         {
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = ReplayableInput.Instance;
-
             replayInput.IsReplaying = true;
-            var buttonNames = new string[] {
-                "Horizontal",
-                "Vertical",
-            };
-            foreach (var name in buttonNames)
-            {
-                replayInput.SetRecordedAxis(name, -0.5f);
-            }
-
-            //データが正しく設定されるか確認
-            var data = new AxisButtonFrameInputData();
-            var observedButtonNames = new string[] {
-                "Horizontal",
-                "Vertical",
-            };
-            data.AddObservedButtonNames(observedButtonNames);
-
-            var frame = data.Update(replayInput);
-
-            foreach (var name in buttonNames)
-            {
-                var errorMessage = $"Fail... ButtonName={name}";
-                if (observedButtonNames.Contains(name))
-                {
-                    Assert.AreEqual(replayInput.GetAxis(name), data.GetAxis(name), errorMessage);
-                }
-                else
-                {
-                    Assert.AreEqual(0f, data.GetAxis(name), errorMessage);
-                }
-            }
-            Debug.Log($"Success to Update Input Datas!");
-
-            {
-                var jsonSerializer = new JsonSerializer();
-                var recoverInput = jsonSerializer.Deserialize<AxisButtonFrameInputData>(frame.InputText);
-                AssertionUtils.AssertEnumerable(
-                    data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , recoverInput.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                    , "Don't match Input Values..."
-                );
-            }
-            Debug.Log($"Success to Create InputRecord.Frame!");
-        }
-
-        [Test]
-        public void RecoverFramePasses()
-        {
-            //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
 
             var data = new AxisButtonFrameInputData();
             var buttonNames = new string[] {
@@ -231,17 +180,9 @@ namespace Hinode.Tests.Input.FrameInputData
             var serializer = new JsonSerializer();
             frameData.InputText = serializer.Serialize(data);
 
+            data.RecoverTo(replayInput); // <- Test is here
+
             //データが正しく設定されるか確認
-            var recoveredData = new AxisButtonFrameInputData();
-            recoveredData.RecoverFrame(replayInput, frameData);
-
-            AssertionUtils.AssertEnumerable(
-                data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , recoveredData.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
-                , "Failed to Recover Input Datas..."
-            );
-            Debug.Log($"Success to Recover Input Datas!");
-
             {
                 foreach (var buttonName in data.ObservedButtonNames)
                 {
@@ -278,16 +219,53 @@ namespace Hinode.Tests.Input.FrameInputData
                 "Vertical",
             };
             data.AddObservedButtonNames(observedButtonNames);
+            data.Record(replayInput);
 
-            data.UpdateInputDatas(replayInput);
+            data.ResetDatas(); // <- Test run Here
 
-            data.ResetDatas();
             Assert.IsTrue(data.GetValuesEnumerable().All(_t => !_t.Value.DidUpdated), "Failed to reset DidUpdated...");
             AssertionUtils.AssertEnumerableByUnordered(
                 data.ObservedButtonNames.Select(_n => (key: _n, value: (object)default(float)))
                 , data.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , "Don't match GetValuesEnumerable()..."
             );
+        }
+
+        /// <summary>
+        /// <seealso cref="AxisButtonFrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
+        [Test]
+        public void RefleashUpdatedFlags()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = ReplayableInput.Instance;
+
+            replayInput.IsReplaying = true;
+
+            var buttonNames = new string[] {
+                "Horizontal",
+                "Vertical",
+            };
+            foreach (var name in buttonNames)
+            {
+                replayInput.SetRecordedAxis(name, -12f);
+            }
+
+            //データが正しく設定されるか確認
+            var data = new AxisButtonFrameInputData();
+            var observedButtonNames = new string[] {
+                "Horizontal",
+                "Vertical",
+            };
+            data.AddObservedButtonNames(observedButtonNames);
+            data.Record(replayInput);
+
+            data.RefleshUpdatedFlags(); // <- Test run here.
+
+            foreach(var t in data.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
     }
 }
