@@ -15,9 +15,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
     /// </summary>
     public class TestFrameInputData
     {
+        [ContainsSerializationKeyTypeGetter(typeof(TestRecorder))]
         class TestRecorder : IFrameDataRecorder, ISerializable
         {
-            UpdateObserver<int> _value;
+            public static string KeyValue = "value";
+
+            [SerializeField] UpdateObserver<int> _value = new UpdateObserver<int>();
 
             public int Value { get => _value.Value; }
 
@@ -33,7 +36,7 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
             {
-                return new FrameInputDataKeyValue[] { ("value", _value) };
+                return new FrameInputDataKeyValue[] { (KeyValue, _value) };
             }
 
             public void Record(ReplayableInput input)
@@ -56,13 +59,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
                 _value.SetDefaultValue(true);
             }
 
-            readonly string Key = "Value";
             public TestRecorder(SerializationInfo info, StreamingContext context)
             {
                 var e = info.GetEnumerator();
                 while (e.MoveNext())
                 {
-                    if (e.Name == Key)
+                    if (e.Name == KeyValue)
                     {
                         _value.Value = (int)e.Value;
                     }
@@ -71,15 +73,29 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             public void GetObjectData(SerializationInfo info, StreamingContext context)
             {
-                if (_value.DidUpdated) info.AddValue(Key, _value.Value);
+                if (_value.DidUpdated) info.AddValue(KeyValue, _value.Value);
+            }
+
+            [SerializationKeyTypeGetter]
+            public static System.Type GetKeyType(string key)
+            {
+                if (key == KeyValue) return typeof(int);
+                return null;
             }
         }
 
+        [ContainsSerializationKeyTypeGetter(typeof(TestRecorder2))]
         class TestRecorder2 : TestRecorder
         {
+            public TestRecorder2() { }
+
             public TestRecorder2(SerializationInfo info, StreamingContext context)
                 : base(info, context)
             {}
+
+            [SerializationKeyTypeGetter]
+            public static new System.Type GetKeyType(string key)
+                => TestRecorder.GetKeyType(key);
         }
 
         [SetUp]
@@ -287,142 +303,375 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
         }
 
         /// <summary>
-        /// <seealso cref="FrameInputData.GetChildFrameInputDataEnumerable()"/>
+        /// <seealso cref="FrameInputData.AddChildRecorder(IFrameDataRecorder)"/>
+        /// <seealso cref="FrameInputData.ContainsChildRecorder(string)"/>
+        /// <seealso cref="FrameInputData.RemoveChildRecorder(string)"/>
         /// </summary>
         [Test]
-        public void GetChildFrameInputDataEnumerablePasses()
+        public void ChildRecorderPasses()
         {
-            throw new System.NotImplementedException();
+            var key = "test";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+
+            var recorder = new FrameInputData();
+
+            var child = new TestRecorder();
+            recorder.AddChildRecorder(child);
+
+            Assert.IsTrue(recorder.ContainsChildRecorder(key));
+
+            recorder.RemoveChildRecorder(key);
+            Assert.IsFalse(recorder.ContainsChildRecorder(key));
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.AddChildRecorder(IFrameDataRecorder)"/>
+        /// </summary>
+        [Test]
+        public void AddChildRecorderFails()
+        {
+            var key = "test";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+
+            var recorder = new FrameInputData();
+            recorder
+                .AddChildRecorder(new TestRecorder());
+
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+                recorder.AddChildRecorder(new TestRecorder());
+            });
+            Debug.Log($"Fail to AddChildFrameInput() The Type already add!");
+
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
+                recorder.AddChildRecorder(new TestRecorder2());
+            });
+            Debug.Log($"Fail to AddChildFrameInput() The Type don't Regist FrameInputData!");
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.ContainsChildRecorder(string)"/>
+        /// <seealso cref="FrameInputData.ContainsChildRecorder(System.Type)"/>
+        /// <seealso cref="FrameInputData.ContainsChildRecorder{T}"/>
+        /// </summary>
+        [Test]
+        public void ContainsChildRecorderPasses()
+        {
+            var key = "test";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+
+            var recorder = new FrameInputData();
+
+            var child = new TestRecorder();
+            recorder.AddChildRecorder(child);
+
+            Assert.IsTrue(recorder.ContainsChildRecorder(key));
+            Assert.IsTrue(recorder.ContainsChildRecorder(typeof(TestRecorder)));
+            Assert.IsTrue(recorder.ContainsChildRecorder<TestRecorder>());
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.RemoveChildRecorder(string)"/>
+        /// <seealso cref="FrameInputData.RemoveChildRecorder(System.Type)"/>
+        /// <seealso cref="FrameInputData.RemoveChildRecorder{T}()"/>
+        /// </summary>
+        [Test]
+        public void RemoveChildRecorderPasses()
+        {
+            var key = "test";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+
+            var recorder = new FrameInputData();
+
+            {
+                var child = new TestRecorder();
+                recorder.AddChildRecorder(child);
+                recorder.RemoveChildRecorder(key);
+                Assert.IsFalse(recorder.ContainsChildRecorder(key));
+            }
+            Debug.Log($"Success to RemoveChildRecorder(key)!");
+
+            {
+                var child = new TestRecorder();
+                recorder.AddChildRecorder(child);
+                recorder.RemoveChildRecorder(child.GetType());
+                Assert.IsFalse(recorder.ContainsChildRecorder(key));
+            }
+            Debug.Log($"Success to RemoveChildRecorder(System.Type)!");
+
+            {
+                var child = new TestRecorder();
+                recorder.AddChildRecorder(child);
+                recorder.RemoveChildRecorder<TestRecorder>();
+                Assert.IsFalse(recorder.ContainsChildRecorder(key));
+            }
+            Debug.Log($"Success to RemoveChildRecorder<T>()!");
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.GetChildRecorderEnumerable()"/>
+        /// </summary>
+        [Test]
+        public void GetChildRecorderEnumerablePasses()
+        {
+            var key = "test";
+            var key2= "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                new (string, IFrameDataRecorder)[] {
+                    (key, childRecorder),
+                    (key2, childRecorder2),
+                }
+                , recorder.GetChildRecorderEnumerable()
+                , ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.GetValuesEnumerable()"/>
+        /// </summary>
+        [Test]
+        public void GetValuesEnumerablePasses()
+        {
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                childRecorder.GetValuesEnumerable()
+                    .Select(_t => ($"{key}.{_t.Key}", _t.Value.RawValue))
+                .Concat(
+                    childRecorder2.GetValuesEnumerable()
+                        .Select(_t => ($"{key2}.{_t.Key}", _t.Value.RawValue)))
+                , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                , ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.GetKeyType(string)"/>
+        /// </summary>
+        [Test]
+        public void GetKeyTypePasses()
+        {
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var testData = new (string key, System.Type type)[]
+            {
+                (key, typeof(TestRecorder)),
+                (key2, typeof(TestRecorder2))
+            };
+            foreach(var d in testData)
+            {
+                var errorMessage = $"Don't match key and Type... key={d.key}, type={d.type}";
+                Assert.AreEqual(d.type, FrameInputData.GetKeyType(d.key), errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.Record(ReplayableInput)"/>
+        /// </summary>
+        [Test]
+        public void RecordPasses()
+        {
+            //好きなデータを指定できるためReplayableInputを使用している
+            var replayInput = new ReplayableInput();
+            replayInput.IsReplaying = true;
+
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            recorder.Record(replayInput);
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                new (string, object)[] {
+                    ($"{key}.{TestRecorder.KeyValue}", replayInput.TouchCount),
+                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.TouchCount),
+                }
+                , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                , ""
+            );
         }
 
         /// <summary>
         /// シリアライズも含めたデータ更新処理が想定しているように動作しているか確認するテスト
+        /// <seealso cref="FrameInputData.GetValuesEnumerable()"/>
+        /// <seealso cref="FrameInputData.FrameInputData(SerializationInfo, StreamingContext)"/>
+        /// <seealso cref="FrameInputData.GetObjectData(SerializationInfo, StreamingContext)"/>
         /// </summary>
         [Test]
         public void SerializationPasses()
         {
-            throw new System.NotImplementedException();
-
-            var data = new Hinode.FrameInputData();
-
-            var serializer = new JsonSerializer();
-            var json = serializer.Serialize(data);
-            Debug.Log($"debug -- json:{json}");
-            var dest = serializer.Deserialize<Hinode.FrameInputData>(json);
-
-            Assert.AreEqual(10, data.GetValuesEnumerable().Count());
-            Assert.AreEqual(data.GetValuesEnumerable().Count(), dest.GetValuesEnumerable().Count());
-        }
-
-        [UnityTest]
-        public IEnumerator UpdatePasses()
-        {
             //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
-            yield return null;
-
+            var replayInput = new ReplayableInput();
             replayInput.IsReplaying = true;
-            //Mouse
-            replayInput.RecordedMousePresent = true;
-            replayInput.RecordedMousePos = Vector2.one * 100f;
-            replayInput.RecordedMouseScrollDelta = Vector2.one * 2f;
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Middle, InputDefines.ButtonCondition.Up);
-            replayInput.SetRecordedMouseButton(InputDefines.MouseButton.Right, InputDefines.ButtonCondition.Down);
-            //Touch
-            replayInput.RecordedTouchSupported = true;
-            replayInput.RecordedTouchCount = 2;
-            replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
-            replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
 
-            //データが正しく設定されるか確認
-            var data = new Hinode.FrameInputData();
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            replayInput.RecordedTouchCount = 111;
+
+            recorder.Record(replayInput);
+
             var serializer = new JsonSerializer();
-            data.Record(replayInput);
-            var frame = data.WriteToFrame(serializer);
+            var json = serializer.Serialize(recorder);
+            Debug.Log($"debug -- json:{json}");
+            var dest = serializer.Deserialize<FrameInputData>(json);
 
-            throw new System.NotImplementedException();
+            {
+                var errorMessage = "Failed to serialize value Count...";
+                Assert.AreEqual(recorder.GetValuesEnumerable().Where(_t => _t.Value.DidUpdated).Count()
+                    , dest.GetValuesEnumerable().Where(_t => _t.Value.DidUpdated).Count(), errorMessage);
+            }
+            Debug.Log($"Success to Serialization Value Count(Only Updated)!");
+
+            {
+                AssertionUtils.AssertEnumerableByUnordered(
+                    recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                    , dest.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                    , ""
+                );
+            }
+            Debug.Log($"Success to Serialization Value(Only Updated)!");
         }
 
         /// <summary>
-        /// <seealso cref="FrameInputData."/>
+        /// <seealso cref="FrameInputData.RecoverTo(ReplayableInput)"/>
         /// </summary>
-        /// <returns></returns>
         [Test]
         public void RecoverToPasses()
         {
-            throw new System.NotImplementedException();
-
             //好きなデータを指定できるためReplayableInputを使用している
-            var replayInput = ReplayableInput.Instance;
+            var replayInput = new ReplayableInput();
             replayInput.IsReplaying = true;
-            var data = new Hinode.FrameInputData();
 
-            //データが正しく設定されるか確認
-            data.RecoverTo(replayInput);
+            replayInput.RecordedTouchCount = 100;
 
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
 
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            recorder.RecoverTo(replayInput); // <- Test is here
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                new (string key, object value)[] {
+                    ($"{key}.{TestRecorder.KeyValue}", replayInput.TouchCount),
+                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.TouchCount),
+                }
+                , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                , ""
+            );
         }
 
+        /// <summary>
+        /// <see cref="FrameInputData.ResetDatas()"/>
+        /// </summary>
         [Test]
-        public void SerializationKeyButtonPasses()
+        public void ResetDatasPasses()
         {
-            throw new System.NotImplementedException();
+            var replayInput = new ReplayableInput();
+            replayInput.IsReplaying = true;
+
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
+
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
+
+            recorder.Record(replayInput);
+
+            recorder.ResetDatas(); // <- Test is here
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                new (string key, object value)[] {
+                    ($"{key}.{TestRecorder.KeyValue}", default(int)),
+                    ($"{key2}.{TestRecorder2.KeyValue}", default(int)),
+                }
+                , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
+                , ""
+            );
         }
 
-        [UnityTest]
-        public IEnumerator UpdateKeyButtonPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
-
-        [UnityTest]
-        public IEnumerator RecoverFrameKeyButtonPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
-
+        /// <summary>
+        /// <seealso cref="FrameInputData.RefleshUpdatedFlags()"/>
+        /// </summary>
         [Test]
-        public void SerializationButtonPasses()
+        public void RefleashUpdatedFlags()
         {
-            throw new System.NotImplementedException();
-        }
+            var replayInput = new ReplayableInput();
+            replayInput.IsReplaying = true;
 
-        [UnityTest]
-        public IEnumerator UpdateButtonPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            var key = "test";
+            var key2 = "test2";
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder>(key);
+            FrameInputData.RegistChildFrameInputDataType<TestRecorder2>(key2);
 
-        [UnityTest]
-        public IEnumerator RecoverFrameButtonPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            var recorder = new FrameInputData();
+            var childRecorder = new TestRecorder();
+            var childRecorder2 = new TestRecorder2();
+            recorder
+                .AddChildRecorder(childRecorder)
+                .AddChildRecorder(childRecorder2);
 
-        [Test]
-        public void SerializationAxisPasses()
-        {
-            throw new System.NotImplementedException();
-        }
+            recorder.Record(replayInput);
 
-        [UnityTest]
-        public IEnumerator UpdateAxisPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
+            recorder.ResetDatas(); // <- Test is here
 
-        [UnityTest]
-        public IEnumerator RecoverFrameAxisPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
+            foreach (var t in recorder.GetValuesEnumerable())
+            {
+                Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
+            }
         }
-
     }
 }

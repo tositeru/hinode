@@ -176,10 +176,6 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
                 data.SetAxis(name, -1f);
             }
 
-            var frameData = new InputRecord.Frame();
-            var serializer = new JsonSerializer();
-            frameData.InputText = serializer.Serialize(data);
-
             data.RecoverTo(replayInput); // <- Test is here
 
             //データが正しく設定されるか確認

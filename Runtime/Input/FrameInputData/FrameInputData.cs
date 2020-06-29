@@ -18,13 +18,6 @@ namespace Hinode
     [System.Serializable, ContainsSerializationKeyTypeGetter(typeof(FrameInputData))]
     public class FrameInputData : IFrameDataRecorder, ISerializable
     {
-        //public interface IFrameDataRecorder : IFrameDataRecorder
-        //{
-        //    void ResetInputDatas();
-        //  void UpdateInputDatas(ReplayableInput input);
-        //  IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable();
-        //}
-
         Dictionary<string, IFrameDataRecorder> _childFrameInputDatas = new Dictionary<string, IFrameDataRecorder>();
 
         JsonSerializer _jsonSerializer = new JsonSerializer();
@@ -35,16 +28,27 @@ namespace Hinode
         {
         }
 
-        public FrameInputData AddChildFrameInputData(IFrameDataRecorder childFrameInputData)
+        public bool ContainsChildRecorder(string key)
+            => ChildFrameInputDatas.ContainsKey(key);
+        public bool ContainsChildRecorder(System.Type type)
+            => ChildFrameInputDatas.Any(_t => _t.Value.GetType().Equals(type));
+        public bool ContainsChildRecorder<T>()
+            where T : IFrameDataRecorder, ISerializable
+            => ContainsChildRecorder(typeof(T));
+
+        public FrameInputData AddChildRecorder(IFrameDataRecorder childFrameInputData)
         {
             Assert.IsTrue(ContainsChildFrameInputDataType(childFrameInputData.GetType()), $"This Type({childFrameInputData.GetType()}) don't regist by FrameInpuData#RegistChildFrameInputDataType()...");
 
             var key = GetChildFrameInputDataKey(childFrameInputData.GetType());
+            Assert.IsFalse(ContainsChildRecorder(key),
+                $"This Type({childFrameInputData.GetType()}) already add...");
+
             _childFrameInputDatas.Add(key, childFrameInputData);
             return this;
         }
 
-        public FrameInputData RemoveChildFrameInputData(string key)
+        public FrameInputData RemoveChildRecorder(string key)
         {
             if (_childFrameInputDatas.ContainsKey(key))
             {
@@ -53,11 +57,11 @@ namespace Hinode
             return this;
         }
 
-        public FrameInputData RemoveChildFrameInputData(System.Type type)
-            => RemoveChildFrameInputData(GetChildFrameInputDataKey(type));
-        public FrameInputData RemoveChildFrameInputData<T>()
+        public FrameInputData RemoveChildRecorder(System.Type type)
+            => RemoveChildRecorder(GetChildFrameInputDataKey(type));
+        public FrameInputData RemoveChildRecorder<T>()
             where T : IFrameDataRecorder, ISerializable
-            => RemoveChildFrameInputData(GetChildFrameInputDataKey<T>());
+            => RemoveChildRecorder(GetChildFrameInputDataKey<T>());
 
         /// <summary>
         /// 他のインスタンスに自身の値を設定する。
@@ -136,7 +140,7 @@ namespace Hinode
 
             public IEnumerator<FrameInputDataKeyValue> GetEnumerator()
             {
-                return _target.GetChildFrameInputDataEnumerable()
+                return _target.GetChildRecorderEnumerable()
                     .SelectMany(_childT => _childT.child.GetValuesEnumerable()
                             .Select(_t => new FrameInputDataKeyValue($"{_childT.key}.{_t.Key}", _t.Value))
                     ).GetEnumerator();
@@ -217,10 +221,11 @@ namespace Hinode
                 if (ContainsChildFrameInputDataType(e.Name))
                 {
                     var childType = GetChildFrameInputDataType(e.Name);
-                    var cstr = childType.GetConstructor(new System.Type[] { typeof(SerializationInfo), typeof(StreamingContext) });
-                    Assert.IsNotNull(cstr);
-                    var inst = cstr.Invoke(new object[] { e.Value, context }) as IFrameDataRecorder;
-                    AddChildFrameInputData(inst);
+                    Assert.AreEqual(childType, e.Value.GetType());
+                    //var cstr = childType.GetConstructor(new System.Type[] { typeof(SerializationInfo), typeof(StreamingContext) });
+                    //Assert.IsNotNull(cstr);
+                    //var inst = cstr.Invoke(new object[] { e.Value, context }) as IFrameDataRecorder;
+                    AddChildRecorder(e.Value as IFrameDataRecorder);
                 }
             }
         }
@@ -229,22 +234,21 @@ namespace Hinode
         {
             foreach (var child in ChildFrameInputDatas)
             {
-                var key = GetChildFrameInputDataKey(child.GetType());
-                info.AddValue(key, child);
+                info.AddValue(child.Key, child.Value);
             }
         }
         #endregion
 
         #region IEnumerable
-        public IEnumerable<(string key, IFrameDataRecorder child)> GetChildFrameInputDataEnumerable()
+        public IEnumerable<(string key, IFrameDataRecorder child)> GetChildRecorderEnumerable()
         {
-            return new ChildFrameInputDataEnumerable(this);
+            return new ChildRecorderEnumerable(this);
         }
 
-        class ChildFrameInputDataEnumerable : IEnumerable<(string key, IFrameDataRecorder child)>, IEnumerable
+        class ChildRecorderEnumerable : IEnumerable<(string key, IFrameDataRecorder child)>, IEnumerable
         {
             FrameInputData _target;
-            public ChildFrameInputDataEnumerable(FrameInputData target)
+            public ChildRecorderEnumerable(FrameInputData target)
             {
                 _target = target;
             }
