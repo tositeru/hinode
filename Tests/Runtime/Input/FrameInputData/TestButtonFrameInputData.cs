@@ -13,6 +13,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
     /// </summary>
     public class TestButtonFrameInputData
     {
+        [SetUp]
+        public void SetUp()
+        {
+            FrameInputData.ClearChildFrameInputDataType();
+        }
+
         /// <summary>
         /// </summary>
         [Test]
@@ -267,6 +273,24 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             {
                 Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
             }
+        }
+
+        /// <summary>
+        /// <seealso cref="ButtonFrameInputData.RegistTypeToFrameInputData()"/>
+        /// </summary>
+        [Test]
+        public void RegistTypeToFrameInputDataPasses()
+        {
+            ButtonFrameInputData.RegistTypeToFrameInputData();
+
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType(ButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType<ButtonFrameInputData>());
+            Assert.AreEqual(typeof(ButtonFrameInputData), FrameInputData.GetChildFrameInputDataType(ButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.AreEqual(ButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE, FrameInputData.GetChildFrameInputDataKey<ButtonFrameInputData>());
+
+            Assert.DoesNotThrow(() => {
+                ButtonFrameInputData.RegistTypeToFrameInputData();
+            });
         }
     }
 }

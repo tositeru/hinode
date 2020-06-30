@@ -13,6 +13,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
     /// </summary>
     public class TestAxisButtonFrameInputData
     {
+        [SetUp]
+        public void SetUp()
+        {
+            FrameInputData.ClearChildFrameInputDataType();
+        }
+
         /// <summary>
         /// <seealso cref="AxisButtonFrameInputData.AddObservedButtonNames(string[])"/>
         /// <seealso cref="AxisButtonFrameInputData.SetAxis(string, float)"/>
@@ -262,6 +268,24 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             {
                 Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
             }
+        }
+
+        /// <summary>
+        /// <seealso cref="AxisButtonFrameInputData.RegistTypeToFrameInputData()"/>
+        /// </summary>
+        [Test]
+        public void RegistTypeToFrameInputDataPasses()
+        {
+            AxisButtonFrameInputData.RegistTypeToFrameInputData();
+
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType(AxisButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType<AxisButtonFrameInputData>());
+            Assert.AreEqual(typeof(AxisButtonFrameInputData), FrameInputData.GetChildFrameInputDataType(AxisButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.AreEqual(AxisButtonFrameInputData.KEY_CHILD_INPUT_DATA_TYPE, FrameInputData.GetChildFrameInputDataKey<AxisButtonFrameInputData>());
+
+            Assert.DoesNotThrow(() => {
+                AxisButtonFrameInputData.RegistTypeToFrameInputData();
+            });
         }
     }
 }

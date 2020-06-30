@@ -18,6 +18,16 @@ namespace Hinode
     public class TouchFrameInputData : IFrameDataRecorder
         , ISerializable
     {
+        public static readonly string KEY_CHILD_INPUT_DATA_TYPE = "tch";
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.RegistChildFrameInputDataType(string, System.Type)"/>
+        /// </summary>
+        public static void RegistTypeToFrameInputData()
+        {
+            IFrameInputDateRecorderHelper.RegistTypeToFrameInputData(KEY_CHILD_INPUT_DATA_TYPE, typeof(TouchFrameInputData));
+        }
+
         public static readonly int LIMIT_TOUCH_COUNT = 16;
 
         [SerializeField] UpdateObserver<bool> _touchSupported = new UpdateObserver<bool>();

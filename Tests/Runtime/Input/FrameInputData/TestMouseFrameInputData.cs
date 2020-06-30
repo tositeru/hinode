@@ -13,6 +13,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
     /// </summary>
     public class TestMouseFrameInputData
     {
+        [SetUp]
+        public void SetUp()
+        {
+            FrameInputData.ClearChildFrameInputDataType();
+        }
+
         /// <summary>
         /// <seealso cref="MouseFrameInputData.MousePresent"/>
         /// <seealso cref="MouseFrameInputData.MousePosition"/>
@@ -294,6 +300,24 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             {
                 Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
             }
+        }
+
+        /// <summary>
+        /// <seealso cref="MouseFrameInputData.RegistTypeToFrameInputData()"/>
+        /// </summary>
+        [Test]
+        public void RegistTypeToFrameInputDataPasses()
+        {
+            MouseFrameInputData.RegistTypeToFrameInputData();
+
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType(MouseFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType<MouseFrameInputData>());
+            Assert.AreEqual(typeof(MouseFrameInputData), FrameInputData.GetChildFrameInputDataType(MouseFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.AreEqual(MouseFrameInputData.KEY_CHILD_INPUT_DATA_TYPE, FrameInputData.GetChildFrameInputDataKey<MouseFrameInputData>());
+
+            Assert.DoesNotThrow(() => {
+                MouseFrameInputData.RegistTypeToFrameInputData();
+            });
         }
     }
 }

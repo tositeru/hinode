@@ -13,6 +13,12 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
     /// </summary>
     public class TestTouchFrameInputData
     {
+        [SetUp]
+        public void SetUp()
+        {
+            FrameInputData.ClearChildFrameInputDataType();
+        }
+
         /// <summary>
         /// <seealso cref="TouchFrameInputData.TouchSupported"/>
         /// <seealso cref="TouchFrameInputData.TouchPressureSupported"/>
@@ -344,6 +350,24 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             {
                 Assert.IsFalse(t.Value.DidUpdated, $"Key({t.Key}) don't reflesh Update Flags...");
             }
+        }
+
+        /// <summary>
+        /// <seealso cref="TouchFrameInputData.RegistTypeToFrameInputData()"/>
+        /// </summary>
+        [Test]
+        public void RegistTypeToFrameInputDataPasses()
+        {
+            TouchFrameInputData.RegistTypeToFrameInputData();
+
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType(TouchFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.IsTrue(FrameInputData.ContainsChildFrameInputDataType<TouchFrameInputData>());
+            Assert.AreEqual(typeof(TouchFrameInputData), FrameInputData.GetChildFrameInputDataType(TouchFrameInputData.KEY_CHILD_INPUT_DATA_TYPE));
+            Assert.AreEqual(TouchFrameInputData.KEY_CHILD_INPUT_DATA_TYPE, FrameInputData.GetChildFrameInputDataKey<TouchFrameInputData>());
+
+            Assert.DoesNotThrow(() => {
+                TouchFrameInputData.RegistTypeToFrameInputData();
+            });
         }
     }
 }

@@ -19,6 +19,16 @@ namespace Hinode
     public class ButtonFrameInputData : IFrameDataRecorder
         , ISerializable
     {
+        public static readonly string KEY_CHILD_INPUT_DATA_TYPE = "btn";
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.RegistChildFrameInputDataType(string, System.Type)"/>
+        /// </summary>
+        public static void RegistTypeToFrameInputData()
+        {
+            IFrameInputDateRecorderHelper.RegistTypeToFrameInputData(KEY_CHILD_INPUT_DATA_TYPE, typeof(ButtonFrameInputData));
+        }
+
         [SerializeField] Dictionary<string, UpdateObserver<InputDefines.ButtonCondition>> _buttons = new Dictionary<string, UpdateObserver<InputDefines.ButtonCondition>>();
         readonly HashSet<string> _observedButtonNames = new HashSet<string>();
 

@@ -19,6 +19,16 @@ namespace Hinode
     public class MouseFrameInputData : IFrameDataRecorder
         , ISerializable
     {
+        public static string KEY_CHILD_INPUT_DATA_TYPE = "mus";
+
+        /// <summary>
+        /// <seealso cref="FrameInputData.RegistChildFrameInputDataType(string, System.Type)"/>
+        /// </summary>
+        public static void RegistTypeToFrameInputData()
+        {
+            IFrameInputDateRecorderHelper.RegistTypeToFrameInputData(KEY_CHILD_INPUT_DATA_TYPE, typeof(MouseFrameInputData));
+        }
+
         [SerializeField] UpdateObserver<bool> _mousePresent = new UpdateObserver<bool>();
         [SerializeField]
         UpdateObserver<InputDefines.ButtonCondition>[] _mouseButtons = new UpdateObserver<InputDefines.ButtonCondition>[3] {

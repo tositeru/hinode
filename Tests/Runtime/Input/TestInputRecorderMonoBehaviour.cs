@@ -228,12 +228,5 @@ namespace Hinode.Tests.Input
             }
             Debug.Log($"Success to Pause Replay!");
         }
-
-        [UnityTest]
-        public IEnumerator FrameInputDataSettingPasses()
-        {
-            yield return null;
-            throw new System.NotImplementedException();
-        }
     }
 }
