@@ -5,8 +5,8 @@ using UnityEditor;
 
 namespace Hinode.Editors
 {
-    [CustomEditor(typeof(InputRecorder))]
-    public class InputRecorderEditor : Editor
+    [CustomEditor(typeof(InputRecorderMonoBehaviour))]
+    public class InputRecorderBehaviourEditor : Editor
     {
         enum Props
         {
@@ -30,7 +30,7 @@ namespace Hinode.Editors
                 return;
             }
 
-            var inst = target as InputRecorder;
+            var inst = target as InputRecorderMonoBehaviour;
             EditorGUILayout.LabelField($"Current State => {inst.CurrentState}");
             using (var scope = new EditorGUILayout.HorizontalScope())
             {
@@ -41,8 +41,8 @@ namespace Hinode.Editors
                         {
                             inst.DoneInGameView(() => {
                                 inst.StopRecord();
-                                inst.SaveToTarget();
-                                EditorUtility.SetDirty(inst.Target);
+                                inst.UseRecorder.SaveToTarget();
+                                EditorUtility.SetDirty(inst.TargetRecord);
                             });
                         }
                         break;
@@ -81,7 +81,7 @@ namespace Hinode.Editors
                                 inst.StartRecord();
                             });
                         }
-                        bool enableReplay = inst.Target != null && inst.Target.FrameCount > 0;
+                        bool enableReplay = inst.TargetRecord != null && inst.TargetRecord.FrameCount > 0;
                         if (enableReplay && GUILayout.Button("Start Replay"))
                         {
                             inst.DoneInGameView(() => {

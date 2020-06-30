@@ -50,15 +50,15 @@ InputRecorderを使うことでReplayableInputの入力データを記録・再�
 
 - InputRecorder : ReplayableInputの記録・再生を行うためのComponent
 - InputRecord : 入力データを表すScriptableObject
-- InputRecorder.IFrameDataRecorder : 入力データのフレーム単位の処理を行うインターフェイス
+- IFrameDataRecorder : 入力データのフレーム単位の処理を行うインターフェイス
 
 使用するにあたっては、基本的に以下の手順を踏みます。
 
-1. InputRecorderをシーン上に作成し、フレーム単位の処理を行うInputRecorder.IFrameDataRecorderをそれに設定します。
+1. InputRecorderをシーン上に作成し、フレーム単位の処理を行うIFrameDataRecorderをそれに設定します。
 1. 記録対象または再生対象となるInputRecordをInputRecorderに登録
 1. 記録・再生処理を行う
 
-InputRecorder.IFrameDataRecorderのデフォルト実装として`FrameInputData`クラスを提供していますので、そちらを利用してください。
+IFrameDataRecorderのハブクラスとして`FrameInputData`クラスを提供していますので、そちらを利用してください。
 (FrameInputDataはInputRecorderに初期化に設定されています。)
 
 ```csharp
@@ -69,7 +69,7 @@ var recorder = recorderObj.GetComponent<InputRecorder>();
 //入力データのインスタンス
 var inputRecord = InputRecord.Create(new Vector2Int(Screen.width, Screen.height));
 
-//入力データの記録・再生を行うクラス(InputRecorder.IFrameDataRecorder interface)
+//入力データの記録・再生を行うクラス(IFrameDataRecorder interface)
 recorder.FrameDataRecorder = new DummyFrameDataRecorder();
 
 {//Record Sample
@@ -94,6 +94,30 @@ recorder.FrameDataRecorder = new DummyFrameDataRecorder();
     recorder.StopReplay();
 }
 ```
+
+#### FrameInputData
+
+FrameInputDataはIFrameDataRecorder interfaceを実装したクラスになります。
+
+FrameInputDataには子IFrameDataRecorderを登録して使用するクラスになります。
+
+登録できる子クラスはIFrameDataRecorderとISerializableを実装したクラスになります。
+
+また、以下の子クラスをHinodeは提供しています。
+
+- MouseFrameInputData: Mouseの入力データ用のIFrameDataRecorder
+- TouchFrameInputData: Touchデータ用のIFrameDataRecorder
+- KeyboardFrameInputData: Keyboardの入力データ用のIFrameDataRecorder
+- ButtonFrameInputData: UnityEngine.InputのGetButton()用のIFrameDataRecorder
+- AxisButtonFrameInputData: UnityEngine.InputのGetAxis()用のIFrameDataRecorder
+
+##### 子クラスの設定方法
+
+入力データを記録・再生する際は以下のクラスをFrameInputDataに設定してください。
+設定の際は以下の手順を踏んでください。
+
+1. FrameInputData.RegistChildFrameInputDataType(XXX)でFrameInputDataに子クラスを登録
+1. FrameInputDataのインスタンスを生成後、FrameInputData.AddChildRecorder()でインスタンスに子クラスのインスタンスを追加してください。
 
 ### InputViewer
 

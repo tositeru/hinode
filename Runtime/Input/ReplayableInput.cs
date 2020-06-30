@@ -14,6 +14,11 @@ namespace Hinode
     /// </summary>
     public class ReplayableInput : ISingleton<ReplayableInput>
     {
+        public static new void ResetInstance()
+        {
+            ISingleton<ReplayableInput>.ResetInstance();
+        }
+
         //Input.acceleration;
         //Input.accelerationEventCount;
         //Input.accelerationEvents;
