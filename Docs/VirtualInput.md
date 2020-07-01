@@ -119,5 +119,21 @@ FrameInputDataには子IFrameDataRecorderを登録して使用するクラスに
 1. FrameInputData.RegistChildFrameInputDataType(XXX)でFrameInputDataに子クラスを登録
 1. FrameInputDataのインスタンスを生成後、FrameInputData.AddChildRecorder()でインスタンスに子クラスのインスタンスを追加してください。
 
+#### InputRecorderMonoBehaviour
+
+InputRecoderをUnityのComponentとして扱うためのInputRecorderMonoBehaviourを提供しています。
+
+使用方法はGameObjectにInputRecorderMonoBehaviourをアタッチするだけになります。
+
+ただし、そのままだと子クラスが何も設定されていない状態ですので、以下のComponentを追加でアタッチすることで任意の入力データを記録・再生することができるようになります。
+
+- AppendAxisButtonFrameData
+- AppendButtonFrameData
+- AppendKeyboardFrameData
+- AppendMouseFrameData
+- AppendTouchFrameData
+
+拡張する際はIAppendFrameInputDataMonoBehaviourを継承したクラスを実装することを推奨します。
+
 ### InputViewer
 

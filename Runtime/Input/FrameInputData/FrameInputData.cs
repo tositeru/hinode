@@ -72,7 +72,6 @@ namespace Hinode
         public void CopyUpdatedDatasTo(IFrameDataRecorder other)
         {
             Assert.IsTrue(other is FrameInputData);
-            throw new System.NotImplementedException();
             var otherInputData = other as FrameInputData;
 
             foreach (var child in ChildFrameInputDatas.Select(_t => _t.Value))

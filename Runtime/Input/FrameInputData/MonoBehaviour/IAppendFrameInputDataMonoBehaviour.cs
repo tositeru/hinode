@@ -14,19 +14,22 @@ namespace Hinode
     /// </summary>
     public abstract class IAppendFrameInputDataMonoBehaviour : MonoBehaviour
     {
-        protected abstract void OnAwake(InputRecorder inputRecorder);
+        public abstract IFrameDataRecorder CreateInputData();
+        protected abstract void OnAttached(InputRecorder inputRecorder);
 
-        private void Awake()
+        public void Attach()
         {
-            if(TryGetComponent<InputRecorderMonoBehaviour>(out var inputRecorder))
+            if (TryGetComponent<InputRecorderMonoBehaviour>(out var inputRecorder))
             {
                 Assert.IsNotNull(inputRecorder.UseRecorder);
-                OnAwake(inputRecorder.UseRecorder);
+
+                OnAttached(inputRecorder.UseRecorder);
             }
-            else
-            {
-                Assert.IsTrue(false, "Require to Attach InputRecorderMonoBehaviour...");
-            }
+        }
+
+        private void Start()
+        {
+            Attach();
         }
     }
 }

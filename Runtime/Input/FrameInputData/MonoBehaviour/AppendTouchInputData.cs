@@ -13,15 +13,25 @@ namespace Hinode
     /// <seealso cref="InputRecorderMonoBehaviour"/>
     /// <seealso cref="IAppendFrameInputDataMonoBehaviour"/>
     /// </summary>
-    public class AttachTouchInputData : IAppendFrameInputDataMonoBehaviour
+    public class AppendTouchInputData : IAppendFrameInputDataMonoBehaviour
     {
         #region override IAppendFrameInputDataMonoBehaviour
-        protected override void OnAwake(InputRecorder inputRecorder)
+        public override IFrameDataRecorder CreateInputData()
         {
-            if(inputRecorder.FrameDataRecorder is FrameInputData)
+            var btn = new TouchFrameInputData();
+            return btn;
+        }
+
+        protected override void OnAttached(InputRecorder inputRecorder)
+        {
+            if (inputRecorder.FrameDataRecorder is FrameInputData)
             {
+                TouchFrameInputData.RegistTypeToFrameInputData();
+
                 var frameInputData = inputRecorder.FrameDataRecorder as FrameInputData;
-                var touchInputData = new TouchFrameInputData();
+                frameInputData.RemoveChildRecorder(TouchFrameInputData.KEY_CHILD_INPUT_DATA_TYPE);
+
+                var touchInputData = CreateInputData();
                 frameInputData.AddChildRecorder(touchInputData);
             }
         }
