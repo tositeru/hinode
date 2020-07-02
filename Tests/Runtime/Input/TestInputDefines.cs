@@ -11,27 +11,10 @@ namespace Hinode.Tests.Input
     /// </summary>
     public class TestInputDefines
     {
-        [UnityTest]
-        public IEnumerator MouseButtonToButtonConditionPasses()
-        {
-            yield return null;
-
-            var baseInputObj = new GameObject("__baseInput", typeof(ReplayableBaseInput));
-            var baseInput = baseInputObj.GetComponent<ReplayableBaseInput>();
-            baseInput.IsReplaying = true;
-            foreach(InputDefines.MouseButton btn in System.Enum.GetValues(typeof(InputDefines.MouseButton)))
-            {
-                baseInput.SetRecordedMouseButton(btn, InputDefines.ButtonCondition.Down);
-                Assert.AreEqual(InputDefines.ButtonCondition.Down, InputDefines.ToButtonCondition(baseInput, btn));
-                baseInput.SetRecordedMouseButton(btn, InputDefines.ButtonCondition.Push);
-                Assert.AreEqual(InputDefines.ButtonCondition.Push, InputDefines.ToButtonCondition(baseInput, btn));
-                baseInput.SetRecordedMouseButton(btn, InputDefines.ButtonCondition.Up);
-                Assert.AreEqual(InputDefines.ButtonCondition.Up, InputDefines.ToButtonCondition(baseInput, btn));
-                baseInput.SetRecordedMouseButton(btn, InputDefines.ButtonCondition.Free);
-                Assert.AreEqual(InputDefines.ButtonCondition.Free, InputDefines.ToButtonCondition(baseInput, btn));
-            }
-        }
-
+        /// <summary>
+		/// <seealso cref="InputDefines.ToButtonCondition(Touch)"/>
+		/// </summary>
+		/// <returns></returns>
         [UnityTest]
         public IEnumerator TouchToButtonConditionPasses()
         {
