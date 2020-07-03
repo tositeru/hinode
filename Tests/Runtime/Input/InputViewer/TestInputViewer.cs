@@ -6,13 +6,13 @@ using UnityEngine.TestTools;
 using System.Linq;
 using UnityEngine.SceneManagement;
 
-namespace Hinode.Tests.Input
+namespace Hinode.Tests.Input.InputViewers
 {
     /// <summary>
     /// <see cref="InputViewer"/>
     /// <seealso cref="ReplayableBaseInput"/>
     /// </summary>
-    public class TestInputViewer
+    public class TestInputViewer : TestBase
     {
         /// <summary>
 		/// <seealso cref="InputViewer.CreateInstance()"/>
@@ -56,17 +56,104 @@ namespace Hinode.Tests.Input
 
         class DummyInputViewerItem : IInputViewerItem
         {
-            public InputViewer UseInputViewer { get; private set; }
+            public new InputViewer UseInputViewer { get; private set; }
+            public int OnChangedStyleCallCounter { get; set; } = 0;
 
-            public override void InitItem(InputViewer inputViewer)
+            public override void OnInitItem(InputViewer inputViewer)
             {
                 UseInputViewer = inputViewer;
             }
 
-            public override void UpdateItem(ReplayableInput UseInput)
+            public override void OnRemoveFromViewer(InputViewer inputViewer)
+            {
+                UseInputViewer = null;
+            }
+
+            public override void OnUpdateItem()
             {
 
             }
+
+            public override void OnChangedStyle(InputViewerStyleInfo styleInfo)
+            {
+                OnChangedStyleCallCounter++;
+            }
+
+        }
+
+        /// <summary>
+        /// <seealso cref="InputViewer.ViewerItems"/>
+        /// <seealso cref="InputViewer.AddItem()"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator AddItemPasses()
+        {
+            var inputViewer = InputViewer.CreateInstance();
+            Assert.IsFalse(inputViewer.ViewerItems.Any());
+
+            var item = inputViewer.gameObject.AddComponent<DummyInputViewerItem>();
+
+            inputViewer.AddItem(item);
+            Assert.IsTrue(inputViewer.ViewerItems.Contains(item));
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="InputViewer.ViewerItems"/>
+        /// <seealso cref="InputViewer.AddItem()"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator AddItemWhenAlreadyAddedPasses()
+        {
+            var inputViewer = InputViewer.CreateInstance();
+            Assert.IsFalse(inputViewer.ViewerItems.Any());
+
+            var item = inputViewer.gameObject.AddComponent<DummyInputViewerItem>();
+            inputViewer.AddItem(item);
+
+            inputViewer.AddItem(item); // <- Test point. InputViewer#AddItem will do nothing.
+
+            Assert.AreEqual(1, inputViewer.ViewerItems.Where(_i => _i == item).Count());
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="InputViewer.ViewerItems"/>
+        /// <seealso cref="InputViewer.RemoveItem(IInputViewerItem)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator RemoveItemPasses()
+        {
+            var inputViewer = InputViewer.CreateInstance();
+            Assert.IsFalse(inputViewer.ViewerItems.Any());
+
+            var item = inputViewer.gameObject.AddComponent<DummyInputViewerItem>();
+            inputViewer.AddItem(item);
+
+            inputViewer.RemoveItem(item); // <- Test point.
+            Assert.IsFalse(inputViewer.ViewerItems.Contains(item));
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="InputViewer.ViewerItems"/>
+        /// <seealso cref="InputViewer.RemoveItem(IInputViewerItem)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator RemoveItemWhenNotExistPasses()
+        {
+            var inputViewer = InputViewer.CreateInstance();
+            Assert.IsFalse(inputViewer.ViewerItems.Any());
+
+            var item = inputViewer.gameObject.AddComponent<DummyInputViewerItem>();
+
+            inputViewer.RemoveItem(item); // <- Test point.
+            Assert.IsFalse(inputViewer.ViewerItems.Contains(item));
+            yield return null;
         }
 
         /// <summary>
@@ -95,6 +182,34 @@ namespace Hinode.Tests.Input
 
             Assert.IsTrue(inputViewer.ViewerItems.OfType<DummyInputViewerItem>().All(_d => _d.UseInputViewer == inputViewer));
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator OnChangedStyleInfoPasses()
+        {
+            var inputViewer = InputViewer.CreateInstance();
+            Assert.IsFalse(inputViewer.ViewerItems.Any());
+
+            var items = new IInputViewerItem[]
+            {
+                inputViewer.gameObject.AddComponent<DummyInputViewerItem>(),
+                inputViewer.gameObject.AddComponent<DummyInputViewerItem>(),
+            };
+
+            yield return null;
+
+            foreach (var child in inputViewer.ViewerItems.OfType<DummyInputViewerItem>())
+            {
+                Assert.AreEqual(1, child.OnChangedStyleCallCounter);
+            }
+            Debug.Log($"Success to IInputViewerItem#InitItem()!");
+
+            inputViewer.StyleInfo.Font = new Font();
+            foreach(var child in inputViewer.ViewerItems.OfType<DummyInputViewerItem>())
+            {
+                Assert.AreEqual(2, child.OnChangedStyleCallCounter);
+            }
+            Debug.Log($"Success to Change InputViewerStyleInfo's property!");
         }
 
         // will delete below

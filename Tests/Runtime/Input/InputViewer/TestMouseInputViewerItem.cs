@@ -5,12 +5,12 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Linq;
 
-namespace Hinode.Tests.Input
+namespace Hinode.Tests.Input.InputViewers
 {
     /// <summary>
 	/// <seealso cref="MouseInputViewerItem"/>
 	/// </summary>
-    public class TestMouseInputViewerItem
+    public class TestMouseInputViewerItem : TestBase
     {
         (InputViewer, MouseInputViewerItem) CreateMouseItem()
         {
@@ -57,11 +57,10 @@ namespace Hinode.Tests.Input
         {
             var (inputViewer, mouse) = CreateMouseItem();
             inputViewer.UseInput.RecordedMousePresent = true;
+            yield return null;
 
             inputViewer.UseInput.RecordedMousePos = Vector3.one * 10f;
-
-            Assert.IsTrue(inputViewer.RootCanvas.transform.GetChildEnumerable().Any(_c => _c == mouse.Cursor));
-            yield return null;
+            Assert.IsTrue(inputViewer.RootCanvas.transform.GetChildEnumerable().Any(_c => _c == mouse.Cursor.transform));
         }
 
         /// <summary>
@@ -73,9 +72,75 @@ namespace Hinode.Tests.Input
         {
             var (inputViewer, mouse) = CreateMouseItem();
             inputViewer.UseInput.RecordedMousePresent = true;
+            yield return null;
 
-            Assert.IsTrue(inputViewer.TextArea.transform.GetChildEnumerable().Any(_c => _c == mouse.ButtonsText));
+            Assert.IsTrue(inputViewer.TextArea.transform.GetChildEnumerable().Any(_c => _c == mouse.ButtonsText.transform));
+        }
+
+        /// <summary>
+		/// <seealso cref="MouseInputViewerItem.OnChangedStyle(InputViewerStyleInfo)"/>
+		/// </summary>
+		/// <returns></returns>
+        [UnityTest]
+        public IEnumerator OnChangedStylePasses()
+        {
+            var (inputViewer, mouse) = CreateMouseItem();
+            inputViewer.UseInput.RecordedMousePresent = true;
+            yield return null;
+
+            inputViewer.StyleInfo.Font = new Font();
+            inputViewer.StyleInfo.FontColor = Color.green;
+
+            Assert.AreSame(inputViewer.StyleInfo.Font, mouse.ButtonsText.font);
+            Assert.AreEqual(inputViewer.StyleInfo.FontColor, mouse.ButtonsText.color);
+        }
+
+        [UnityTest]
+        public IEnumerator CursorRadiusPasses()
+        {
+            var (inputViewer, mouse) = CreateMouseItem();
+            inputViewer.UseInput.RecordedMousePresent = true;
+
+            mouse.CursorRadius = 20;
+
+            var mouseR = mouse.Cursor.transform as RectTransform;
+            Assert.AreEqual(mouse.CursorRadius, mouseR.rect.width);
+            Assert.AreEqual(mouse.CursorRadius, mouseR.rect.height);
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator CursorColorPasses()
+        {
+            var (inputViewer, mouse) = CreateMouseItem();
+            inputViewer.UseInput.RecordedMousePresent = true;
+
+            inputViewer.StyleInfo.ButtonColorAtFree = Color.red;
+            inputViewer.StyleInfo.ButtonColorAtDown = Color.blue;
+            inputViewer.StyleInfo.ButtonColorAtPush = Color.green;
+            inputViewer.StyleInfo.ButtonColorAtUp = Color.yellow;
+
+            inputViewer.UseInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Free);
+            yield return null;
+            Assert.AreEqual(inputViewer.StyleInfo.ButtonColorAtFree, mouse.Cursor.color);
+            Debug.Log($"Success to Set Cursor Color at Free!");
+
+            inputViewer.UseInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+            yield return null;
+            Assert.AreEqual(inputViewer.StyleInfo.ButtonColorAtDown, mouse.Cursor.color);
+            Debug.Log($"Success to Set Cursor Color at Down!");
+
+            inputViewer.UseInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Push);
+            yield return null;
+            Assert.AreEqual(inputViewer.StyleInfo.ButtonColorAtPush, mouse.Cursor.color);
+            Debug.Log($"Success to Set Cursor Color at Push!");
+
+            inputViewer.UseInput.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Up);
+            yield return null;
+            Assert.AreEqual(inputViewer.StyleInfo.ButtonColorAtUp, mouse.Cursor.color);
+            Debug.Log($"Success to Set Cursor Color at Up!");
+
+        }
+
     }
 }
