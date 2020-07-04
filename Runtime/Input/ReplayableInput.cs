@@ -274,6 +274,29 @@ namespace Hinode
         }
 
         /// <summary>
+		/// 
+		/// </summary>
+		/// <param name=""></param>
+		/// <returns></returns>
+        public InputDefines.ButtonCondition GetKeyCondition(KeyCode keyCode)
+        {
+            if(IsReplaying)
+            {
+                return GetRecordedKeyButton(keyCode);
+            }
+            else
+            {
+                return Input.GetKeyDown(keyCode)
+                ? InputDefines.ButtonCondition.Down
+                : Input.GetKeyUp(keyCode)
+                    ? InputDefines.ButtonCondition.Up
+                    : Input.GetKey(keyCode)
+                        ? InputDefines.ButtonCondition.Push
+                        : InputDefines.ButtonCondition.Free;
+            }
+        }
+
+        /// <summary>
         /// <seealso cref="Hinode.Tests.Input.TestReplayableInput.KeyPasses()"/>
         /// </summary>
         /// <param name="keyCode"></param>

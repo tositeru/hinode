@@ -89,13 +89,18 @@ namespace Hinode
         public static Image CreateImage(string name)
         {
             var obj = CreateGameObject(name);
-            return obj.AddComponent<Image>();
+            var inst = obj.AddComponent<Image>();
+            inst.raycastTarget = false;
+            return inst;
         }
 
         public static Text CreateText(string name)
         {
             var obj = CreateGameObject(name);
-            return obj.AddComponent<Text>();
+            var inst = obj.AddComponent<Text>();
+            inst.raycastTarget = false;
+            return inst;
+
         }
         #endregion
 

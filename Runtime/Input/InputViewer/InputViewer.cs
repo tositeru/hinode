@@ -77,13 +77,15 @@ namespace Hinode
                     _textArea.pivot = new Vector2(0, 1);
 
                     var rootR = RootCanvas.transform as RectTransform;
-                    _textArea.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, rootR.rect.width / 3f);
+                    _textArea.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, rootR.rect.width);
                     _textArea.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, rootR.rect.height / 3f);
 
-
                     var layout = _textArea.gameObject.AddComponent<VerticalLayoutGroup>();
+                    layout.childForceExpandHeight = false;
 
                     var image = _textArea.gameObject.AddComponent<Image>();
+                    image.raycastTarget = false;
+
                     var color = Color.black;
                     color.a = 0.4f;
                     image.color = color;

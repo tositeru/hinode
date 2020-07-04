@@ -294,6 +294,26 @@ namespace Hinode.Tests.Input
         }
 
         /// <summary>
+        /// <seealso cref="ReplayableInput.GetKeyCondition(KeyCode)"/>
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public void GetKeyConditionPasses()
+        {
+            var input = new ReplayableInput();
+
+            foreach (var keyCode in System.Enum.GetValues(typeof(KeyCode))
+                .GetEnumerable<KeyCode>())
+            {
+                var errorMessage = $"Failed KeyCode({keyCode})...";
+                Assert.IsFalse(input.ContainsRecordedKeyCode(keyCode), errorMessage);
+
+                input.SetRecordedKeyButton(keyCode, InputDefines.ButtonCondition.Down);
+                Assert.AreEqual(InputDefines.ButtonCondition.Down, input.GetKeyCondition(keyCode), errorMessage);
+            }
+        }
+
+        /// <summary>
         /// <seealso cref="ReplayableInput.GetButton(string)"/>
         /// <seealso cref="ReplayableInput.GetButtonDown(string)"/>
         /// <seealso cref="ReplayableInput.GetButtonUp(string)"/>
