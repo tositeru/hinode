@@ -137,3 +137,17 @@ InputRecoderをUnityのComponentとして扱うためのInputRecorderMonoBehavio
 
 ### InputViewer
 
+HinodeはReplayableInputの現在の状態を画面に表示するためのInputViewerを提供しています。
+
+使用する際は、InputViewerを適当なGameObjectにアタッチするか、InputViewer#CreateInstance()でインスタンスを生成してください。
+
+実際の表示処理はIInputViewerItem interfaceが行うため、生成直後のInputViewerは何も表示しません。
+必ずアタッチ・インスタンスの生成後にIInputViewerItemから派生したクラスを同じGameObjectにアタッチしてください。
+
+Hinodeでは以下のIInputViewerItemの派生クラスを提供しています。
+
+- AxisButtonInputViewerItem
+- ButtonInputViewerItem
+- KeyboardInputViewerItem
+- MouseInputViewerItem
+- TouchInputViewerItem
