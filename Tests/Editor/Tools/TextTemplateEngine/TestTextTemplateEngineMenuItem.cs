@@ -12,6 +12,9 @@ namespace Hinode.Tests.Editors.Tools
     /// </summary>
     public class TestTextTemplateEngineMenuItem
     {
+        /// <summary>
+        /// <seealso cref="TextTemplateEngineMenuItem.ExpandTextTemplate(string)"/>
+        /// </summary>
         [Test]
         public void BasicCasePasses()
         {
@@ -31,6 +34,9 @@ Hogehoge
             Assert.AreEqual(destText,TextTemplateEngineMenuItem.ExpandTextTemplate(srcText).text.Replace("\r\n", "\n"));
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngineMenuItem.ExpandTextTemplate(string)"/>
+        /// </summary>
         [Test]
         public void AlreadyExpanededPasses()
         {
@@ -53,6 +59,9 @@ Hogehoge
             Assert.AreEqual(destText, TextTemplateEngineMenuItem.ExpandTextTemplate(srcText).text.Replace("\r\n", "\n"));
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngineMenuItem.ExpandTextTemplate(string)"/>
+        /// </summary>
         [Test]
         public void ExpanedMultiplePasses()
         {
@@ -77,6 +86,9 @@ Cat is Animal
             Assert.AreEqual(destText, TextTemplateEngineMenuItem.ExpandTextTemplate(srcText).text.Replace("\r\n", "\n"));
         }
 
+        /// <summary>
+        /// <seealso cref="TextTemplateEngineMenuItem.ExpandTextTemplate(string)"/>
+        /// </summary>
         [Test]
         public void EdgeCasePasses()
         {

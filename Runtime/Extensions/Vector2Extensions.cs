@@ -4,10 +4,14 @@ using UnityEngine;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Extensions.TestVector2Extensions"/>
+    /// </summary>
     public static class Vector2Extensions
     {
         /// <summary>
         /// ([num], [num])の形式のみ対応している
+        /// <seealso cref="Hinode.Tests.Extensions.TestVector2Extensions.TryParsePasses()"/>
         /// </summary>
         /// <param name="text"></param>
         /// <param name="result"></param>

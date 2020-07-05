@@ -7,8 +7,17 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Extensions.TestMonoBehaviourExtensions"/>
+    /// </summary>
     public static class MonoBehaviourExtensions
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestMonoBehaviourExtensions.SafeStartCoroutinePasses()"/>
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="coroutine"></param>
+        /// <param name="routine"></param>
         public static void SafeStartCoroutine(this MonoBehaviour target, ref Coroutine coroutine, IEnumerator routine)
         {
             if(coroutine != null)
@@ -18,11 +27,21 @@ namespace Hinode
             coroutine = target.StartCoroutine(routine);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestMonoBehaviourExtensions.AssertObjectReferencePasses()"/>
+        /// </summary>
+        /// <param name="mono"></param>
+        /// <param name="objHash"></param>
         public static void AssertObjectReference(this MonoBehaviour mono, HashSet<object> objHash = null)
         {
             AssertObjectReference(mono as object, objHash);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestMonoBehaviourExtensions.AssertObjectReferencePasses()"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="objHash"></param>
         public static void AssertObjectReference(object obj, HashSet<object> objHash = null)
         {
             if (objHash == null) objHash = new HashSet<object>();

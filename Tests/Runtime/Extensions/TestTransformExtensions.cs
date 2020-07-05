@@ -7,11 +7,16 @@ using System.Linq;
 
 namespace Hinode.Tests.Extensions
 {
+    /// <summary>
+    /// <seealso cref="TransformExtensions"/>
+    /// </summary>
     public class TestTransformExtensions : TestBase
     {
-        // A Test behaves as an ordinary method
-        [Test]
-        public void GetChildEnumerablePass()
+        /// <summary>
+        /// <seealso cref="TransformExtensions.GetChildEnumerable(Transform)"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GetChildEnumerablePass()
         {
             var corrects = new List<GameObject>();
             var root = GameObjectExtensions.Create(
@@ -25,11 +30,14 @@ namespace Hinode.Tests.Extensions
 
             corrects.RemoveAt(0);
             AssertionUtils.AssertEnumerable(corrects.Select(_g => _g.transform), root.GetChildEnumerable(), "TransformExtensions#GetChildEnumerableの探索順が想定したものになっていません。");
+            yield return null;
         }
 
-        // A Test behaves as an ordinary method
-        [Test]
-        public void GetHierarchyEnumerablePass()
+        /// <summary>
+        /// <seealso cref="TransformExtensions.GetHierarchyEnumerable(Transform)"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GetHierarchyEnumerablePass()
         {
             var corrects = new List<GameObject>();
             var root = GameObjectExtensions.Create(
@@ -48,10 +56,15 @@ namespace Hinode.Tests.Extensions
             ).transform;
 
             AssertionUtils.AssertEnumerable(corrects.Select(_g => _g.transform), root.transform.GetHierarchyEnumerable(), "TransformExtensions#GetHierarchyEnumerableの探索順が想定したものになっていません。");
+            yield return null;
         }
 
-        [Test]
-        public void GetParentEnumerablePass()
+        /// <summary>
+        /// <seealso cref="TransformExtensions.GetParentEnumerable(Transform)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator GetParentEnumerablePass()
         {
             var corrects = new List<GameObject>();
             var root = GameObjectExtensions.Create(
@@ -76,6 +89,7 @@ namespace Hinode.Tests.Extensions
                 new Transform[] { A, root }
                 , child.GetParentEnumerable()
                 , errorMessage);
+            yield return null;
         }
     }
 }

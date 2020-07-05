@@ -5,23 +5,44 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Hinode.Tests.Extensions.TestTransformExtensions"/>
+    /// </summary>
     public static class TransformExtensions
     {
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestTransformExtensions.GetChildEnumerablePass()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static IEnumerable<Transform> GetChildEnumerable(this Transform t)
         {
             return new ChildEnumerable(t);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestTransformExtensions.GetHierarchyEnumerablePass()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static IEnumerable<Transform> GetHierarchyEnumerable(this Transform t)
         {
             return new HierarchyEnumerable(t);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.Extensions.TestTransformExtensions.GetParentEnumerablePass()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static IEnumerable<Transform> GetParentEnumerable(this Transform t)
         {
             return new ParentEnumerable(t);
         }
 
+        /// <summary>
+        /// <seealso cref="GetChildEnumerable(Transform)"/>
+        /// </summary>
         public class ChildEnumerable : IEnumerable<Transform>, IEnumerable
         {
             Transform _target;
@@ -46,6 +67,7 @@ namespace Hinode
 
         /// <summary>
         /// 自身を含み、ルートオブジェクトとしたオブジェクト階層をたどるIEnumerable
+        /// <seealso cref="GetHierarchyEnumerable(Transform)"/>
         /// </summary>
         public class HierarchyEnumerable : IEnumerable<Transform>, IEnumerable
         {
@@ -95,6 +117,9 @@ namespace Hinode
             }
         }
 
+        /// <summary>
+        /// <seealso cref="GetParentEnumerable(Transform)"/>
+        /// </summary>
         class ParentEnumerable : IEnumerable<Transform>, IEnumerable
         {
             Transform _target;

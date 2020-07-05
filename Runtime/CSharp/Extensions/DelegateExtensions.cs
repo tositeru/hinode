@@ -7,11 +7,13 @@ namespace Hinode
 {
     /// <summary>
     /// <seealso cref="System.Delegate"/>
+    /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDelegateExtensions"/>
     /// </summary>
     public static class DelegateExtensions
     {
         /// <summary>
         /// delegateの仕様上、targetのInvocationListは空になりませんので、戻り値を使用してください。
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDelegateExtensions.ClearInvocationsPasses()"/>
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>

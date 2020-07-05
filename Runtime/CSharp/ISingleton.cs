@@ -17,13 +17,18 @@ namespace Hinode
             get
             {
                 if (_instance != null) return _instance;
-                _instance = new T();
-                _instance.OnCreated();
+                ResetInstance();
                 return _instance;
             }
         }
 
         protected ISingleton() {}
+
+        protected static void ResetInstance()
+        {
+            _instance = new T();
+            _instance.OnCreated();
+        }
 
         virtual protected void OnCreated() { }
     }

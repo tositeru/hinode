@@ -19,6 +19,9 @@ namespace Hinode.Tests.CSharp.Extensions
             public float floatValue = 0f;
         }
 
+        /// <summary>
+        /// <seealso cref="SerializationInfoExtensions.GetEnumerable(SerializationInfo)"/>
+        /// </summary>
         [Test]
         public void GetEnumerablePasses()
         {

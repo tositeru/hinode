@@ -43,7 +43,7 @@ namespace Hinode.MVC
 
         public virtual bool IsVaildViewLayoutType(System.Type type)
         {
-            return type.HasInterface(ViewLayoutType);
+            return type.ContainsInterface(ViewLayoutType);
         }
 
         public virtual bool IsVaildValue(object value)

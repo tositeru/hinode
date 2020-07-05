@@ -158,6 +158,7 @@ This Pen is Nice. Go! Go! Go!
         public enum PropType
         {
             TemplateText,
+            ReplacementKeywords,
             IsOnlyEmbbed,
             DoShareKeywords,
             Keywords,
@@ -169,6 +170,7 @@ This Pen is Nice. Go! Go! Go!
         }
         static readonly (PropType, string)[] props = {
             (PropType.TemplateText, "_templateText"),
+            (PropType.ReplacementKeywords, "_replacementKeywords"),
             (PropType.IsOnlyEmbbed, "_isOnlyEmbbed"),
             (PropType.IsSingleKeywordPairMode, "_isSingleKeywordPairMode"),
             (PropType.DoShareKeywords, "_doShareKaywords"),
@@ -276,18 +278,28 @@ This Pen is Nice. Go! Go! Go!
                 //param.rootScrollPos = scrollScope.scrollPosition;
 
                 EditorGUILayout.PropertyField(param.propDict[PropType.TemplateText], true);
+                EditorGUILayout.ObjectField(param.propDict[PropType.ReplacementKeywords]);
                 EditorGUILayout.PropertyField(param.propDict[PropType.IsOnlyEmbbed], true);
                 EditorGUILayout.PropertyField(param.propDict[PropType.DoShareKeywords], true);
+
                 EditorGUILayout.PropertyField(param.propDict[PropType.Keywords], true);
-                EditorGUILayout.PropertyField(param.propDict[PropType.IsSingleKeywordPairMode], true);
-                if(param.propDict[PropType.IsSingleKeywordPairMode].boolValue)
+                if(param.propDict[PropType.ReplacementKeywords].objectReferenceValue == null)
                 {
-                    EditorGUILayout.PropertyField(param.propDict[PropType.SingleKeywordPairList], true);
+                    EditorGUILayout.PropertyField(param.propDict[PropType.IsSingleKeywordPairMode], true);
+                    if(param.propDict[PropType.IsSingleKeywordPairMode].boolValue)
+                    {
+                        EditorGUILayout.PropertyField(param.propDict[PropType.SingleKeywordPairList], true);
+                    }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(param.propDict[PropType.IgnorePairs], true);
+                    }
                 }
                 else
                 {
-                    EditorGUILayout.PropertyField(param.propDict[PropType.IgnorePairs], true);
+                    var replaceKeywords = param.propDict[PropType.ReplacementKeywords].objectReferenceValue as TextTemplateEngine;
                 }
+
                 EditorGUILayout.PropertyField(param.propDict[PropType.EmbbedTemplates], true);
                 EditorGUILayout.PropertyField(param.propDict[PropType.Newline], true);
 

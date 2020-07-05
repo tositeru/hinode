@@ -8,10 +8,15 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="System.Type"/>
+    /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions"/>
+    /// </summary>
     public static class TypeExtensions
     {
         /// <summary>
         /// 同じまたは派生元の型かどうか？
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.IsSameOrInheritedTypePasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <param name="type"></param>
@@ -19,10 +24,11 @@ namespace Hinode
         public static bool IsSameOrInheritedType(this System.Type t, System.Type type)
             => t.Equals(type)
             || t.IsSubclassOf(type)
-            || t.HasInterface(type);
+            || t.ContainsInterface(type);
 
         /// <summary>
         /// 同じまたは派生元の型かどうか？
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.IsSameOrInheritedTypePasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <param name="type"></param>
@@ -32,27 +38,30 @@ namespace Hinode
 
         /// <summary>
         /// 指定されたInterfaceを実装しているかどうか?
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.ContainsInterfacePasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <param name="interfaceType"></param>
         /// <returns></returns>
-        public static bool HasInterface(this System.Type t, System.Type interfaceType)
+        public static bool ContainsInterface(this System.Type t, System.Type interfaceType)
         {
             return interfaceType.IsInterface && t.GetInterfaces().Any(_i => _i == interfaceType);
         }
 
         /// <summary>
         /// 指定されたInterfaceを実装しているかどうか?
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.ContainsInterfacePasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <param name="interfaceType"></param>
         /// <returns></returns>
-        public static bool HasInterface<InterfaceType>(this System.Type t)
-            => t.HasInterface(typeof(InterfaceType));
+        public static bool ContainsInterface<InterfaceType>(this System.Type t)
+            => t.ContainsInterface(typeof(InterfaceType));
 
         /// <summary>
         /// 整数型かどうか?
         /// System.Numeric.BigIntegerも含みます
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.IsIntegerPasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -69,6 +78,7 @@ namespace Hinode
 
         /// <summary>
         /// 浮動小数点型かどうか？
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.IsFloatPasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -80,6 +90,7 @@ namespace Hinode
         /// <summary>
         /// 数値を表す組み込み型か？
         /// System.Numeric.BigIntegerも含みます
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.IsNumericPasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -88,6 +99,7 @@ namespace Hinode
 
         /// <summary>
         /// struct型かどうか?
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.IsStructPasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -96,10 +108,11 @@ namespace Hinode
 
         /// <summary>
         /// 数値を表すstringをtypeに対応した数値型に変換する
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.ParseToNumberPasses()"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static object ParseToNumber(this System.Type type, string keyword)
+        public static object ParseToNumber(this System.Type type, string str)
         {
             if(type?.IsEnum ?? false)
             {//enumの時は対応する型を使用してパースする(charは未対応)
@@ -109,51 +122,51 @@ namespace Hinode
 
             if (type.Equals(typeof(sbyte)))
             {
-                return sbyte.Parse(keyword);
+                return sbyte.Parse(str);
             }
             else if (type.Equals(typeof(byte)))
             {
-                return byte.Parse(keyword);
+                return byte.Parse(str);
             }
             else if (type.Equals(typeof(short)))
             {
-                return short.Parse(keyword);
+                return short.Parse(str);
             }
             else if (type.Equals(typeof(ushort)))
             {
-                return ushort.Parse(keyword);
+                return ushort.Parse(str);
             }
             else if (type.Equals(typeof(int)))
             {
-                return int.Parse(keyword);
+                return int.Parse(str);
             }
             else if (type.Equals(typeof(uint)))
             {
-                return uint.Parse(keyword);
+                return uint.Parse(str);
             }
             else if (type.Equals(typeof(long)))
             {
-                return long.Parse(keyword);
+                return long.Parse(str);
             }
             else if (type.Equals(typeof(ulong)))
             {
-                return ulong.Parse(keyword);
+                return ulong.Parse(str);
             }
             else if (type.Equals(typeof(float)))
             {
-                return float.Parse(keyword);
+                return float.Parse(str);
             }
             else if (type.Equals(typeof(double)))
             {
-                return double.Parse(keyword);
+                return double.Parse(str);
             }
             else if (type.Equals(typeof(decimal)))
             {
-                return decimal.Parse(keyword);
+                return decimal.Parse(str);
             }
             else if (type.Equals(typeof(BigInteger)))
             {
-                return BigInteger.Parse(keyword);
+                return BigInteger.Parse(str);
             }
             else
             {
@@ -163,10 +176,11 @@ namespace Hinode
 
         /// <summary>
         /// 数値を表すstringをtypeに対応した数値型に変換する
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TryParseToNumber()"/>
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static bool TryParseToNumber(this System.Type type, string keyword, out object outNum)
+        public static bool TryParseToNumber(this System.Type type, string str, out object outNum)
         {
             if (type?.IsEnum ?? false)
             {//enumの時は対応する型を使用してパースする(charは未対応)
@@ -176,73 +190,73 @@ namespace Hinode
 
             if (type.Equals(typeof(sbyte)))
             {
-                var isOK = sbyte.TryParse(keyword, out var n);
+                var isOK = sbyte.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(byte)))
             {
-                var isOK = byte.TryParse(keyword, out var n);
+                var isOK = byte.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(short)))
             {
-                var isOK = short.TryParse(keyword, out var n);
+                var isOK = short.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(ushort)))
             {
-                var isOK = ushort.TryParse(keyword, out var n);
+                var isOK = ushort.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(int)))
             {
-                var isOK = int.TryParse(keyword, out var n);
+                var isOK = int.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(uint)))
             {
-                var isOK = uint.TryParse(keyword, out var n);
+                var isOK = uint.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(long)))
             {
-                var isOK = long.TryParse(keyword, out var n);
+                var isOK = long.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(ulong)))
             {
-                var isOK = ulong.TryParse(keyword, out var n);
+                var isOK = ulong.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(float)))
             {
-                var isOK = float.TryParse(keyword, out var n);
+                var isOK = float.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(double)))
             {
-                var isOK = double.TryParse(keyword, out var n);
+                var isOK = double.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(decimal)))
             {
-                var isOK = decimal.TryParse(keyword, out var n);
+                var isOK = decimal.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
             else if (type.Equals(typeof(BigInteger)))
             {
-                var isOK = BigInteger.TryParse(keyword, out var n);
+                var isOK = BigInteger.TryParse(str, out var n);
                 outNum = n;
                 return isOK;
             }
@@ -257,6 +271,7 @@ namespace Hinode
         /// <summary>
         /// 型が等しいかどうか判定する。
         /// もし比較対象の型がGeneric型の時は元になったGeneric型が等しいかどうか判定します。
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.EqualGenericTypeDefinitionPasses()"/>
         /// </summary>
         /// <param name="t"></param>
         /// <param name="other"></param>
@@ -268,6 +283,13 @@ namespace Hinode
             return self.Equals(other);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.GetFieldInHierarchyPasses()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="name"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
         public static FieldInfo GetFieldInHierarchy(this System.Type t, string name, BindingFlags flags = BindingFlags.Default)
         {
             while(t != null)
@@ -280,6 +302,11 @@ namespace Hinode
             return null;
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.IsArrayOrListPasses()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static bool IsArrayOrList(this System.Type t)
         {
             if(t.IsArray) return true;
@@ -287,6 +314,11 @@ namespace Hinode
             return t.GetInterfaces().Any(_i => _i.Equals(typeof(IList)) || _i.Equals(typeof(IList<>)));
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.GetArrayElementTypePasses()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static System.Type GetArrayElementType(this System.Type t)
         {
             Assert.IsTrue(t.IsArrayOrList());
@@ -303,6 +335,11 @@ namespace Hinode
             return elementType ?? typeof(object);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.GetClassHierarchyEnumerablePasses()"/>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public static IEnumerable<System.Type> GetClassHierarchyEnumerable(this System.Type t)
         {
             return new ClassHierarchyEnumerable(t);

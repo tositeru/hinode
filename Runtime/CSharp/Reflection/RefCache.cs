@@ -7,6 +7,10 @@ using UnityEngine.Assertions;
 
 namespace Hinode
 {
+    /// <summary>
+    /// 
+    /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache"/>
+    /// </summary>
     public class RefCache
     {
         static readonly BindingFlags commonBindingFlags =
@@ -17,7 +21,7 @@ namespace Hinode
 
         Dictionary<string, FieldInfo> _fieldCaches = new Dictionary<string, FieldInfo>();
         Dictionary<string, PropertyInfo> _propCaches = new Dictionary<string, PropertyInfo>();
-        Dictionary<MethodInfoKey, MethodInfo> _methodCaches = new Dictionary<MethodInfoKey, MethodInfo>();
+        Dictionary<string, HashSet<MethodInfo>> _methodCaches = new Dictionary<string, HashSet<MethodInfo>>();
         Dictionary<string, ConstructorInfo> _ctorCaches = new Dictionary<string, ConstructorInfo>();
 
         public RefCache(System.Type target)
@@ -27,104 +31,210 @@ namespace Hinode
 		}
 
         #region Field
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.FieldMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public object GetField(object instance, string name)
         {
-            var info = FindField(name, instance != null, true);
+            var info = FindAndCacheField(name, instance != null);
             return info.GetValue(instance);
         }
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.FieldMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
         public void SetField(object instance, string name, object value)
         {
-            var info = FindField(name, instance != null, false);
+            var info = FindAndCacheField(name, instance != null);
             Assert.IsFalse(info.IsInitOnly || info.IsLiteral, $"'{name}' field is not set...");
             info.SetValue(instance, value);
         }
-        public bool HasField(string name)
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.FieldMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool ContainsCachedField(string name)
         {
             return _fieldCaches.ContainsKey(name);
         }
-        public FieldInfo FindField(string name, bool isInstance, bool isReadonly)
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.FieldMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="isLiteral"></param>
+        /// <returns></returns>
+        public FieldInfo FindAndCacheField(string name, bool isInstance)
         {
-            if(HasField(name))
+            if(ContainsCachedField(name))
             {
                 return _fieldCaches[name];
             }
 
             var bindFlags = commonBindingFlags;
-            bindFlags |= isReadonly ? BindingFlags.SetField : BindingFlags.GetField;
             bindFlags |= isInstance ? BindingFlags.Instance : BindingFlags.Static;
             var info = TargetType.GetField(name, bindFlags);
             Assert.IsNotNull(info, $"Don't exist '{name}' {(isInstance ? "Instance" : "Static")} field...");
+            
             _fieldCaches.Add(name, info);
             return info;
         }
         #endregion
         #region Property
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.PropertyMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.SetterOnlyPropertyPasses()"/>
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public object GetProp(object instance, string name)
         {
-            var info = FindProp(name, instance != null, true);
+            var info = FindAndCacheProp(name, instance != null);
             Assert.IsTrue(info.CanRead, $"'{name}' prop is not get...");
             return info.GetValue(instance);
         }
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.PropertyMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.GetterOnlyPropertyPasses()"/>
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
         public void SetProp(object instance, string name, object value)
         {
-            var info = FindProp(name, instance != null, false);
+            var info = FindAndCacheProp(name, instance != null);
             Assert.IsTrue(info.CanWrite, $"'{name}' prop is not set...");
             info.SetValue(instance, value);
         }
 
-        public bool HasProp(string name)
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.PropertyMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool ContainsCachedProp(string name)
         {
             return _propCaches.ContainsKey(name);
         }
 
-        public PropertyInfo FindProp(string name, bool isInstance, bool isGetter)
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.PropertyMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.GetterOnlyPropertyPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="isGetter"></param>
+        /// <returns></returns>
+        public PropertyInfo FindAndCacheProp(string name, bool isInstance)
         {
-            if (HasProp(name))
+            if (ContainsCachedProp(name))
             {
                 return _propCaches[name];
             }
 
             var bindFlags = commonBindingFlags;
-            bindFlags |= isGetter ? BindingFlags.GetProperty : BindingFlags.SetProperty;
             bindFlags |= isInstance ? BindingFlags.Instance : BindingFlags.Static;
             var info = TargetType.GetProperty(name, bindFlags);
-            Assert.IsNotNull(info, $"Don't exist '{name}' prop... {(isInstance ? "Instance" : "Static")}, {(isGetter ? "getter" : "setter")}");
+            Assert.IsNotNull(info, $"Don't exist '{name}' prop... {(isInstance ? "Instance" : "Static")}");
             _propCaches.Add(name, info);
             return info;
         }
         #endregion
         #region Method
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="name"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public object Invoke(object instance, string name, params object[] args)
         {
             var info = FindAndCacheMethod(name, instance != null, args.Select(_a => _a.GetType()));
             return info.Invoke(instance, args);
         }
 
-        public bool HasMethod(string name, params System.Type[] argumentTypes)
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
+        public bool ContainsCachedMethod(string name, params System.Type[] argumentTypes)
         {
-            return GetMethodInfo(name, argumentTypes.AsEnumerable()) != null;
-        }
-        public MethodInfo GetMethodInfo(string name)
-        {
-            var key = _methodCaches.Keys.FirstOrDefault(_k => _k.Name == name);
-            return key != null ? _methodCaches[key] : null;
-        }
-        public MethodInfo GetMethodInfo(string name, IEnumerable<System.Type> argumentTypes)
-        {
-            var key = _methodCaches.Keys.FirstOrDefault(_k => _k.Name == name
-                && _k.ArgumentTypes.Zip(argumentTypes, (_t, _o) => (t: _t, o: _o))
-                    .All(pair => pair.t == pair.o));
-            return key != null ? _methodCaches[key] : null;
+            return GetCachedMethodInfo(name, argumentTypes.AsEnumerable()) != null;
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public MethodInfo GetCachedMethodInfo(string name)
+        {
+            if (!_methodCaches.ContainsKey(name)) return null;
+            return _methodCaches[name].FirstOrDefault();
+        }
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
+        public MethodInfo GetCachedMethodInfo(string name, params System.Type[] argumentTypes)
+            => GetCachedMethodInfo(name, argumentTypes.AsEnumerable());
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
+        public MethodInfo GetCachedMethodInfo(string name, IEnumerable<System.Type> argumentTypes)
+        {
+            if (!_methodCaches.ContainsKey(name)) return null;
+
+            return _methodCaches[name].FirstOrDefault(_i => IsSameArgumentType(_i, argumentTypes));
+        }
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
         public MethodInfo FindAndCacheMethod(string name, bool isInstance, params System.Type[] argumentTypes)
         {
             return FindAndCacheMethod(name, isInstance, argumentTypes.AsEnumerable());
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.MethodMethodsAtInstancePassess()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.OverloadMethodPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
         public MethodInfo FindAndCacheMethod(string name, bool isInstance, IEnumerable<System.Type> argumentTypes)
         {
-            var info = GetMethodInfo(name, argumentTypes);
+            var info = GetCachedMethodInfo(name, argumentTypes);
             if(info != null)
             {
                 return info;
@@ -136,45 +246,86 @@ namespace Hinode
                 .Where(_i => _i.Name == name)
                 .FirstOrDefault(_i => IsSameArgumentType(_i, argumentTypes));
             Assert.IsNotNull(info, $"Don't exist '{name}' {(isInstance ? "Instance" : "Static")} method with {ToStr(argumentTypes)}...");
-            _methodCaches.Add(new MethodInfoKey(name, argumentTypes.ToArray()), info);
+            if(!_methodCaches.ContainsKey(name))
+            {
+                _methodCaches.Add(name, new HashSet<MethodInfo>());
+            }
+            if (!_methodCaches[name].Contains(info))
+            {
+                _methodCaches[name].Add(info);
+            }
             return info;
         }
         #endregion
         #region Constructor
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.CreateInstancePasses()"/>
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public object CreateInstance(params object[] args)
         {
             var constructor = TargetType.GetConstructors().First(_ctor => {
-                return _ctor.GetParameters()
-                    .Zip(args, (_p, _a) => (param: _p, arg: _a))
-                    .All(_pair => _pair.param.ParameterType == _pair.arg.GetType());
+                return IsSameArgumentType(_ctor, args.Select(_a => _a.GetType()));
             });
             return constructor.Invoke(args);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.ConstructorMethodsPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         public object CreateInstanceWithCache(string name, params object[] args)
         {
             var info = FindAndCacheConstructor(name, true, args != null ? args.Select(_a => _a.GetType()):null);
             return info.Invoke(args);
         }
 
-        public bool HasConstructorInfo(string name)
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.ConstructorMethodsPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool ContainsCachedConstructorInfo(string name)
         {
-            return GetConstructorInfo(name) != null;
+            return GetCachedConstructorInfo(name) != null;
         }
-        public ConstructorInfo GetConstructorInfo(string name)
+
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.ConstructorMethodsPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public ConstructorInfo GetCachedConstructorInfo(string name)
         {
             var key = _ctorCaches.Keys.FirstOrDefault(_k => _k == name);
             return key != null ? _ctorCaches[key] : null;
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.ConstructorMethodsPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
         public ConstructorInfo FindAndCacheConstructor(string name, bool isInstance, params System.Type[] argumentTypes)
         {
             return FindAndCacheConstructor(name, isInstance, argumentTypes?.AsEnumerable() ?? null);
         }
 
+        /// <summary>
+        /// <seealso cref="Hinode.Tests.CSharp.Reflection.TestRefCache.ConstructorMethodsPasses()"/>
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="isInstance"></param>
+        /// <param name="argumentTypes"></param>
+        /// <returns></returns>
         public ConstructorInfo FindAndCacheConstructor(string name, bool isInstance, IEnumerable<System.Type> argumentTypes)
         {
-            var info = GetConstructorInfo(name);
+            var info = GetCachedConstructorInfo(name);
             if (info != null)
             {
                 return info;
@@ -198,11 +349,12 @@ namespace Hinode
         /// <returns></returns>
         bool IsSameArgumentType(MethodBase info, IEnumerable<System.Type> argumentTypes)
         {
-            if (argumentTypes == null) return info.GetParameters().Count() <= 0;
-
-            return info.GetParameters()
+            var parameters = info.GetParameters();
+            if (argumentTypes == null) return parameters.Count() <= 0;
+            if (argumentTypes.Count() != parameters.Length) return false;
+            return parameters
                     .Zip(argumentTypes, (_p, _a) => (param: _p, arg: _a))
-                    .All(pair => pair.param.ParameterType == pair.arg);
+                    .All(pair => pair.param.ParameterType.IsSameOrInheritedType(pair.arg));
         }
 
         string ToStr(IEnumerable<System.Type> types)
@@ -215,44 +367,6 @@ namespace Hinode
             }
             str += ")";
             return str;
-        }
-
-        /// <summary>
-        /// 関数のオーバーロードに対応するために作成したクラス
-        /// </summary>
-        class MethodInfoKey : System.IEquatable<MethodInfoKey>
-        {
-            readonly string _name;
-            readonly System.Type[] _argumentTypes;
-
-            public string Name { get => _name; }
-            public System.Type[] ArgumentTypes { get => _argumentTypes; }
-
-            public MethodInfoKey(string name, System.Type[] argumentTypes)
-            {
-                _name = name;
-                _argumentTypes = argumentTypes;
-            }
-
-            public bool Equals(MethodInfoKey other)
-            {
-                if (Name != other.Name) return false;
-                return ArgumentTypes.Zip(other.ArgumentTypes, (_t, _o) => (t: _t, o: _o))
-                    .All(pair => pair.t == pair.o);
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (obj is MethodInfoKey)
-                {
-                    return Equals(obj as MethodInfoKey);
-                }
-                return false;
-            }
-            public override int GetHashCode()
-            {
-                return Name.GetHashCode() ^ (ArgumentTypes.GetHashCode() + 100);
-            }
         }
     }
 }

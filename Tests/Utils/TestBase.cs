@@ -104,7 +104,7 @@ namespace Hinode.Tests
             foreach(var canvas in Object.FindObjectsOfType<Canvas>()
                 .Where(_c => _c.renderMode == RenderMode.ScreenSpaceOverlay))
             {
-                var label = canvas.gameObject.AddComponent<LabelObj>();
+                var label = canvas.gameObject.AddComponent<LabelObject>();
                 label.Add(FOR_SCREENSHOT_LABEL);
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
                 canvas.worldCamera = camera;
@@ -120,7 +120,7 @@ namespace Hinode.Tests
 
             newSnapshot.SaveScreenshot(captureTex, !DoTakeSnapshot);
 
-            foreach (var pair in Object.FindObjectsOfType<LabelObj>()
+            foreach (var pair in Object.FindObjectsOfType<LabelObject>()
                 .Where(_l => _l.Contains(FOR_SCREENSHOT_LABEL))
                 .Select(_l => (l: _l, c: _l.GetComponent<Canvas>())))
             {

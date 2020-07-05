@@ -8,10 +8,16 @@ using UnityEngine.TestTools;
 
 namespace Hinode.Tests.CSharp.Extensions
 {
+    /// <summary>
+    /// <seealso cref="TextReaderExtensions"/>
+    /// </summary>
     public class TestTextReaderExtensions
     {
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.MoveTo(TextReader, char)"/>
+        /// </summary>
         [Test]
-        public void MoveToPasses()
+        public void MoveToWithCharPasses()
         {
             string text = "apple orange grape";
             using (var reader = new StringReader(text))
@@ -25,7 +31,14 @@ namespace Hinode.Tests.CSharp.Extensions
                 Assert.IsFalse(reader.MoveTo(' '));
                 Assert.AreEqual(-1, reader.Read());
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.MoveTo(TextReader, char[])"/>
+        /// </summary>
+        [Test]
+        public void MoveToWithCharArrayPasses()
+        {
             using (var reader = new StringReader("Apple Orange Grape"))
             {
                 var skipKeyChar = new char[] { 'e', 'g' };
@@ -44,32 +57,42 @@ namespace Hinode.Tests.CSharp.Extensions
                 Assert.IsFalse(reader.MoveTo(skipKeyChar));
                 Assert.AreEqual(-1, reader.Peek());
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.MoveTo(TextReader, Regex)"/>
+        /// </summary>
+        [Test]
+        public void MoveToWithRegexPasses()
+        {
             using (var reader = new StringReader("Apple Orange Grape"))
             {
                 var regex = new Regex(@"[eg]", RegexOptions.IgnoreCase);
-                Assert.IsTrue(reader.MeveTo(regex));
+                Assert.IsTrue(reader.MoveTo(regex));
                 Assert.AreEqual(' ', (char)reader.Peek());
 
-                Assert.IsTrue(reader.MeveTo(regex));
+                Assert.IsTrue(reader.MoveTo(regex));
                 Assert.AreEqual('e', (char)reader.Peek());
 
-                Assert.IsTrue(reader.MeveTo(regex));
+                Assert.IsTrue(reader.MoveTo(regex));
                 Assert.AreEqual(' ', (char)reader.Peek());
 
-                Assert.IsTrue(reader.MeveTo(regex));
+                Assert.IsTrue(reader.MoveTo(regex));
                 Assert.AreEqual('r', (char)reader.Peek());
 
-                Assert.IsTrue(reader.MeveTo(regex));
+                Assert.IsTrue(reader.MoveTo(regex));
                 Assert.AreEqual(-1, reader.Peek());
 
-                Assert.IsFalse(reader.MeveTo(regex));
+                Assert.IsFalse(reader.MoveTo(regex));
                 Assert.AreEqual(-1, reader.Peek());
             }
         }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.SkipTo(TextReader, char)"/>
+        /// </summary>
         [Test]
-        public void SkipToPasses()
+        public void SkipToWithCharPasses()
         {
             string text = "aaa aaBCaaaaDE";
             using (var reader = new StringReader(text))
@@ -97,7 +120,14 @@ namespace Hinode.Tests.CSharp.Extensions
                 Assert.IsFalse(reader.SkipTo('a'));
                 Assert.AreEqual(-1, reader.Peek());
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.SkipTo(TextReader, char[])"/>
+        /// </summary>
+        [Test]
+        public void SkipToWithCharArrayPasses()
+        {
             using (var reader = new StringReader("1122A222BC11D"))
             {
                 var skipKeyChar = new char[] { '1', '2' };
@@ -120,7 +150,14 @@ namespace Hinode.Tests.CSharp.Extensions
                 Assert.IsFalse(reader.SkipTo(skipKeyChar));
                 Assert.AreEqual(-1, reader.Peek());
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.SkipTo(TextReader, Regex)"/>
+        /// </summary>
+        [Test]
+        public void SkipToWithRegexPasses()
+        {
             using (var reader = new StringReader("1aaa23AaA4"))
             {
                 var regex = new Regex(@"[a]", RegexOptions.IgnoreCase);
@@ -145,8 +182,11 @@ namespace Hinode.Tests.CSharp.Extensions
             }
         }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.IsMatchPeek(TextReader, char)"/>
+        /// </summary>
         [Test]
-        public void IsMatchPeekPasses()
+        public void IsMatchPeekWithCharPasses()
         {
             using (var reader = new StringReader("ab1ABC"))
             {
@@ -160,7 +200,14 @@ namespace Hinode.Tests.CSharp.Extensions
                 reader.Read(); // move to next
                 Assert.IsTrue(reader.IsMatchPeek(new Regex(@"a", RegexOptions.IgnoreCase)));
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.IsMatchPeek(TextReader, char[])"/>
+        /// </summary>
+        [Test]
+        public void IsMatchPeekWithCharArrayPasses()
+        {
             using (var reader = new StringReader("1122A222BC11D"))
             {
                 var skipKeyChar = new char[] { '1', '2' };
@@ -183,7 +230,14 @@ namespace Hinode.Tests.CSharp.Extensions
                 Assert.IsFalse(reader.SkipTo(skipKeyChar));
                 Assert.AreEqual(-1, reader.Peek());
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="TextReaderExtensions.IsMatchPeek(TextReader, Regex)"/>
+        /// </summary>
+        [Test]
+        public void IsMatchPeekWithRegexPasses()
+        {
             using (var reader = new StringReader("1aaa23AaA4"))
             {
                 var regex = new Regex(@"[a]", RegexOptions.IgnoreCase);

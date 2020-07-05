@@ -5,10 +5,16 @@ using UnityEngine;
 
 namespace Hinode
 {
+    /// <summary>
+    /// <seealso cref="Dictionary{TKey, TValue}"/>
+    /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDictionaryExtensions"/>
+    /// </summary>
     public static class DictionaryExtensions
     {
         /// <summary>
         /// 他のDictinaryの要素を追加する
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDictionaryExtensions.NotOverwriteMergePasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDictionaryExtensions.OverwriteMergePasses()"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -23,6 +29,8 @@ namespace Hinode
 
         /// <summary>
         /// 他のDictinaryの要素を追加する
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDictionaryExtensions.NotOverwriteMergePasses()"/>
+        /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestDictionaryExtensions.OverwriteMergePasses()"/>
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

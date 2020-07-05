@@ -1,21 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
+using Hinode.Serialization;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace Hinode
 {
     /// <summary>
-    /// 入力データを保存することができるBaseInput
+    /// 入力データを保存することができるClass
     /// 
     /// 入力データはInputRecordクラスへ保存されます
     /// 
     /// IFrameDataRecorderを使用して1フレームのデータを記録しています。
-    /// デフォルトではEventSystemFrameInputDataクラスが設定されています。
     ///
     /// 記録するデータを変更したい場合は記録を停止した状態でFrameDataRecorderを変更してください。
     /// 
@@ -38,32 +34,9 @@ namespace Hinode
     /// 1. InputRecorder#IsPauseReplayで再生の一時停止かどうか判定できます。
     /// 
     /// <seealso cref="InputRecord"/>
-    /// <seealso cref="EventSystemFrameInputData"/>
     /// </summary>
-    public class InputRecorder : ReplayableBaseInput
+    public class InputRecorder
     {
-        public interface IFrameDataRecorder
-        {
-            /// <summary>
-            /// 初期状態に戻す
-            /// </summary>
-            void ClearRecorder();
-
-            /// <summary>
-            /// 1フレームのデータを記録する
-            /// </summary>
-            /// <param name="baseInput"></param>
-            /// <returns></returns>
-            InputRecord.Frame Update(BaseInput baseInput);
-
-            /// <summary>
-            /// フレームのデータを復元する
-            /// </summary>
-            /// <param name="baseInput"></param>
-            /// <param name="frame"></param>
-            void RecoverFrame(ReplayableBaseInput baseInput, InputRecord.Frame frame);
-        }
-
         public enum State
         {
             Stop,
@@ -72,41 +45,32 @@ namespace Hinode
             PauseingReplay
         }
 
-        State _state;
         /// <summary>
         /// 計算誤差であまり信頼できない値になるかもしれないので注意してください。
         /// </summary>
         float _deltaTime;
-        int _currentFrameNo=-1;
         Vector2Int _recordedScreenSize;
-        IFrameDataRecorder _frameDataRecorder = new EventSystemFrameInputData();
+        IFrameDataRecorder _frameDataRecorder = new FrameInputData();
         List<InputRecord.Frame> _recordFrames = new List<InputRecord.Frame>();
-        Coroutine _updateCoroutine;
+        IEnumerator _enumerator;
+        ReplayableInput _useInput;
 
-        [SerializeField] InputRecord _target;
+        public ISerializer UseSerializer { get; set; } = new JsonSerializer();
+        public ReplayableInput UseInput { get => _useInput ?? ReplayableInput.Instance; set => _useInput = value; }
 
-        public State CurrentState
-        {
-            get => _state;
-            set
-            {
-                base.IsReplaying = value == State.Replaying || value == State.PauseingReplay;
-                _state = value;
-            }
-        }
+        public State CurrentState { get; set; }
 
-        public bool IsStopping { get => _state == State.Stop; }
-        public bool IsRecording { get => _state == State.Recording; }
-        public bool IsPausingReplay { get => _state == State.PauseingReplay; }
+        public bool IsReplaying { get => CurrentState == State.Replaying || CurrentState == State.PauseingReplay; }
 
-        public int CurrentFrameNo { get => _currentFrameNo; }
+        public int CurrentFrameNo { get; private set; } = -1;
 
         public IFrameDataRecorder FrameDataRecorder
         {
             get => _frameDataRecorder;
             set
             {
-                if (IsRecording)
+                if (CurrentState == State.Recording ||
+                    CurrentState == State.Replaying)
                 {
                     throw new System.InvalidOperationException($"Must stop recording when FrameDataRecorder change...");
                 }
@@ -115,19 +79,23 @@ namespace Hinode
             }
         }
 
-        public InputRecord Target { get => _target; private set => _target = value; }
+        public InputRecord Target { get; private set; }
 
-        private void LateUpdate()
+        public void StepFrame()
         {
-            switch(CurrentState)
+            Assert.IsNotNull(_enumerator);
+
+            if (CurrentState == State.PauseingReplay) return;
+
+            var isContinue = _enumerator.MoveNext();
+
+            if(!isContinue)
             {
-                case State.Recording:
-                    UpdateRecording();
-                    break;
+                _enumerator = null;
             }
         }
 
-        #region 記録関係
+        #region Record
         /// <summary>
         /// 記録を開始する
         /// </summary>
@@ -140,11 +108,14 @@ namespace Hinode
             }
 
             CurrentState = State.Recording;
-            _currentFrameNo = 0;
+            CurrentFrameNo = 0;
             _recordedScreenSize.x = -1;
             _recordedScreenSize.y = -1;
-            _frameDataRecorder.ClearRecorder();
+            _frameDataRecorder.ResetDatas();
             _recordFrames.Clear();
+
+            _enumerator = GetRecordEnumerator();
+            _enumerator.MoveNext();
         }
 
         /// <summary>
@@ -152,7 +123,7 @@ namespace Hinode
         /// </summary>
         public void StopRecord()
         {
-            Assert.IsTrue(IsRecording);
+            Assert.IsTrue(CurrentState == State.Recording);
             CurrentState = State.Stop;
         }
 
@@ -162,20 +133,20 @@ namespace Hinode
         /// <param name="inputRecord">nullの場合はTargetに保存します</param>
         public void SaveToTarget(InputRecord inputRecord = null)
         {
-            Assert.IsFalse(IsRecording, "Don't save when recording...");
+            Assert.IsFalse(CurrentState == State.Recording, "Don't save when recording...");
 
             if (inputRecord == null) inputRecord = Target;
             Assert.IsNotNull(inputRecord, "The Saving target must be not null... ");
 
-            _target.ScreenSize = _recordedScreenSize;
-            _target.ClearFrames();
+            Target.ScreenSize = _recordedScreenSize;
+            Target.ClearFrames();
             foreach (var f in _recordFrames)
             {
-                _target.Push(f);
+                Target.Push(f);
             }
         }
 
-        void UpdateRecording()
+        IEnumerator GetRecordEnumerator()
         {
             if (_recordedScreenSize.x == -1 && _recordedScreenSize.y == -1)
             {//Editor拡張でScreen.width|heightを使うと、Inspectorのサイズを取得してしまうので、ここで画面サイズを設定している
@@ -184,27 +155,36 @@ namespace Hinode
             }
             else if (_recordedScreenSize.x != Screen.width || _recordedScreenSize.y != Screen.height)
             {
-                Debug.LogWarning($"記録中に画面サイズが変更することに対応していません。これまでの記録したものを保存し記録を中止します。({_recordedScreenSize.x}, {_recordedScreenSize.y}) => ({Screen.width}, {Screen.height})");
+                Logger.LogWarning(Logger.Priority.High, () =>
+                    $"記録中に画面サイズが変更することに対応していません。これまでの記録したものを保存し記録を中止します。({_recordedScreenSize.x}, {_recordedScreenSize.y}) => ({Screen.width}, {Screen.height})",
+                    InputLoggerDefines.SELECTOR_MAIN, InputLoggerDefines.SELECTOR_RECORDER);
                 StopRecord();
-                return;
+                yield break;
             }
+            yield return null; // finish initialize
 
-            _deltaTime += Time.deltaTime;
-
-            var frame = _frameDataRecorder.Update(this);
-            if(!frame.IsEmptyInputText)
+            while (true)
             {
-                frame.FrameNo = (uint)_currentFrameNo;
-                frame.DeltaSecond = _deltaTime;
-                _recordFrames.Add(frame);
+                _deltaTime += Time.deltaTime;
 
-                _deltaTime = 0f;
+                _frameDataRecorder.RefleshUpdatedFlags();
+                _frameDataRecorder.Record(UseInput);
+                var frame = _frameDataRecorder.WriteToFrame(UseSerializer);
+                if (!frame.IsEmptyInputText)
+                {
+                    frame.FrameNo = (uint)CurrentFrameNo;
+                    frame.DeltaSecond = _deltaTime;
+                    _recordFrames.Add(frame);
+
+                    _deltaTime = 0f;
+                }
+                CurrentFrameNo++;
+                yield return null;
             }
-            _currentFrameNo++;
         }
         #endregion
 
-        #region 記録の再生関係
+        #region Replay
         /// <summary>
         /// この関数を呼び出してから次のフレームから入力データが反映されます。
         /// また、最終フレームに到達後、停止状態になるまで一フレームかかります。
@@ -212,15 +192,18 @@ namespace Hinode
         /// <param name="newTarget">nullの場合は既に設定されているものを使用します。</param>
         public void StartReplay(InputRecord newTarget = null)
         {
-            Assert.IsTrue(IsStopping || IsPausingReplay);
+            Assert.IsTrue(CurrentState == State.Stop || CurrentState == State.PauseingReplay);
             if (newTarget != null) Target = newTarget;
 
             Assert.IsNotNull(Target);
 
-            switch(CurrentState)
+            switch (CurrentState)
             {
                 case State.Stop:
-                    _updateCoroutine = StartCoroutine(UpdateReplay());
+                    _enumerator = GetReplayEnumerator();
+                    CurrentState = State.Replaying;
+
+                    _enumerator.MoveNext();
                     break;
                 case State.PauseingReplay:
                     CurrentState = State.Replaying;
@@ -228,65 +211,61 @@ namespace Hinode
                 default:
                     throw new System.NotImplementedException();
             }
-            
-            //TODO EventSystemは複数存在する可能性があるので、その全てに反映する方法
         }
 
         public void StopReplay()
         {
-            Assert.IsTrue(IsReplaying || IsPausingReplay);
+            Assert.IsTrue(CurrentState == State.Replaying || CurrentState == State.PauseingReplay);
             CurrentState = State.Stop;
-            if(_updateCoroutine != null) StopCoroutine(_updateCoroutine);
-            _updateCoroutine = null;
+
+            _enumerator = null;
         }
 
         public void PauseReplay()
         {
-            Assert.IsTrue(IsReplaying);
+            Assert.IsTrue(CurrentState == State.Replaying);
             CurrentState = State.PauseingReplay;
         }
 
-        public void NextReplayFrame()
-        {
-            Assert.IsTrue(IsPausingReplay);
-        }
-
-        IEnumerator UpdateReplay()
+        IEnumerator GetReplayEnumerator()
         {
             CurrentState = State.Replaying;
-            _currentFrameNo = -1;
+            CurrentFrameNo = -1;
             var deltaTime = 0f;
             var replayingFrameEnumerator = Target.Frames.GetEnumerator();
             if (!replayingFrameEnumerator.MoveNext())
             {
                 StopReplay();
-                Debug.LogWarning($"空データを再生しようとしました。再生を停止します。");
+                Logger.LogWarning(Logger.Priority.High, () => $"空データを再生しようとしました。再生を停止します。",
+                    InputLoggerDefines.SELECTOR_MAIN, InputLoggerDefines.SELECTOR_RECORDER);
                 yield break;
             }
 
-            while(replayingFrameEnumerator != null)
+            while (replayingFrameEnumerator != null)
             {
                 if (Target.ScreenSize.x != Screen.width || Target.ScreenSize.y != Screen.height)
                 {//Editor拡張でScreen.width|heightを使うと、Inspectorのサイズを取得してしまうので、ここで画面サイズを設定している
-                    Debug.LogWarning($"再生中に画面サイズが変更することに対応していません。再生を中断します。");
+                    Logger.LogWarning(Logger.Priority.High, () => $"再生中に画面サイズが変更することに対応していません。再生を中断します。",
+                        InputLoggerDefines.SELECTOR_MAIN, InputLoggerDefines.SELECTOR_RECORDER);
                     break;
                 }
 
-                yield return new WaitForEndOfFrame();
+                yield return null;
 
                 if (CurrentState != State.Replaying)
                 {
                     continue;
                 }
 
-                _currentFrameNo++;
+                CurrentFrameNo++;
                 deltaTime += Time.deltaTime;
 
-                var curFrame = replayingFrameEnumerator.Current as InputRecord.Frame;
+                var curFrame = replayingFrameEnumerator.Current;
                 //Debug.Log($"debug -- frameNo={curFrame.FrameNo}, curFrameIndex={_currentFrameNo}");
-                if (curFrame.FrameNo == _currentFrameNo)
+                if (curFrame.FrameNo == CurrentFrameNo)
                 {
-                    _frameDataRecorder.RecoverFrame(this, curFrame);
+                    _frameDataRecorder.RecoverFromFrame(curFrame, UseSerializer);
+                    _frameDataRecorder.RecoverTo(UseInput);
 
                     if (!replayingFrameEnumerator.MoveNext())
                     {
@@ -297,11 +276,11 @@ namespace Hinode
             }
 
             //処理の流れの都合上、最終フレームまで到達した時、フレームを待つ処理がループにはないのでここで待つ
-            yield return new WaitForEndOfFrame();
+            yield return null;
 
-            if(replayingFrameEnumerator == null)
+            if (replayingFrameEnumerator == null)
             {//最後まで再生されていたら、現在のフレームを最終フレームに合わせる
-                _currentFrameNo = Target.FrameCount;
+                CurrentFrameNo = Target.FrameCount;
             }
             StopReplay();
         }

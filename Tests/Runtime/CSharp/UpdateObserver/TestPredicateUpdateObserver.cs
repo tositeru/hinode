@@ -9,8 +9,14 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
     /// <summary>
 	/// <seealso cref="PredicateUpdateObserver"/>
 	/// </summary>
-    public class TestPredicateUpdateObserver : TestBase
+    public class TestPredicateUpdateObserver
     {
+        /// <summary>
+        /// <seealso cref="PredicateUpdateObserver{T}.DidUpdated"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.RawValue"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Value"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Update()"/>
+        /// </summary>
         [Test]
         public void BasicUsagePasses()
         {
@@ -53,6 +59,14 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
             }
         }
 
+        /// <summary>
+        /// <seealso cref="PredicateUpdateObserver{T}.DidUpdated"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Update()"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.RawValue"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Value"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Reset()"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.SetDefaultValue(bool)"/>
+        /// </summary>
         [Test]
         public void ResetAndSetDefaultValuePasses()
         {
@@ -106,7 +120,10 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
             }
         }
 
-
+        /// <summary>
+        /// <seealso cref="PredicateUpdateObserver{T}.OnChangedValue"/>
+        /// <seealso cref="PredicateUpdateObserver{T}.Update()"/>
+        /// </summary>
         [Test]
         public void OnUpdatedPasses()
         {
@@ -134,6 +151,9 @@ namespace Hinode.Tests.CSharp.IUpdateObserver
         class NullValuePassesClass
         { }
 
+        /// <summary>
+        /// <seealso cref="PredicateUpdateObserver{T}.Update()"/>
+        /// </summary>
         [Test]
         public void NullValuePasses()
         {

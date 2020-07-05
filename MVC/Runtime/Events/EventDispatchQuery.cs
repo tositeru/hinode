@@ -27,7 +27,7 @@ namespace Hinode.MVC
         {
             if (!_enabledEventTypes.Contains(type))
             {
-                Assert.IsTrue(type.HasInterface<IEventHandler>());
+                Assert.IsTrue(type.ContainsInterface<IEventHandler>());
 
                 _enabledEventTypes.Add(type);
             }
@@ -40,7 +40,7 @@ namespace Hinode.MVC
         public bool DoMatch(Model model, IViewObject viewObj, System.Type eventType)
         {
             Assert.IsNotNull(model);
-            Assert.IsTrue(eventType.HasInterface<IEventHandler>(), $"Invalid EventType({eventType})...");
+            Assert.IsTrue(eventType.ContainsInterface<IEventHandler>(), $"Invalid EventType({eventType})...");
             if(viewObj == null)
             {
                 return model.DoMatchQuery(Query)

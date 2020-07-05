@@ -16,13 +16,13 @@ namespace Hinode.MVC.Tests.ViewLayout
         [Test]
         public void CheckClassDefinePasses()
         {
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IAutoViewLayoutObject>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorMinViewLayout>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorMaxViewLayout>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorXViewLayout>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformAnchorYViewLayout>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformPivotViewLayout>());
-            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).HasInterface<IRectTransformSizeViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IAutoViewLayoutObject>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformAnchorMinViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformAnchorMaxViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformAnchorXViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformAnchorYViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformPivotViewLayout>());
+            Assert.IsTrue(typeof(RectTransformAutoViewLayoutObject).ContainsInterface<IRectTransformSizeViewLayout>());
         }
 
         [Test]

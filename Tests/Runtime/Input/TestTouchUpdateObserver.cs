@@ -7,11 +7,15 @@ using System.Runtime.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Hinode.Serialization;
 
 namespace Hinode.Tests.Input
 {
     public class TestTouchUpdateObserver : TestBase
     {
+        /// <summary>
+        /// <seealso cref="TouchFrameInputData.Al"/>
+        /// </summary>
         [Test]
         public void BasicUsagePasses()
         {
@@ -58,6 +62,9 @@ namespace Hinode.Tests.Input
             Assert.IsTrue(touch.Equals(dest));
         }
 
+        /// <summary>
+        /// <seealso cref="TouchUpdateObserver.explicit operator Touch(TouchUpdateObserver observer)"/>
+        /// </summary>
         [Test]
         public void CastTouchPasses()
         {

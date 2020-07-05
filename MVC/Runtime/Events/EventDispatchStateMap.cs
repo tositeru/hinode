@@ -58,7 +58,7 @@ namespace Hinode.MVC
         #region AddState
         public EventDispatchStateMap AddState(string layerLogicalID, string stateName, EventDispatchQuery state)
         {
-            if(!_states.ContainsKey(stateName))
+            if (!_states.ContainsKey(stateName))
             {
                 _states[stateName] = new HashSet<EventDispatchQuery>();
             }
@@ -84,7 +84,7 @@ namespace Hinode.MVC
         #region SwitchingModel
         public EventDispatchStateMap AddSwitchingModel(Model model)
         {
-            if(!_switchingModels.Contains(model))
+            if (!_switchingModels.Contains(model))
             {
                 _switchingModels.Add(model);
                 model.OnChangedModelIdentities.Add(ModelOnChangedModelIdentities);
@@ -108,7 +108,7 @@ namespace Hinode.MVC
         {
             foreach (var data in _layerDict.Values)
             {
-                if(data.LayerLogicalID == "")
+                if (data.LayerLogicalID == "")
                 {//Case Default Layer
                     data.DoEnabled = !_switchingModels
                         .Any(_m => _m.DoMatchQuery(DISABLE_DEFAULT_LAYER_LOGICAL_ID));
@@ -134,7 +134,7 @@ namespace Hinode.MVC
         #region DoMatch
         public bool DoMatch(string stateName, Model model, IViewObject viewObj, System.Type eventType)
         {
-            Assert.IsTrue(eventType.HasInterface<IEventHandler>());
+            Assert.IsTrue(eventType.ContainsInterface<IEventHandler>());
 
             return _states.ContainsKey(stateName)
                 && _states[stateName]

@@ -16,13 +16,13 @@ namespace Hinode.MVC.Tests.ViewLayout
         [Test]
         public void CheckClassDefinePasses()
         {
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<IAutoViewLayoutObject>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformParentViewLayout>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformPosViewLayout>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformRotateViewLayout>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformLocalPosViewLayout>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformLocalRotateViewLayout>());
-            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).HasInterface<ITransformLocalScaleViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<IAutoViewLayoutObject>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformParentViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformPosViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformRotateViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformLocalPosViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformLocalRotateViewLayout>());
+            Assert.IsTrue(typeof(TransformAutoViewLayoutObject).ContainsInterface<ITransformLocalScaleViewLayout>());
         }
 
         [Test]

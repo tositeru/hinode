@@ -48,7 +48,7 @@ namespace Hinode.MVC
         public void DoneRecieverExecuter(System.Type useRecieverType, IEventHandler reciever, Model sender, object eventData)
         {
             Assert.IsTrue(_executerDict.ContainsKey(useRecieverType), $"Don't entry Type({useRecieverType}) executer... Please Use EventHandlerTypeManager#EntryRecieverExecuter()!!");
-            Assert.IsTrue(reciever.GetType().HasInterface(useRecieverType));
+            Assert.IsTrue(reciever.GetType().ContainsInterface(useRecieverType));
             _executerDict[useRecieverType](reciever, sender, eventData);
         }
 

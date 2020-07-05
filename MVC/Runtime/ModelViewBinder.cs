@@ -155,7 +155,7 @@ namespace Hinode.MVC
 
             public BindInfo AddViewLayoutValue(string keyword, object value)
             {
-                if(_viewLayoutValueDict.ContainsKey(keyword))
+                if (_viewLayoutValueDict.ContainsKey(keyword))
                 {
                     throw new System.ArgumentException($"Already set ViewLayout keyword({keyword})...");
                 }
@@ -216,7 +216,7 @@ namespace Hinode.MVC
 
         public override string ToString()
         {
-            return $"Binder({Query}:{EnabledModelTypes.Select(_t => _t.FullName).Aggregate("", (_s, _c) => _s+_c+";")})";
+            return $"Binder({Query}:{EnabledModelTypes.Select(_t => _t.FullName).Aggregate("", (_s, _c) => _s + _c + ";")})";
         }
 
         #region BindInfo
@@ -289,14 +289,14 @@ namespace Hinode.MVC
 
         public ModelViewBinder AddInfosFromOtherBinder(ModelViewBinder otherBinder)
         {
-            foreach(var bindInfo in otherBinder.BindInfos)
+            foreach (var bindInfo in otherBinder.BindInfos)
             {
-                if(_bindInfoDict.ContainsKey(bindInfo.ID.MainID))
+                if (_bindInfoDict.ContainsKey(bindInfo.ID.MainID))
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Not Add bindInfo because already exist ID({bindInfo.ID})...  otherBinder({otherBinder})");
                     continue;
                 }
-                else if(_bindInfoDict.Values.Contains(bindInfo))
+                else if (_bindInfoDict.Values.Contains(bindInfo))
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Not Add bindInfo because already exist same reference BindInfo...  otherBinder({otherBinder})");
                     continue;
@@ -326,11 +326,11 @@ namespace Hinode.MVC
         /// <returns></returns>
         public bool DoMatch(Model model)
         {
-            if(EnabledModelTypes.Count <= 0)
+            if (EnabledModelTypes.Count <= 0)
             {
-                return  model.DoMatchQuery(Query);
+                return model.DoMatchQuery(Query);
             }
-            else if(ContainEnabledModelType(model))
+            else if (ContainEnabledModelType(model))
             {
                 return Query == null || Query == ""
                     ? true
@@ -419,7 +419,7 @@ namespace Hinode.MVC
             Model = model;
             UseInstanceMap = binderInstanceMap;
             _viewObjects = binder.CreateViewObjects(Model, this, binderInstanceMap);
-            foreach(var v in ViewObjects)
+            foreach (var v in ViewObjects)
             {
                 v.UseBinderInstance = this;
 
@@ -454,16 +454,18 @@ namespace Hinode.MVC
                     var bindInfo = viewObj.UseBindInfo;
 
                     var autoViewObjHash = new HashSet<IAutoViewLayoutObject>();
-                    foreach(var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayoutValues.Layouts.Keys))
+                    foreach (var creator in viewLayouter.GetAutoViewObjectCreator(viewObj, bindInfo.ViewLayoutValues.Layouts.Keys))
                     {
                         var autoViewObj = creator.Create(viewObj);
                         autoViewObjHash.Add(autoViewObj);
                     }
-                    if(autoViewObjHash.Any()) {
+                    if (autoViewObjHash.Any())
+                    {
                         _autoLayoutViewObjects.Add(viewObj, autoViewObjHash);
 
-                        Logger.Log(Logger.Priority.Debug, () => {
-                            var list = autoViewObjHash.Select(_v => _v.GetType().FullName).Aggregate("",(_s, _c) => _s + _c + ", ");
+                        Logger.Log(Logger.Priority.Debug, () =>
+                        {
+                            var list = autoViewObjHash.Select(_v => _v.GetType().FullName).Aggregate("", (_s, _c) => _s + _c + ", ");
                             return $"Add Auto ViewObjs!! {model} : {viewObj} : {list}";
                         });
                     }
@@ -475,7 +477,7 @@ namespace Hinode.MVC
 
         void ModelOnUpdated(Model m)
         {
-            if(UseInstanceMap != null)
+            if (UseInstanceMap != null)
             {
                 UseInstanceMap.Update(m);
             }
@@ -508,7 +510,7 @@ namespace Hinode.MVC
         {
             if (eventData.Value == null) return;
 
-            if(UseViewLayouter != null)
+            if (UseViewLayouter != null)
             {
                 var viewLayouter = UseViewLayouter;
 
@@ -552,7 +554,8 @@ namespace Hinode.MVC
             {
                 viewLayouter.SetAllMatchLayouts(updateTimingFlags, viewObj, layoutState);
 
-                Logger.Log(Logger.Priority.Low, () => {
+                Logger.Log(Logger.Priority.Low, () =>
+                {
                     var log = viewObj.UseBindInfo.ViewLayoutValues.Layouts
                         .Select(_v => $"{_v}={viewLayouter.IsVaildViewObject(_v.Key, viewObj)}:{viewLayouter.IsVaildValue(_v.Key, _v.Value)}")
                         .Aggregate("layout=", (_s, _c) => _s + _c + ";");
@@ -584,7 +587,7 @@ namespace Hinode.MVC
         public IEnumerable<IViewObject> QueryViews(ViewIdentity query)
         {
             var matchViews = ViewObjects.Where(_v => _v.UseBindInfo.ID.MainID == query.MainID);
-            if(query.HasChildIDs)
+            if (query.HasChildIDs)
             {
                 matchViews = matchViews.Select(_v => _v.QueryChild<IViewObject>(query.ChildIDs));
             }
@@ -599,7 +602,7 @@ namespace Hinode.MVC
         #region IEventDispatcherHelper
         public bool HasEventDispatcherHelpObject(IViewObject viewObject, System.Type helpObjectType)
         {
-            Assert.IsTrue(helpObjectType.HasInterface<IEventDispatcherHelper>(), $"{helpObjectType} is not IEventDispatcherHelper interface...");
+            Assert.IsTrue(helpObjectType.ContainsInterface<IEventDispatcherHelper>(), $"{helpObjectType} is not IEventDispatcherHelper interface...");
             Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
 
             if (!_eventDispathcerHelpObjectListDict.ContainsKey(viewObject)) return false;
@@ -613,7 +616,7 @@ namespace Hinode.MVC
 
         public IEventDispatcherHelper GetEventDispathcerHelpObject(IViewObject viewObject, System.Type controllerObjectType)
         {
-            Assert.IsTrue(controllerObjectType.HasInterface<IEventDispatcherHelper>(), $"{controllerObjectType} is not IEventDispatcherHelper interface...");
+            Assert.IsTrue(controllerObjectType.ContainsInterface<IEventDispatcherHelper>(), $"{controllerObjectType} is not IEventDispatcherHelper interface...");
             Assert.IsTrue(ViewObjects.Contains(viewObject), $"This BinderInstance don't have '{viewObject}'...");
 
 
@@ -631,25 +634,25 @@ namespace Hinode.MVC
         public void Dispose()
         {
             HoldedEventInterruptedData = null;
-            if(ViewObjects.Any())
+            if (ViewObjects.Any())
             {
                 foreach (var view in ViewObjects)
                 {
-                    if(_eventDispathcerHelpObjectListDict.ContainsKey(view))
+                    if (_eventDispathcerHelpObjectListDict.ContainsKey(view))
                     {
-                        foreach(var sender in _eventDispathcerHelpObjectListDict[view])
+                        foreach (var sender in _eventDispathcerHelpObjectListDict[view])
                         {
                             sender.Destroy();
                         }
                     }
-                    if(_autoLayoutViewObjects.ContainsKey(view))
+                    if (_autoLayoutViewObjects.ContainsKey(view))
                     {
-                        foreach(var autoView in _autoLayoutViewObjects[view])
+                        foreach (var autoView in _autoLayoutViewObjects[view])
                         {
                             autoView.Dettach();
                         }
                     }
-                    if(view.UseBindInfo.ViewObjectCreateType == ViewObjectCreateType.Default)
+                    if (view.UseBindInfo.ViewObjectCreateType == ViewObjectCreateType.Default)
                     {
                         view.Unbind();
                         view.Destroy();
@@ -659,7 +662,7 @@ namespace Hinode.MVC
                         view.Unbind();
                     }
 
-                    if(_viewLayoutStateDict.ContainsKey(view))
+                    if (_viewLayoutStateDict.ContainsKey(view))
                     {
                         var state = _viewLayoutStateDict[view];
                         state.OnChangedValue.Remove(ViewLayoutStateOnChangedValue);
@@ -670,14 +673,14 @@ namespace Hinode.MVC
                 _viewObjects.Clear();
             }
 
-            if(UseInstanceMap != null)
+            if (UseInstanceMap != null)
             {
                 var instanceMap = UseInstanceMap;
                 UseInstanceMap = null;
                 instanceMap?.Remove(Model);
             }
 
-            if(Model != null)
+            if (Model != null)
             {
                 DettachModelCallback();
                 Model = null;
@@ -789,7 +792,7 @@ namespace Hinode.MVC
         {
             if (viewObject.UseBinderInstance == null) return null;
 
-            if(viewObject.UseBinderInstance.AutoLayoutViewObjects.ContainsKey(viewObject))
+            if (viewObject.UseBinderInstance.AutoLayoutViewObjects.ContainsKey(viewObject))
             {
                 return viewObject.UseBinderInstance.AutoLayoutViewObjects[viewObject];
             }
