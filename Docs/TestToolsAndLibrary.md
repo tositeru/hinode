@@ -6,7 +6,7 @@ Hinodeにはユニットテスト用の便利クラスやツールを提供し�
 
 - TestBase
 - Snapshot
-- UnityText属性を指定されたテストのStep By Step実行機能
+- UnityTest属性を指定されたテストのStep By Step実行機能
 
 ### TestBase
 
