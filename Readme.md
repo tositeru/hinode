@@ -10,6 +10,8 @@ Apache Licence Version 2.0
 
 ## インストール
 
+UnityのPackage Managerを使用しGit URLからインストールできます。
+
 ## 機能
 
 以下の機能を提供しています。
