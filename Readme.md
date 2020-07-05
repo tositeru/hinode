@@ -6,7 +6,9 @@ Unity 2019.2以降のバージョンに対応しています。
 
 ## ライセンス
 
-Appache Licence Version 2.0
+Apache Licence Version 2.0
+
+## インストール
 
 ## 機能
 
