@@ -26,6 +26,7 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
     - [Serializer](./Docs/CSharpUtilityClasses.md#serializer-namespace-hinodesizerialzation)
         - Json Serializer
     - [Text Resources](./Docs/CSharpUtilityClasses.md#Text-Resources)
+    - [Collection Helper](./Docs/CSharpUtilityClasses.md#Collection-Helper)
 - [Unityの便利クラス](./Docs/UnityUtiliryClaesses.md)
     - [ChildObject](./Docs/UnityUtiliryClaesses.md#ChildObject)
     - [SceneObject](./Docs/UnityUtiliryClaesses.md#SceneObject)

@@ -282,3 +282,29 @@ Assert.IsTrue(resource.Contains(formattedKey1));
     Assert.IsFalse(resource.Contains(formattedKey1));
 }
 ```
+
+### Collection Helper
+
+Hinodeでは以下のCollectionのヘルパークラスを提供しています。
+
+- HashSetHelper
+- ListHelper
+- DictionaryHelper
+
+これらのHelperクラスはクラスを実装するに当たってCollection操作関係の処理を肩代わりすることを目的に作成されています。
+
+これらのクラスを使用することで重複するメソッドの共通化やテストコードの削減を図ることができます。
+
+各Helperクラスには追加・削除などのタイミングでコールバックを設定することができるように設計されています。
+
+もしCollection操作の時に追加の処理を行いたい時はコールバックを登録することで対応することが可能になっています。
+
+また、コールバックも含めたCollection操作内で例外が発生した時は内部でキャッチするようになっているため、操作に失敗した場合でも処理を続行できるように設計されています。
+(例外が発生した時はログに出力します。)
+
+```csharp
+var helper = new HashSetHelper();
+helper.OnAdded.Add((addedValue) => ...);
+helper.OnRemoved.Add((removedValue) => ...);
+helper.OnCleared.Add(() => ...);
+```
