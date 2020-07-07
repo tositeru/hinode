@@ -11,6 +11,11 @@ using System.IO;
 
 namespace Hinode.Tests.Editors.Tools
 {
+    public static class StepByStepTestRunnerDefines
+    {
+        public static readonly string LOGGER_SELECTOR = "StepByStepTestRunner";
+    }
+
     public class StepByStepTestRunnerWindow : EditorWindow
     {
         [MenuItem("Hinode/Tools/StepByStep Test Runner")]
@@ -18,7 +23,6 @@ namespace Hinode.Tests.Editors.Tools
         {
             var window = CreateWindow<StepByStepTestRunnerWindow>("StepByStep Test Runner");
             window.Show();
-            Debug.Log("open");
         }
 
         Assembly[] _cachedAssembies = null;
@@ -104,7 +108,7 @@ namespace Hinode.Tests.Editors.Tools
 
         void ReloadAssembies()
         {
-            Debug.Log("Loading Assemblies");
+            Logger.Log(Logger.Priority.Debug, () => "Loading Assemblies", StepByStepTestRunnerDefines.LOGGER_SELECTOR);
 
             CachedAssembies = System.AppDomain.CurrentDomain.GetAssemblies()
                     .Where(_asm => _asm.IsFullyTrusted)
@@ -143,7 +147,7 @@ namespace Hinode.Tests.Editors.Tools
                 UnityTestMethodPopup.SelectedUnityTestMethodInfo = SelectedUnityTestMethod;
                 SelectedUnityTestMethod = UnityTestMethodPopup.SelectedUnityTestMethodInfo;
             }
-            Debug.Log("Finish to Load Assemblies");
+            Logger.Log(Logger.Priority.Debug, () => "Finish to Load Assemblies", StepByStepTestRunnerDefines.LOGGER_SELECTOR);
         }
 
         #region EditorWindow
@@ -172,7 +176,6 @@ namespace Hinode.Tests.Editors.Tools
 
         private void OnEnable()
         {
-            Debug.Log("debug -- OnEnable");
             ReloadAssembies();
         }
 
