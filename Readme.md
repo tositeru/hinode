@@ -41,5 +41,12 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
     - [TestBase](./Docs/TestToolsAndLibrary.md#TestBase)
     - [Snapshot テスト](./Docs/TestToolsAndLibrary.md#Snapshot)
     - [UnityTest Attributeを指定されたテストのStep By Step実行機能](./Docs/TestToolsAndLibrary.md#UnityTestのStepByStep実行)
+- [Layouts](./Docs/Layouts.md)
+    - [設計目標](./Docs/Layouts.md#設計目標)
+    - [基準領域](./Docs/Layouts.md#基準領域)
+    - [ILayout](./Docs/Layouts.md#ILayout)
+    - [ILayoutTarget](./Docs/Layouts.md#ILayoutTarget)
+    - [LayoutManager](./Docs/Layouts.md#LayoutManager)
+    - [組み込みのILayout](./Docs/Layouts.md#組み込みのILayout)
 - [MVCフレームワーク](./Docs/MVCFramework.md)
     - HTMLとCSSのようなセレクタによるModel-Viewの関連付け機能
