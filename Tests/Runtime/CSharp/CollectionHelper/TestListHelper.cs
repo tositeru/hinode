@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Hinode.CollectionHelper;
 using System.Linq;
 
 namespace Hinode.Tests.CSharp.CollectionHelper
