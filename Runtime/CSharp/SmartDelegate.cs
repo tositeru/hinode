@@ -17,6 +17,10 @@ namespace Hinode
         internal protected T _predicate;
 
         public bool IsValid { get => _predicate != null; }
+        public int RegistedDelegateCount
+        {
+            get => _predicate?.GetInvocationList().Length ?? 0;
+        }
 
         //public T Get { get => _predicate; set => _predicate = value; }
 
