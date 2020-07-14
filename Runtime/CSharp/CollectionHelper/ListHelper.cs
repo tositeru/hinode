@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-namespace Hinode.CollectionHelper
+namespace Hinode
 {
     public static class ListHelperCallback<T>
     {
