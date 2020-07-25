@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Hinode.Layouts;
 using System.Linq;
+using Hinode.Tests;
 
-namespace Hinode.Tests.Layouts
+namespace Hinode.Layouts.Tests
 {
     /// <summary>
 	/// <seealso cref="LayoutManager"/>
