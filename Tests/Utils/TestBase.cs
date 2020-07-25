@@ -30,7 +30,7 @@ namespace Hinode.Tests
 
         #region Snapshot
         Snapshot _lastSnapshot;
-        SnapshotSettings _snapshotSetting;
+        TestSettings _snapshotSetting;
 
         /// <summary>
         /// 最後に作成した/使用したSnapshotを返します。
@@ -58,7 +58,7 @@ namespace Hinode.Tests
         [SetUp]
         public void ReadSnapshotSetting()
         {
-            _snapshotSetting = SnapshotSettings.CreateOrGet();
+            _snapshotSetting = TestSettings.CreateOrGet();
         }
 
         /// <summary>

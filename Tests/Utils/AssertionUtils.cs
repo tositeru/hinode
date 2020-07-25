@@ -43,13 +43,33 @@ namespace Hinode.Tests
             Assert.IsTrue(0 == correctList.Count(), $"{message}: Don't match elements...");
         }
 
-        public static void AreNearlyEqual(float correct, float got, float epsilon, string message)
+        public static void AreNearlyEqual(float correct, float got, float epsilon=float.Epsilon, string message="")
         {
             Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
         }
-        public static void AreNearlyEqual(float correct, float got, float epsilon=float.Epsilon)
+
+        public static void AreNearlyEqual(Vector2 correct, Vector2 got, float epsilon=float.Epsilon, string message="")
         {
-            AreNearlyEqual(correct, got, epsilon, "");
+            Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
+                && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
+                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+        }
+
+        public static void AreNearlyEqual(Vector3 correct, Vector3 got, float epsilon=float.Epsilon, string message="")
+        {
+            Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
+                && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
+                && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
+                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+        }
+
+        public static void AreNearlyEqual(Vector4 correct, Vector4 got, float epsilon=float.Epsilon, string message="")
+        {
+            Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
+                && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
+                && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
+                && Utils.AreFloatsEqual(correct.w, got.w, epsilon)
+                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
         }
 
         public static void AreEqual<TKey, TValue>(Dictionary<TKey, TValue> correct, Dictionary<TKey, TValue> got, string message)

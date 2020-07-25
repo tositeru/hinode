@@ -12,7 +12,7 @@ namespace Hinode.Tests.Editors
         {
             base.OnInspectorGUI();
 
-            var settings = SnapshotSettings.CreateOrGet();
+            var settings = TestSettings.CreateOrGet();
             var doTakeSnapshot = EditorGUILayout.Toggle("Do Take Snapshot", settings.DoTakeSnapshot);
 
             if (EditorApplication.isPlaying)
@@ -34,7 +34,7 @@ namespace Hinode.Tests.Editors
                 if (doTakeSnapshot != settings.DoTakeSnapshot)
                 {
                     settings.DoTakeSnapshot = doTakeSnapshot;
-                    SnapshotSettings.Save(settings);
+                    TestSettings.Save(settings);
                 }
 
                 if (GUILayout.Button("Play Test"))
