@@ -13,21 +13,6 @@ namespace Hinode.Tests.Layouts
 	/// </summary>
     public class TestILayout
     {
-        class TestLayoutTarget : LayoutTargetBase
-        {
-            public override ILayoutTarget Parent { get; }
-            public override IEnumerable<ILayoutTarget> Childrens { get; }
-
-            public override Vector3 Pos { get; set; }
-            public override Vector3 Size { get; set; }
-
-            public override Vector3 AnchorMin { get; set; }
-            public override Vector3 AnchorMax { get; set; }
-
-            public override Vector3 AnchorOffsetMin { get; set; }
-            public override Vector3 AnchorOffsetMax { get; set; }
-        }
-
         class TestLayout : LayoutBase
         {
             public override bool DoChanged { get; }
@@ -84,7 +69,7 @@ namespace Hinode.Tests.Layouts
         public void LayoutTargetOnDisposedPasses()
         {
             var layout = new TestLayout();
-            var target = new TestLayoutTarget();
+            var target = new LayoutTargetObject();
 
             layout.Target = target;
 
@@ -102,8 +87,8 @@ namespace Hinode.Tests.Layouts
         public void LayoutTargetOnDisposedWhenReassignPasses()
         {
             var layout = new TestLayout();
-            var prevTarget = new TestLayoutTarget();
-            var curTarget = new TestLayoutTarget();
+            var prevTarget = new LayoutTargetObject();
+            var curTarget = new LayoutTargetObject();
 
             layout.Target = prevTarget;
 
@@ -139,7 +124,7 @@ namespace Hinode.Tests.Layouts
             var layout = new TestLayout();
             Assert.IsFalse(layout.ContainsTarget());
 
-            var target = new TestLayoutTarget();
+            var target = new LayoutTargetObject();
 
             layout.Target = target;
             Assert.IsTrue(layout.ContainsTarget());

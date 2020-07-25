@@ -13,28 +13,6 @@ namespace Hinode.Tests.Layouts
 	/// </summary>
     public class TestLayoutManager
     {
-        class TestLayoutTarget : LayoutTargetBase
-        {
-            public HashSetHelper<TestLayoutTarget> ChildrenHashSet { get; } = new HashSetHelper<TestLayoutTarget>();
-
-            public ILayoutTarget SetParent(ILayoutTarget parent) => _parent = parent;
-
-            #region ILayoutTarget interface
-            ILayoutTarget _parent;
-            public override ILayoutTarget Parent { get => _parent; }
-            public override IEnumerable<ILayoutTarget> Childrens { get => ChildrenHashSet; }
-
-            public override Vector3 Pos { get; set; }
-            public override Vector3 Size { get; set; }
-
-            public override Vector3 AnchorMin { get; set; }
-            public override Vector3 AnchorMax { get; set; }
-
-            public override Vector3 AnchorOffsetMin { get; set; }
-            public override Vector3 AnchorOffsetMax { get; set; }
-            #endregion
-        }
-
         class LayoutCallbackCounter : LayoutBase
         {
             public void ResetCounter()
@@ -140,9 +118,9 @@ namespace Hinode.Tests.Layouts
         {
             var manager = new LayoutManager();
             var layouts = new LayoutCallbackCounter[] {
-                new LayoutCallbackCounter() { Target = new TestLayoutTarget() },
-                new LayoutCallbackCounter() { Target = new TestLayoutTarget() },
-                new LayoutCallbackCounter() { Target = new TestLayoutTarget() },
+                new LayoutCallbackCounter() { Target = new LayoutTargetObject() },
+                new LayoutCallbackCounter() { Target = new LayoutTargetObject() },
+                new LayoutCallbackCounter() { Target = new LayoutTargetObject() },
             };
             manager.Layouts.Add(layouts);
 
@@ -176,9 +154,9 @@ namespace Hinode.Tests.Layouts
         {
             var manager = new LayoutManager();
             var layouts = new LayoutCallbackCounter[] {
-                new LayoutCallbackCounter() { Target = new TestLayoutTarget() },
+                new LayoutCallbackCounter() { Target = new LayoutTargetObject() },
                 new LayoutCallbackCounter() { Target = null },
-                new LayoutCallbackCounter() { Target = new TestLayoutTarget() },
+                new LayoutCallbackCounter() { Target = new LayoutTargetObject() },
             };
             foreach (var l in layouts) { l.SetDoChanged(true); }
             manager.Layouts.Add(layouts);

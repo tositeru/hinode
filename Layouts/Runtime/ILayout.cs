@@ -28,6 +28,9 @@ namespace Hinode.Layouts
             => layout.Target != null;
     }
 
+    /// <summary>
+	/// <seealso cref="ILayout"/>
+	/// </summary>
     public abstract class LayoutBase : ILayout
     {
         SmartDelegate<ILayoutOnDisposed> _onDisposed = new SmartDelegate<ILayoutOnDisposed>();
