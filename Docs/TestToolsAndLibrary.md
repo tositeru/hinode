@@ -6,6 +6,7 @@ Hinodeにはユニットテスト用の便利クラスやツールを提供し�
 
 - TestBase
 - Snapshot
+- A/B Test
 - UnityTest属性を指定されたテストのStep By Step実行機能
 
 ### TestBase
@@ -54,7 +55,7 @@ Snapshotには以下のモードがあります。
 モードの切り替えには以下の手順を行ってください。
 
 1. MenuのEdit > Project Settingsボタンを押し、Project Settings Windowを開きます。
-1. Hinode Snapshot Testの項目を押し、
+1. Hinode Test Settingsの項目を押し、
 1. Do Take SnapshotのCheckBoxをクリックすることでモードを切り替えられます。
 
 切り替えは全てのテストに影響を与えるため注意して切り替えてください。
@@ -102,5 +103,70 @@ StepByStep実行を行いたい時は以下の手順を行ってください。
 実行中の制御はRunTestStepByStepコンポーネントのInspectorから行ってください。
 
 
+### A/B Test
 
+Hinodeではユニットテストのメソッドを作成を支援するため、A/B Test的なテスト用の`IABTest` abstract classを提供しています。
 
+`IABTest` abstract classを継承する際は以下のメソッドをoverrideをしてください。
+
+- GetParamTexts() : A/B Test内で使用するパラメータの名前とその値のテキストを返すメソッド。使用するパラメータのログ出力に使用されます。
+- InitParams(System.Random rnd) : TestMethod()内で使用するパラメータの初期化を行うメソッド
+- TestMethod() : テストを実際に実行するメソッド。この関数内で例外が投げられると、A/B Testに失敗したと判定します。
+
+以下に`IABTest`の使用例を挙げます。
+
+```csharp
+class RangeFloatABTestParam : IABTest
+{
+    public float Min { get; set; }
+    public float Max { get; set; }
+
+    System.Random UseRandom { get; set; }
+    protected override (string name, string paramText)[] GetParamTexts()
+    {
+        return new (string name, string paramText)[]
+        {
+            ("Min", Min.ToString()),
+            ("Max", Max.ToString()),
+        };
+    }
+
+    protected override void InitParams(System.Random rnd)
+    {
+        var tmp = (float)rnd.NextDouble();
+        var max = (float)rnd.NextDouble();
+        Min = System.Math.Min(tmp, max);
+        Max = System.Math.Max(tmp, max);
+
+        UseRandom = rnd;
+    }
+
+    protected override void TestMethod()
+    {
+        var value = UseRandom.Range(Min, Max);
+
+        var errorMessage = $"Fail test... result={value}";
+        Assert.IsTrue(Min <= value && value <= Max, errorMessage);
+    }
+}
+
+[Test]
+public void ABTestRangeFloat()
+{
+    var settings = TestSettings.CreateOrGet();
+    var ABTest = new RangeDoubleABTestParam();
+    ABTest.RunTest(settings);
+}
+```
+
+#### A/B Testの設定
+
+A/B Testの設定は以下の場所にあります。
+
+1. MenuのEdit > Project Settingsボタンを押し、Project Settings Windowを開きます。
+1. Hinode Test Settingsの項目を押す。
+
+設定項目は以下のものがあります。
+
+- Enable A/B Test : A/B Testの有効・無効
+- Default A/B Test Loop Count : A/B Testのループ数

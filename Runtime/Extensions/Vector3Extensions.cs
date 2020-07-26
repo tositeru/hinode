@@ -7,9 +7,9 @@ using System.Linq;
 namespace Hinode
 {
     /// <summary>
-    /// <seealso cref="Hinode.Tests.Extensions.TestVector2Extensions"/>
-    /// </summary>
-    public static class Vector2Extensions
+	/// <seealso cref="Vector3"/>
+	/// </summary>
+    public static partial class Vector3Extensions
     {
         /// <summary>
 		/// 
@@ -17,36 +17,39 @@ namespace Hinode
 		/// <param name="self"></param>
 		/// <param name="other"></param>
 		/// <returns></returns>
-        public static Vector2 Mul(this Vector2 self, Vector2 other)
-            => new Vector2(
+        public static Vector3 Mul(this Vector3 self, Vector3 other)
+            => new Vector3(
                 self.x * other.x,
-                self.y * other.y
+                self.y * other.y,
+                self.z * other.z
             );
 
         /// <summary>
-		/// 
-		/// </summary>
-		/// <param name="self"></param>
-		/// <returns></returns>
-        public static Vector2 Abs(this Vector2 self)
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static Vector3 Abs(this Vector3 self)
         {
-            return new Vector2(
+            return new Vector3(
                 System.Math.Abs(self.x),
-                System.Math.Abs(self.y)
+                System.Math.Abs(self.y),
+                System.Math.Abs(self.z)
             );
         }
 
         /// <summary>
-		/// 
-		/// </summary>
-		/// <param name="self"></param>
-		/// <param name="other"></param>
-		/// <param name="epsilon"></param>
-		/// <returns></returns>
-        public static bool AreNearlyEqual(this Vector2 self, Vector2 other, float epsilon = float.Epsilon)
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="other"></param>
+        /// <param name="epsilon"></param>
+        /// <returns></returns>
+        public static bool AreNearlyEqual(this Vector3 self, Vector3 other, float epsilon = float.Epsilon)
         {
             return System.Math.Abs(self.x - other.x) <= epsilon
-                && System.Math.Abs(self.y - other.y) <= epsilon;
+                && System.Math.Abs(self.y - other.y) <= epsilon
+                && System.Math.Abs(self.z - other.z) <= epsilon;
         }
 
         static readonly Regex REMOVE_CHAR_REGEX = new Regex(@"[\(\)\[\]]");
@@ -58,12 +61,12 @@ namespace Hinode
         /// <param name="text"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static bool TryParse(string text, out Vector2 result)
+        public static bool TryParse(string text, out Vector3 result)
         {
-            result = Vector2.zero;
+            result = Vector3.zero;
             text = REMOVE_CHAR_REGEX.Replace(text, "");
             var sections = text.Split(',', ' ').Where(_s => _s.Length > 0).ToArray();
-            var loopCount = System.Math.Min(2, sections.Length);
+            var loopCount = System.Math.Min(3, sections.Length);
             for (var i = 0; i < loopCount; ++i)
             {
                 bool isSuccess = false;
@@ -71,6 +74,7 @@ namespace Hinode
                 {
                     case 0: isSuccess = float.TryParse(sections[i], out result.x); break;
                     case 1: isSuccess = float.TryParse(sections[i], out result.y); break;
+                    case 2: isSuccess = float.TryParse(sections[i], out result.z); break;
                 }
                 if (!isSuccess) return false;
             }

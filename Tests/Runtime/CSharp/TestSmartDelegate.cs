@@ -51,5 +51,19 @@ namespace Hinode.Tests.CSharp
             Assert.IsFalse(predicate.IsValid);
             Assert.IsNull(predicate.Instance);
         }
+
+        void Apple() { }
+        [Test]
+        public void RegistedDelegateCountPasses()
+        {
+            var d = new SmartDelegate<BasicUsagePassesDelegate>();
+
+            d.Add(() => { });
+            d.Add(Apple);
+            Assert.AreEqual(2, d.RegistedDelegateCount);
+
+            d.Remove(Apple);
+            Assert.AreEqual(1, d.RegistedDelegateCount);
+        }
     }
 }
