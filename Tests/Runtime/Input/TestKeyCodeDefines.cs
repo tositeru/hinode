@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using System.Linq;
 
 namespace Hinode.Tests.Input
 {
@@ -11,6 +12,50 @@ namespace Hinode.Tests.Input
 	/// </summary>
     public class TestKeyCodesDefines
     {
+        /// <summary>
+        /// <seealso cref="KeyCodeDefines.IsSupportedKeyCodes(KeyCode keyCode)"/>
+        /// </summary>
+        [Test]
+        public void IsSupportedKeyCodesPasses()
+        {
+            foreach (KeyCode keyCode in System.Enum.GetValues(typeof(KeyCode)))
+            {
+                var errorMessage = $"Fail test... keyCode={keyCode}";
+                Assert.IsTrue(
+                    KeyCodeDefines.IsSupportedKeyCodes(keyCode)
+                    , errorMessage);
+            }
+        }
+
+        /// <summary>
+		/// <seealso cref="KeyCodeDefines.AllSupportedKeyCodes"/>
+		/// </summary>
+        [Test]
+        public void AllSupportedKeyCodesPasses()
+        {
+            var ignoreKeyCodes = new HashSet<KeyCode>()
+            {
+                KeyCode.RightApple,
+                KeyCode.LeftApple,
+            };
+
+            // 同値のEnumに対応するために使用している
+            var ignoreCounter = new Dictionary<KeyCode, int>();
+
+            AssertionUtils.AssertEnumerableByUnordered(
+                System.Enum.GetValues(typeof(KeyCode))
+                    .GetEnumerable<KeyCode>()
+                    .Where(_k => {
+                        if (!ignoreKeyCodes.Contains(_k)) return true;
+                        if (ignoreCounter.ContainsKey(_k)) return false;
+                        ignoreCounter.Add(_k, 1);
+                        return true;
+                    }).ToArray(),
+                KeyCodeDefines.AllSupportedKeyCodes,
+                ""
+            );
+        }
+
         /// <summary>
 		/// <seealso cref="KeyCodeDefines.ArrowKeyCodes"/>
         /// </summary>

@@ -172,8 +172,7 @@ namespace Hinode.Tests.Input
 
             {//ContainsRecordedKeyCode
 
-                foreach(var keyCode in System.Enum.GetValues(typeof(KeyCode))
-                    .GetEnumerable<KeyCode>())
+                foreach(var keyCode in KeyCodeDefines.AllSupportedKeyCodes)
                 {
                     var errorMessage = $"Failed KeyCode({keyCode})...";
                     Assert.IsFalse(input.ContainsRecordedKeyCode(keyCode), errorMessage);
@@ -301,9 +300,12 @@ namespace Hinode.Tests.Input
         public void GetKeyConditionPasses()
         {
             var input = new ReplayableInput();
+            input.IsReplaying = true;
 
-            foreach (var keyCode in System.Enum.GetValues(typeof(KeyCode))
-                .GetEnumerable<KeyCode>())
+            Assert.AreEqual(KeyCode.RightApple, KeyCode.RightCommand);
+            Assert.AreEqual(KeyCode.LeftApple, KeyCode.LeftCommand);
+
+            foreach (var keyCode in KeyCodeDefines.AllSupportedKeyCodes)
             {
                 var errorMessage = $"Failed KeyCode({keyCode})...";
                 Assert.IsFalse(input.ContainsRecordedKeyCode(keyCode), errorMessage);

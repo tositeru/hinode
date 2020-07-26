@@ -1,25 +1,63 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace Hinode
 {
     /// <summary>
+	/// 以下のKeyCodeは別のものとして扱っています。
+	/// - KeyCode.RightApple -> KeyCode.RightCommand
+	/// - KeyCode.LeftApple -> KeyCode.LeftCommand
 	/// <seealso cref="KeyCode"/>
 	/// </summary>
     public static class KeyCodeDefines
     {
-        public static IEnumerable<KeyCode> ArrowKeyCodes { get => _arrowKeyCodes; }
-        public static IEnumerable<KeyCode> AlphabetKeyCodes { get => _alphabetKeyCodes; }
-        public static IEnumerable<KeyCode> FunctionKeyCodes { get => _functionKeyCodes; }
-        public static IEnumerable<KeyCode> JoyStickKeyCodes { get => _joyStickKeyCodes; }
-        public static IEnumerable<KeyCode> KeypadKeyCodes { get => _keypadKeyCodes; }
-        public static IEnumerable<KeyCode> MouseKeyCodes { get => _mouseKeyCodes; }
-        public static IEnumerable<KeyCode> OtherKeyCodes { get => _otherKeyCodes; }
-        public static IEnumerable<KeyCode> SymbolKeyCodes { get => _symbolKeyCodes; }
-        public static IEnumerable<KeyCode> SystemKeyCodes { get => _systemKeyCodes; }
+        public static bool IsSupportedKeyCodes(KeyCode keyCode)
+            => GetAllSupportedKeyCodeCollectionEnumerable()
+                .Any(_c => _c.Contains(keyCode));
 
-        static readonly KeyCode[] _arrowKeyCodes = new KeyCode[]
+        public static IEnumerable<KeyCode> AllSupportedKeyCodes
+        {
+            get => GetAllSupportedKeyCodeCollectionEnumerable()
+                .SelectMany(_c => _c);
+        }
+
+        static IEnumerable<IReadOnlyCollection<KeyCode>> GetAllSupportedKeyCodeCollectionEnumerable()
+            => new AllSupportedKeyCodeCollectionEnumerable();
+
+        class AllSupportedKeyCodeCollectionEnumerable : IEnumerable<IReadOnlyCollection<KeyCode>>, IEnumerable
+        {
+            public AllSupportedKeyCodeCollectionEnumerable()
+            {}
+
+            public IEnumerator<IReadOnlyCollection<KeyCode>> GetEnumerator()
+            {
+                yield return ArrowKeyCodes;
+                yield return AlphabetKeyCodes;
+                yield return FunctionKeyCodes;
+                yield return JoyStickKeyCodes;
+                yield return KeypadKeyCodes;
+                yield return MouseKeyCodes;
+                yield return OtherKeyCodes;
+                yield return SymbolKeyCodes;
+                yield return SystemKeyCodes;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
+        public static IReadOnlyCollection<KeyCode> ArrowKeyCodes { get => _arrowKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> AlphabetKeyCodes { get => _alphabetKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> FunctionKeyCodes { get => _functionKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> JoyStickKeyCodes { get => _joyStickKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> KeypadKeyCodes { get => _keypadKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> MouseKeyCodes { get => _mouseKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> OtherKeyCodes { get => _otherKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> SymbolKeyCodes { get => _symbolKeyCodes; }
+        public static IReadOnlyCollection<KeyCode> SystemKeyCodes { get => _systemKeyCodes; }
+
+        static readonly HashSet<KeyCode> _arrowKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.UpArrow,
             KeyCode.DownArrow,
@@ -27,7 +65,7 @@ namespace Hinode
             KeyCode.LeftArrow,
         };
 
-        static readonly KeyCode[] _functionKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _functionKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.F1,
             KeyCode.F2,
@@ -46,7 +84,7 @@ namespace Hinode
             KeyCode.F15,
         };
 
-        static readonly KeyCode[] _joyStickKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _joyStickKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.JoystickButton0,
             KeyCode.JoystickButton1,
@@ -230,7 +268,7 @@ namespace Hinode
             KeyCode.Joystick8Button19
         };
 
-        static readonly KeyCode[] _alphabetKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _alphabetKeyCodes = new HashSet<KeyCode>
         {
                 KeyCode.A,
                 KeyCode.B,
@@ -260,7 +298,7 @@ namespace Hinode
                 KeyCode.Z,
         };
 
-        static readonly KeyCode[] _keypadKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _keypadKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.Keypad0,
             KeyCode.Keypad1,
@@ -281,7 +319,7 @@ namespace Hinode
             KeyCode.KeypadEquals,
         };
 
-        static readonly KeyCode[] _mouseKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _mouseKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.Mouse0,
             KeyCode.Mouse1,
@@ -292,7 +330,7 @@ namespace Hinode
             KeyCode.Mouse6,
         };
 
-        static readonly KeyCode[] _otherKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _otherKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.None,
             KeyCode.Alpha0,
@@ -307,7 +345,7 @@ namespace Hinode
             KeyCode.Alpha9,
         };
 
-        static readonly KeyCode[] _symbolKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _symbolKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.Tab,
             KeyCode.Space,
@@ -345,7 +383,7 @@ namespace Hinode
             KeyCode.Tilde
         };
 
-        static readonly KeyCode[] _systemKeyCodes = new KeyCode[]
+        static readonly HashSet<KeyCode> _systemKeyCodes = new HashSet<KeyCode>
         {
             KeyCode.Backspace,
             KeyCode.Delete,
