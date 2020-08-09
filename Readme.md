@@ -31,6 +31,7 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
     - [ChildObject](./Docs/UnityUtiliryClaesses.md#ChildObject)
     - [SceneObject](./Docs/UnityUtiliryClaesses.md#SceneObject)
     - [LabelObject](./Docs/UnityUtiliryClaesses.md#LabelObject)
+    - [SubComponent](/Docs/UnityUtiliryClaesses.md#SubComponent)
 - [Editor拡張](./Docs/Editor.md)
     - [テキストテンプレートエンジン](./Docs/Editor/TextTemplateEngine.md)
 - [仮想Input機能](./Docs/VirtualInput.md)
