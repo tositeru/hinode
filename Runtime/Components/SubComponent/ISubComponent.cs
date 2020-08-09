@@ -19,4 +19,12 @@ namespace Hinode
         void Destroy();
         void UpdateUI();
     }
+
+    public static class SubComponentDefines
+    {
+        /// <summary>
+        /// Loggerのためのセレクタ
+        /// </summary>
+        public static readonly string LOGGER_SELECTOR = "SubComponent";
+    }
 }
