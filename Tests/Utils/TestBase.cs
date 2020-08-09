@@ -58,6 +58,7 @@ namespace Hinode.Tests
         [SetUp]
         public void ReadSnapshotSetting()
         {
+            LogAssert.ignoreFailingMessages = true;
             _snapshotSetting = TestSettings.CreateOrGet();
         }
 
