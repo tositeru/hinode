@@ -45,7 +45,7 @@ namespace Hinode
         /// <returns></returns>
         public static bool ContainsInterface(this System.Type t, System.Type interfaceType)
         {
-            return interfaceType.IsInterface && t.GetInterfaces().Any(_i => _i == interfaceType);
+            return interfaceType.IsInterface && t.GetInterface(interfaceType.Name) != null;
         }
 
         /// <summary>
