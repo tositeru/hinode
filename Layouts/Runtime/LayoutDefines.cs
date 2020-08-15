@@ -12,5 +12,11 @@ namespace Hinode.Layouts
 		/// 計算精度
 		/// </summary>
         public static readonly float NUMBER_PRECISION = 0.0001f;
+
+        /// <summary>
+        /// 位置関係の計算精度
+        /// </summary>
+        public static readonly float POS_NUMBER_PRECISION = 0.01f;
+
     }
 }

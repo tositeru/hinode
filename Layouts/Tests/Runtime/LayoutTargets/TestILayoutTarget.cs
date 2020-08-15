@@ -14,7 +14,8 @@ namespace Hinode.Layouts.Tests
     /// </summary>
     public class TestILayoutTarget
     {
-        readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON_POS = LayoutDefines.POS_NUMBER_PRECISION;
 
         class SetLocalSizeABTestParam : IABTest
         {
