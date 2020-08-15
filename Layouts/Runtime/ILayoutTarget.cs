@@ -17,14 +17,24 @@ namespace Hinode.Layouts
     }
 
     public delegate void ILayoutTargetOnDisposed(ILayoutTarget self);
-    public delegate void ILayoutTargetOnChangedParent(ILayoutTarget self, ILayoutTarget parent);
+    public delegate void ILayoutTargetOnChangedParent(ILayoutTarget self, ILayoutTarget parent, ILayoutTarget prevParent);
     public delegate void ILayoutTargetOnChangedChildren(ILayoutTarget self, ILayoutTarget child, ILayoutTargetOnChangedChildMode mode);
-    public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self);
-    public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self);
+    public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
+    public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 
     /// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
 	///
+    /// ###　実装上の注意点
+    /// 
+	/// - System.IDisposable#Dispose()では以下のILayoutTargetに関係するパラメータをクリアーするようにしてください。
+	/// ex)
+	///   - OnChangeParentなど全てのILayoutTargetのDelegateに設定されているコールバックのクリアー
+	///   - ParentがNullを返すようにする
+	///   - Childrenが空になるようにする
+	///
+    /// - 親のLocalSizeが変更された時は、AnchorMin/MaxとAnchorOffsetMin/Maxが保持されるようにパラメータを変更してください。
+    ///
 	/// ### 領域について
 	/// 
 	/// 自身の領域については以下の図を参考にしてください
@@ -47,7 +57,7 @@ namespace Hinode.Layouts
 	/// - Area Mode: それ以外の時。
 	///
 	/// AnchorMin/Maxの値は必ずAnchorMin <= AnchorMaxになるように実装してください。
-	/// 
+	///
 	/// <seealso cref="ILayout"/>
 	/// <seealso cref="LayoutManager"/>
 	/// </summary>
@@ -61,27 +71,46 @@ namespace Hinode.Layouts
 
         ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }
+        int ChildCount { get; }
 
         Vector3 LocalPos { get; set; }
 
         Vector3 LocalSize { get; }
         Vector3 AnchorMin { get; }
         Vector3 AnchorMax { get; }
-        Vector3 AnchorOffsetMin { get; }
-        Vector3 AnchorOffsetMax { get; }
+        Vector3 Offset { get; }
 
-        /// <summary>
+		/// <summary>
 		/// LocalSizeに関係するパラメータを一括で更新する関数。
+		/// AnchorMin/MaxとAnchorAreaからのoffsetを指定してください。
 		///
-		/// 計算の結果、LocalSizeの各要素が0より下回るようになる時は0になるように実装してください。
-		///
+		/// 計算の結果は以下の条件を守るようにしてください。
+        /// - LocalSize.xyz >= 0
+		/// - LocalAreaMin <= LocalAreaMax
+        /// 
 		/// OnChangedLocalSizeは一度だけ呼び出すように実装していください。
+		///
+		/// figure.1 AnchorMin/MaxとOffsetの関係
+		///     + | - <- AnchorOffsetMin
+		/// --m---a--o-O----M-A--
+		///               - | + <- AnchorOffsetMax
+		/// O: 原点
+		/// o: Offset
+		/// a: AnchorMin
+		/// A: AnchorMax
+		/// m: LocalAreaMin
+		/// M: LocalAreaMax
+		///
+		/// figure.2 LocalAreaMin(m) <= LocalAreaMax(M)
+		/// + | - <- AnchorOffsetMin
+		/// --a---O-m-M----A---
+		///              - | + <- AnchorOffsetMax
 		/// </summary>
 		/// <param name="anchorMin"></param>
 		/// <param name="anchorMax"></param>
 		/// <param name="offsetMin"></param>
 		/// <param name="offsetMax"></param>
-        void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax);
+		void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax);
 
         /// <summary>
 		/// LocalSizeに関係するパラメータを一括で更新する関数。
@@ -92,8 +121,8 @@ namespace Hinode.Layouts
 		/// <param name="localSize"></param>
 		/// <param name="anchorMin"></param>
 		/// <param name="anchorMax"></param>
-		/// <param name="offsetAnchor">アンカー領域の中央からのオフセット。AnchorOffsetMin/Maxに影響を与えます</param>
-        void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetAnchor);
+		/// <param name="offset">アンカー領域の中央からのオフセット。AnchorOffsetMin/Maxに影響を与えます</param>
+        void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 anchorMin, Vector3 anchorMax, Vector3 offset);
     }
 
 
@@ -139,58 +168,64 @@ namespace Hinode.Layouts
 		/// <returns></returns>
         public static (Vector3 min, Vector3 max) LocalAreaMinMaxPos(this ILayoutTarget self)
         {
-            var (anchorMin, anchorMax) = self.AnchorAreaMinMaxPos();
-            return (anchorMin - self.AnchorOffsetMin, anchorMax + self.AnchorOffsetMax);
+            var halfSize = self.LocalSize * 0.5f;
+            return (-halfSize + self.Offset, halfSize + self.Offset);
         }
 
-        /// <summary>
+		/// <summary>
+		/// AnchorAreaからのLocalSizeのオフセットを返します。
+		/// 返される値の正負はAnchorAreaから外側方向に正の数、内側に負の数になっています。
+		///
+		/// 
+		/// + | - <- AnchorOffsetMin
+		/// --a-----O-----A---
+		///             - | + AnchorOffsetMax
+        ///
+        /// a: AnchorMinPos
+        /// A: AnchorMaxPos
+		/// </summary>
+		/// <param name="self"></param>
+		/// <returns></returns>
+		public static (Vector3 offsetMin, Vector3 offsetMax) AnchorOffsetMinMax(this ILayoutTarget self)
+		{
+			var (min, max) = self.AnchorAreaMinMaxPos();
+			var (localMin, localMax) = self.LocalAreaMinMaxPos();
+			return (-(localMin - min), localMax - max);
+		}
+
+		/// <summary>
 		/// LocalSizeを指定したサイズに変更します。
 		///
-		/// この関数によってAnchorMin/Maxは変更されません。
-		/// AnchorOffsetMin/Maxは現在のselfのアンカー空間上の中央位置を変更されないように再計算されます。
+		/// この関数によってAnchorMin/Max, Offsetは変更されません。
 		/// </summary>
 		/// <param name="self"></param>
 		/// <param name="min"></param>
-        public static void SetLocalSize(this ILayoutTarget self, Vector3 localSize)
+		public static void SetLocalSize(this ILayoutTarget self, Vector3 localSize)
         {
             localSize = Vector3.Max(localSize, Vector3.zero);
 
-            var halfParentAreaSize = self.AnchorAreaSize() * 0.5f;
-
-            var anchorMinPos = -(halfParentAreaSize + self.AnchorOffsetMin);
-            var anchorMaxPos = halfParentAreaSize + self.AnchorOffsetMax;
-            var anchorCenterPos = (anchorMaxPos + anchorMinPos) * 0.5f;
-
-            var halfLocalSize = localSize * 0.5f;
-            var localMinPos = anchorCenterPos - halfLocalSize;
-            var localMaxPos = anchorCenterPos + halfLocalSize;
-
-            Vector3 offsetMin, offsetMax;
-            switch (self.AnchorMode())
-            {
-                case LayoutTargetAnchorMode.Point:
-                    offsetMin = -1 * localMinPos;
-                    offsetMax = localMaxPos;
-                    break;
-                case LayoutTargetAnchorMode.Area:
-                    offsetMin = -1 * (localMinPos + halfParentAreaSize);
-                    offsetMax = (localMaxPos - halfParentAreaSize);
-                    break;
-                default:
-                    throw new System.NotImplementedException();
-            }
-            self.UpdateLocalSizeWithAnchorParam(self.AnchorMin, self.AnchorMax, offsetMin, offsetMax);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, self.AnchorMin, self.AnchorMax, self.Offset);
         }
 
-        /// <summary>
-		/// この関数はILayoutTarget.UpdateLocalSizeWithAnchorParam(min, max, self.AnchorOffsetMin, self.AnchorOffsetMax)と同じです。
+		/// <summary>
+		/// この関数はILayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, self.AnchorMin, self.AnchorMax, offset)と同じです。
+		/// </summary>
+		/// <param name="self"></param>
+		/// <param name="offset"></param>
+		public static void SetOffset(this ILayoutTarget self, Vector3 offset)
+        {
+			self.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, self.AnchorMin, self.AnchorMax, offset);
+		}
+
+		/// <summary>
+		/// この関数はILayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, min, max, self.Offset)と同じです。
 		/// </summary>
 		/// <param name="self"></param>
 		/// <param name="min"></param>
 		/// <param name="max"></param>
-        public static void SetAnchor(this ILayoutTarget self, Vector3 min, Vector3 max)
+		public static void SetAnchor(this ILayoutTarget self, Vector3 min, Vector3 max)
         {
-            self.UpdateLocalSizeWithAnchorParam(min, max, self.AnchorOffsetMin, self.AnchorOffsetMax);
+			self.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, min, max, self.Offset);
         }
 
         /// <summary>

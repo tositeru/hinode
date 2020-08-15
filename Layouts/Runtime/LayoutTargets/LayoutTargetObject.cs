@@ -26,8 +26,7 @@ namespace Hinode.Layouts
         Vector3 _localSize;
         Vector3 _anchorMin;
         Vector3 _anchorMax;
-        Vector3 _anchorOffsetMin;
-        Vector3 _anchorOffsetMax;
+        Vector3 _offset;
 
         public LayoutTargetObject()
         {
@@ -62,7 +61,7 @@ namespace Hinode.Layouts
                 _parent.OnChangedLocalSize.Remove(ParentOnChangedLocalSize);
                 _parent._children.Remove(this);
             }
-
+            var prevParent = _parent;
             _parent = parent;
 
             if(_parent != null)
@@ -73,7 +72,7 @@ namespace Hinode.Layouts
 
             try
             {
-                _onChangedParent.Instance?.Invoke(this, _parent);
+                _onChangedParent.Instance?.Invoke(this, _parent, prevParent);
             }
             catch(System.Exception e)
             {
@@ -82,11 +81,21 @@ namespace Hinode.Layouts
             return this;
         }
 
-        void ParentOnChangedLocalSize(ILayoutTarget parent)
+        /// <summary>
+        /// 親のサイズが変更された時はAnchorMin/MaxとAnchorOffsetMin/Maxが変更されないようにパラメータを変更してください
+        /// </summary>
+        /// <param name="parent"></param>
+        void ParentOnChangedLocalSize(ILayoutTarget parent, Vector3 prevLocalSize)
         {
             if (parent != Parent) return;
 
-            UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, AnchorOffsetMin, AnchorOffsetMax);
+            var prevAnchorAreaSize = prevLocalSize.Mul(AnchorMax - AnchorMin);
+            var max = prevAnchorAreaSize*0.5f;
+            var min = -max;
+            var (localMin, localMax) = this.LocalAreaMinMaxPos();
+            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
+
+            UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
         }
 
         #region ILayoutTarget interface
@@ -98,17 +107,19 @@ namespace Hinode.Layouts
 
         public ILayoutTarget Parent { get => _parent; }
         public IEnumerable<ILayoutTarget> Children { get => _children; }
+        public int ChildCount { get => _children.Count; }
 
         public Vector3 LocalPos
         {
             get => _localPos;
             set 
             {
+                var prevLocalPos = _localPos;
                 _localPos = value;
 
                 try
                 {
-                    _onChangedLocalPos.Instance?.Invoke(this);
+                    _onChangedLocalPos.Instance?.Invoke(this, prevLocalPos);
                 }
                 catch(System.Exception e)
                 {
@@ -129,21 +140,18 @@ namespace Hinode.Layouts
         {
             get => _anchorMax;
         }
-        public Vector3 AnchorOffsetMin
+        public Vector3 Offset
         {
-            get => _anchorOffsetMin;
-        }
-        public Vector3 AnchorOffsetMax
-        {
-            get => _anchorOffsetMax;
+            get => _offset;
         }
 
         public virtual void Dispose()
         {
             while(0 < _children.Count)
             {
-                _children.Items.First().Dispose();
+                _children.Items.First().SetParent(null);
             }
+            //_children.Clear();
             SetParent(null);
 
             _onDisposed.Instance?.Invoke(this);
@@ -157,6 +165,7 @@ namespace Hinode.Layouts
         public void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
         {
             NormalizeAnchorPos(ref anchorMin, ref anchorMax);
+            var prevLocalSize = LocalSize;
 
             var anchorAreaSize = this.ParentLocalSize().Mul(anchorMax - anchorMin);
             _localSize = anchorAreaSize + offsetMin + offsetMax;
@@ -165,27 +174,26 @@ namespace Hinode.Layouts
 
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
-            _anchorOffsetMin = offsetMin;
-            _anchorOffsetMax = offsetMax;
 
-            OnUpdateLocalSizeWithExceptionCheck();
+            var minPos = _localSize * -0.5f - offsetMin;
+            var maxPos = _localSize * 0.5f + offsetMax;
+            _offset = (maxPos + minPos) * 0.5f;
+
+            OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
         }
 
         public void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 anchorMin, Vector3 anchorMax, Vector3 offset)
         {
             NormalizeAnchorPos(ref anchorMin, ref anchorMax);
-            var anchorAreaSize = this.ParentLocalSize().Mul(anchorMax - anchorMin);
+            var prevLocalSize = LocalSize;
+            localSize = Vector3.Max(localSize, Vector3.zero);
 
-            _anchorOffsetMin = -offset;
-            _anchorOffsetMax = offset;
-
-            NormalizeLocalSize(ref localSize, ref _anchorOffsetMin, ref _anchorOffsetMax, anchorAreaSize);
-
-            _localSize = localSize;
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
+            _localSize = localSize;
+            _offset = offset;
 
-            OnUpdateLocalSizeWithExceptionCheck();
+            OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
         }
 
         void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
@@ -217,11 +225,11 @@ namespace Hinode.Layouts
             }
         }
 
-        void OnUpdateLocalSizeWithExceptionCheck()
+        void OnUpdateLocalSizeWithExceptionCheck(Vector3 prevLocalSize)
         {
             try
             {
-                _onChangedLocalSize.Instance?.Invoke(this);
+                _onChangedLocalSize.Instance?.Invoke(this, prevLocalSize);
             }
             catch (System.Exception e)
             {
