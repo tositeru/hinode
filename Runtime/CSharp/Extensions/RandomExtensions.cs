@@ -15,7 +15,7 @@ namespace Hinode
 		/// <returns></returns>
         public static double Range(this System.Random rnd, double min, double max)
         {
-            var t = System.Math.Abs(rnd.NextDouble()) / double.MaxValue;
+            var t = System.Math.Abs(rnd.Next(int.MaxValue)) / (double)int.MaxValue;
             var len = System.Math.Max(min, max) - System.Math.Min(min, max);
             return min + t * len;
         }

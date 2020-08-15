@@ -28,6 +28,7 @@ namespace Hinode.Tests
 
             var isSuccess = true;
             var rnd = settings.GetRandomForABTest();
+            var failCounter = 0;
             for (var i = 0; i < loopCount; ++i)
             {
                 InitParams(rnd);
@@ -38,14 +39,10 @@ namespace Hinode.Tests
                 catch (System.Exception e)
                 {
                     isSuccess = false;
-                    var paramText = GetParamTexts().Select(_t => _t.paramText).Aggregate("", (_s, _c) => _s + _c + ",");
-                    Debug.LogWarning($"Detect Fail Test Case... Message={e.Message}{System.Environment.NewLine}params => {paramText}");
-                }
-                catch
-                {
-                    isSuccess = false;
-                    var paramText = GetParamTexts().Select(_t => _t.paramText).Aggregate("", (_s, _c) => _s + _c + ",");
-                    Debug.LogWarning($"Detect Fail Test Case... Message=<<Unknown Exception>>.{System.Environment.NewLine}params => {paramText}");
+                    var paramText = GetParamTexts().Select(_t => $"{_t.name}={_t.paramText}").Aggregate("", (_s, _c) => _s + _c + ",");
+                    Debug.LogWarning($"Detect Fail Test Case... {System.Environment.NewLine}{e}{System.Environment.NewLine}params => {paramText}");
+                    failCounter++;
+                    if (failCounter > 10) break;
                 }
             }
 
