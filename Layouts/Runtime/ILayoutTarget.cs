@@ -22,34 +22,65 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 
-    /// <summary>
+	/// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
 	///
-    /// ###　実装上の注意点
-    /// 
+	/// ###　実装上の注意点
+	/// 
 	/// - System.IDisposable#Dispose()では以下のILayoutTargetに関係するパラメータをクリアーするようにしてください。
 	/// ex)
 	///   - OnChangeParentなど全てのILayoutTargetのDelegateに設定されているコールバックのクリアー
 	///   - ParentがNullを返すようにする
 	///   - Childrenが空になるようにする
 	///
-    /// - 親のLocalSizeが変更された時は、AnchorMin/MaxとAnchorOffsetMin/Maxが保持されるようにパラメータを変更してください。
-    ///
-	/// ### 領域について
+	/// - 親のLocalSizeが変更された時は、AnchorMin/MaxとAnchorOffsetMin/Maxが保持されるようにパラメータを変更してください。
+	///
+	/// ### プロパティと領域について
 	/// 
 	/// 自身の領域については以下の図を参考にしてください
 	///
-	///      | AnchorArea |
-	/// -OI--a-----O------A--OA--
-	///  |     LocalArea      |
-	///   
-	/// - AnchorArea: 親領域と関連付けされるAnchorの領域。親のサイズが変更されるとこちらも変更されるように実装してください。
-	/// - LocalArea: AnchorAreaにOffset値を追加した領域。こちらが自身の領域となります。
-	/// - a: anchorMin
-	/// - A: anchorMax
-	/// - OI: anchorMinにAnchorOffsetMinを追加したもの
-	/// - OA: anchorMaxにAnchorOffsetMaxを追加したもの
+	/// (※ 親のサイズが変更されるときはAnchorMin/MaxとAnchorOffsetMin/Maxが変更されないように実装してください。)
+	/// 
+	///    (AnchorAreaSize)
+	///    <-     v     ->
+	///   |   AnchorArea  |
+	/// --a--OI---O--o----A--OA--
+	///      |   LocalArea   |
+	///       <- LocalSize ->
+	/// - AnchorArea: 親領域と関連付けされるAnchorの領域。 ILayoutTargetExtensions#AnchorAreaSizeで取得できます。
+	/// - LocalArea: AnchorAreaにOffsetを追加した領域。こちらが自身の領域となります。
+	/// - O: 中心. Parentが設定されている場合はその中央になります。
+	/// - o: 中心からのOffset		ILayoutTarget#Offset
+	/// - a: anchorMin			ILayoutTarget#AnchorMin
+	/// - A: anchorMax			ILayoutTarget#AnchorMax
+	/// - OI: 中心からのOffset - 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
+	/// - OA: 中心からのOffset + 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
 	///
+	/// AnchorOffsetMin: (a - OI). ILayoutTargetExtensions#AnchorOffsetMinMax()で取得できます。
+	/// AnchorOffsetMax: (A - OA). ILayoutTargetExtensions#AnchorOffsetMinMax()で取得できます。
+	/// AnchorAreaSize: ILayoutTargetExtensions#AnchorAreaSize()で取得できます。
+	/// LocalSize:		ILayoutTarget#LocalSizeで取得できます
+	/// ILayoutTarget#LocalPos: oを原点とした時の位置になります。
+	/// 
+	/// ### AnchorOffsetMin/Max
+	/// AnchorOffsetMin/Maxの符号は以下の図を参考にしてください。
+	/// 
+	/// figure.1 AnchorMin/MaxとOffsetの関係
+	///     + | - <- AnchorOffsetMin
+	/// --m---a--o-O----M-A--
+	///               - | + <- AnchorOffsetMax
+	/// O: 原点
+	/// o: Offset
+	/// a: AnchorMin
+	/// A: AnchorMax
+	/// m: LocalAreaMin
+	/// M: LocalAreaMax
+	///
+	/// figure.2 LocalAreaMin(m) <= LocalAreaMax(M)
+	/// + | - <- AnchorOffsetMin
+	/// --a---O-m-M----A---
+	///              - | + <- AnchorOffsetMax
+	/// 
 	/// ### AnchorMode
 	/// 
 	/// Anchor位置によって以下の種類分けがなされています。
@@ -61,7 +92,7 @@ namespace Hinode.Layouts
 	/// <seealso cref="ILayout"/>
 	/// <seealso cref="LayoutManager"/>
 	/// </summary>
-    public interface ILayoutTarget : System.IDisposable
+	public interface ILayoutTarget : System.IDisposable
     {
         NotInvokableDelegate<ILayoutTargetOnDisposed> OnDisposed { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedParent> OnChangedParent { get; }
