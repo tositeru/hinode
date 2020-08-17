@@ -13,7 +13,8 @@ namespace Hinode.Layouts.Tests
 	/// </summary>
     public class TestLayoutTargetObject
     {
-        readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON_POS = LayoutDefines.POS_NUMBER_PRECISION;
 
         #region Dispose
         /// <summary>
@@ -35,14 +36,13 @@ namespace Hinode.Layouts.Tests
                 c.SetParent(self);
             }
 
-            parent.Dispose();
+            self.Dispose();
 
             Assert.IsFalse(parent.Children.Any());
 
             Assert.IsNull(self.Parent);
-            Assert.IsFalse(self.Children.Any());
-
             Assert.IsTrue(children.All(_c => _c.Parent == null));
+            Assert.IsFalse(self.Children.Any(), $"child count={self.ChildCount}");
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Hinode.Layouts.Tests
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
-            layout.OnChangedParent.Add((_self, _parent) => { callCounter++; });
+            layout.OnChangedParent.Add((_self, _parent, _prevParent) => { callCounter++; });
 
             callCounter = 0;
             {// <- test point
@@ -127,7 +127,7 @@ namespace Hinode.Layouts.Tests
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
-            layout.OnChangedLocalPos.Add((_self) => { callCounter++; });
+            layout.OnChangedLocalPos.Add((_self, _) => { callCounter++; });
 
             callCounter = 0;
             {// <- test point
@@ -146,7 +146,7 @@ namespace Hinode.Layouts.Tests
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
-            layout.OnChangedLocalSize.Add((_self) => { callCounter++; });
+            layout.OnChangedLocalSize.Add((_self, _) => { callCounter++; });
 
             callCounter = 0;
             {// <- test point
@@ -215,10 +215,10 @@ namespace Hinode.Layouts.Tests
         {
             var layout = new LayoutTargetObject();
             int callCounter = 0;
-            (ILayoutTarget self, ILayoutTarget parent) recievedData = default;
-            layout.OnChangedParent.Add((_self, _parent) => {
+            (ILayoutTarget self, ILayoutTarget parent, ILayoutTarget prevParent) recievedData = default;
+            layout.OnChangedParent.Add((_self, _parent, _prevParent) => {
                 callCounter++;
-                recievedData = (_self, _parent);
+                recievedData = (_self, _parent, _prevParent);
             });
 
             var parent = new LayoutTargetObject();
@@ -227,6 +227,7 @@ namespace Hinode.Layouts.Tests
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(layout, recievedData.self);
             Assert.AreSame(parent, recievedData.parent);
+            Assert.AreSame(null, recievedData.prevParent);
         }
 
         /// <summary>
@@ -237,7 +238,7 @@ namespace Hinode.Layouts.Tests
         public void OnChangedParentInSetParentWhenThrowExceptionPasses()
         {
             var layout = new LayoutTargetObject();
-            layout.OnChangedParent.Add((_self, _parent) => {
+            layout.OnChangedParent.Add((_self, _parent, _prevParent) => {
                 throw new System.Exception();
             });
 
@@ -260,10 +261,10 @@ namespace Hinode.Layouts.Tests
             layout.SetParent(parent);
 
             int callCounter = 0;
-            (ILayoutTarget self, ILayoutTarget parent) recievedData = default;
-            layout.OnChangedParent.Add((_self, _parent) => {
+            (ILayoutTarget self, ILayoutTarget parent, ILayoutTarget prevParent) recievedData = default;
+            layout.OnChangedParent.Add((_self, _parent, _prevParent) => {
                 callCounter++;
-                recievedData = (_self, _parent);
+                recievedData = (_self, _parent, _prevParent);
             });
 
             layout.SetParent(null); // <- test point 
@@ -271,6 +272,7 @@ namespace Hinode.Layouts.Tests
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(layout, recievedData.self);
             Assert.IsNull(recievedData.parent);
+            Assert.AreSame(parent, recievedData.prevParent);
         }
 
         /// <summary>
@@ -285,10 +287,10 @@ namespace Hinode.Layouts.Tests
             layout.SetParent(parent);
 
             int callCounter = 0;
-            (ILayoutTarget self, ILayoutTarget parent) recievedData = default;
-            layout.OnChangedParent.Add((_self, _parent) => {
+            (ILayoutTarget self, ILayoutTarget parent, ILayoutTarget prevParent) recievedData = default;
+            layout.OnChangedParent.Add((_self, _parent, _prevParent) => {
                 callCounter++;
-                recievedData = (_self, _parent);
+                recievedData = (_self, _parent, _prevParent);
             });
 
             var parent2 = new LayoutTargetObject();
@@ -297,6 +299,7 @@ namespace Hinode.Layouts.Tests
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(layout, recievedData.self);
             Assert.AreSame(parent2, recievedData.parent);
+            Assert.AreSame(parent, recievedData.prevParent);
         }
 
         /// <summary>
@@ -582,14 +585,16 @@ namespace Hinode.Layouts.Tests
             var self = new LayoutTargetObject();
 
             var callCounter = 0;
-            ILayoutTarget recievedData = null;
-            self.OnChangedLocalPos.Add((_self) => { callCounter++; recievedData = _self; });
+            (ILayoutTarget self, Vector3 prevPos) recievedData = default;
+            self.OnChangedLocalPos.Add((_self, _prevPos) => { callCounter++; recievedData = (_self, _prevPos); });
 
+            var prevLocalPos = self.LocalPos;
             var localPos = new Vector3(1, 2, 3);
             self.LocalPos = localPos;
 
             Assert.AreEqual(1, callCounter);
-            Assert.AreSame(self, recievedData);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevLocalPos, recievedData.prevPos);
         }
 
         /// <summary>
@@ -600,7 +605,7 @@ namespace Hinode.Layouts.Tests
         public void OnChangedLocalPosWhenThrowExceptionPasses()
         {
             var self = new LayoutTargetObject();
-            self.OnChangedLocalPos.Add((_) => throw new System.Exception());
+            self.OnChangedLocalPos.Add((_, __) => throw new System.Exception());
 
             var localPos = new Vector3(1, 2, 3);
             self.LocalPos = localPos;
@@ -633,16 +638,18 @@ namespace Hinode.Layouts.Tests
             var self = new LayoutTargetObject();
 
             var callCounter = 0;
-            ILayoutTarget recievedData = null;
-            self.OnChangedLocalSize.Add((_self) => {
+            (ILayoutTarget self, Vector3 localSize)recievedData = default;
+            self.OnChangedLocalSize.Add((_self, _prevSize) => {
                 callCounter++;
-                recievedData = self;
+                recievedData = (_self, _prevSize);
             });
+            var prevLocalSize = self.LocalSize;
             var localSize = new Vector3(10, 20, 30);
             self.SetLocalSize(localSize);
 
             Assert.AreEqual(1, callCounter);
-            Assert.AreSame(self, recievedData);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevLocalSize, recievedData.localSize);
         }
 
         /// <summary>
@@ -653,7 +660,7 @@ namespace Hinode.Layouts.Tests
         public void OnChangedLocalSizeWhenThrowExceptionPasses()
         {
             var self = new LayoutTargetObject();
-            self.OnChangedLocalSize.Add((_) => {
+            self.OnChangedLocalSize.Add((_, __) => {
                 throw new System.Exception();
             });
 
@@ -694,33 +701,19 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
-        #region AnchorOffsetMin
+        #region Offset
         /// <summary>
-		/// <seealso cref="LayoutTargetObject.AnchorOffsetMin"/>
-		/// </summary>
-        [Test]
-        public void AnchorOffsetMinPasses()
-        {
-            var self = new LayoutTargetObject();
-            var anchorOffsetMin = new Vector3(0.5f, 0.5f, 0.5f);
-            self.SetAnchorOffset(anchorOffsetMin, self.AnchorOffsetMax);
-
-            Assert.AreEqual(anchorOffsetMin, self.AnchorOffsetMin);
-        }
-        #endregion
-
-        #region AnchorOffsetMax
-        /// <summary>
-        /// <seealso cref="LayoutTargetObject.AnchorOffsetMax"/>
+        /// <seealso cref="LayoutTargetObject.Offset"/>
         /// </summary>
         [Test]
-        public void AnchorOffsetMaxPasses()
+        public void OffsetPasses()
         {
             var self = new LayoutTargetObject();
             var anchorOffsetMax = new Vector3(0.5f, 0.5f, 0.5f);
-            self.SetAnchorOffset(self.AnchorOffsetMin, anchorOffsetMax);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, self.AnchorMin, self.AnchorMax, offset);
 
-            Assert.AreEqual(anchorOffsetMax, self.AnchorOffsetMax);
+            Assert.AreEqual(offset, self.Offset);
         }
         #endregion
 
@@ -746,8 +739,11 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMin, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMax, self.AnchorOffsetMax, EPSILON);
+
+            var (anchorAreaMinPos, anchorAreaMaxPos) = self.AnchorAreaMinMaxPos();
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
         }
 
         /// <summary>
@@ -768,13 +764,12 @@ namespace Hinode.Layouts.Tests
             self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
 
             var anchorAreaSize = parent.LocalSize.Mul(anchorMax - anchorMin);
+            //LocalSizeが0になるようにしてください。
             AssertionUtils.AreNearlyEqual(Vector3.zero, self.LocalSize, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
 
-            //LocalSizeが0になるようにしてください。
-            AssertionUtils.AreNearlyEqual(anchorAreaSize * -0.5f, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(anchorAreaSize * -0.5f, self.AnchorOffsetMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(Vector3.zero, self.Offset, EPSILON);
         }
 
         /// <summary>
@@ -790,12 +785,13 @@ namespace Hinode.Layouts.Tests
             self.SetParent(parent);
 
             var callCounter = 0;
-            ILayoutTarget recievedData = null;
-            self.OnChangedLocalSize.Add((_self) => {
+            (ILayoutTarget self, Vector3 prevSize) recievedData = default;
+            self.OnChangedLocalSize.Add((_self, _prevSize) => {
                 callCounter++;
-                recievedData = _self;
+                recievedData = (_self, _prevSize);
             });
 
+            var prevLocalSize = self.LocalSize;
             var anchorMin = new Vector3(0, 0.5f, 0f);
             var anchorMax = new Vector3(1, 0.5f, 0f);
             var offsetMin = new Vector3(1, 2, 0f);
@@ -803,7 +799,8 @@ namespace Hinode.Layouts.Tests
             self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
 
             Assert.AreEqual(1, callCounter);
-            Assert.AreSame(self, recievedData);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevLocalSize, recievedData.prevSize);
         }
 
         /// <summary>
@@ -818,7 +815,7 @@ namespace Hinode.Layouts.Tests
             var self = new LayoutTargetObject();
             self.SetParent(parent);
 
-            self.OnChangedLocalSize.Add((_self) => {
+            self.OnChangedLocalSize.Add((_self, __) => {
                 throw new System.Exception();
             });
 
@@ -832,8 +829,9 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMin, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMax, self.AnchorOffsetMax, EPSILON);
+
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
         }
         #endregion
 
@@ -859,10 +857,7 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
 
-            var offsetMin = -offset;
-            var offsetMax = offset;
-            AssertionUtils.AreNearlyEqual(offsetMin, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMax, self.AnchorOffsetMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
         }
 
         /// <summary>
@@ -886,9 +881,7 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
 
-            var halfAnchorAreaSize = self.AnchorAreaSize() * 0.5f;
-            AssertionUtils.AreNearlyEqual(-halfAnchorAreaSize, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(-halfAnchorAreaSize, self.AnchorOffsetMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
         }
 
         /// <summary>
@@ -904,12 +897,13 @@ namespace Hinode.Layouts.Tests
             self.SetParent(parent);
 
             var callCounter = 0;
-            ILayoutTarget recievedData = null;
-            self.OnChangedLocalSize.Add((_self) => {
+            (ILayoutTarget self, Vector3 prevSize) recievedData = default;
+            self.OnChangedLocalSize.Add((_self, _prevSize) => {
                 callCounter++;
-                recievedData = _self;
+                recievedData = (_self, _prevSize);
             });
 
+            var prevLocalSize = self.LocalSize;
             var localSize = new Vector3(20, 40);
             var anchorMin = new Vector3(0, 0.5f, 0f);
             var anchorMax = new Vector3(1, 0.5f, 0f);
@@ -917,7 +911,8 @@ namespace Hinode.Layouts.Tests
             self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
 
             Assert.AreEqual(1, callCounter);
-            Assert.AreSame(self, recievedData);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevLocalSize, recievedData.prevSize);
         }
 
         /// <summary>
@@ -932,7 +927,7 @@ namespace Hinode.Layouts.Tests
             var self = new LayoutTargetObject();
             self.SetParent(parent);
 
-            self.OnChangedLocalSize.Add((_self) => {
+            self.OnChangedLocalSize.Add((_self, __) => {
                 throw new System.Exception();
             });
 
@@ -945,11 +940,7 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
-
-            var offsetMin = -offset;
-            var offsetMax = offset;
-            AssertionUtils.AreNearlyEqual(offsetMin, self.AnchorOffsetMin, EPSILON);
-            AssertionUtils.AreNearlyEqual(offsetMax, self.AnchorOffsetMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
         }
         #endregion
 
@@ -974,14 +965,20 @@ namespace Hinode.Layouts.Tests
                 var offsetMax = Vector3.one * 20;
                 self.UpdateLocalSizeWithAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
 
+                {
+                    var (min, max) = self.AnchorOffsetMinMax();
+                    Debug.Log($"pass localSize={self.LocalSize} offset={min},{max}");
+                }
+
                 parent.SetLocalSize(Vector3.one * 20f); // <- test point
 
                 var errorMessage = $"AnchorMin/Max, AnchorOffsetMin/MaxはParentの領域に追従してSelfの領域が変更されても変更されないようにしてください。";
-                Assert.AreEqual(parent.LocalSize + self.AnchorOffsetMin + self.AnchorOffsetMax, self.LocalSize, errorMessage);
-                Assert.AreEqual(Vector3.zero, self.AnchorMin);
-                Assert.AreEqual(Vector3.one, self.AnchorMax);
-                AssertionUtils.AreNearlyEqual(offsetMin, self.AnchorOffsetMin);
-                AssertionUtils.AreNearlyEqual(offsetMax, self.AnchorOffsetMax);
+                var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(parent.LocalSize + offsetMin + offsetMax, self.LocalSize, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.zero, self.AnchorMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.one, self.AnchorMax, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
             }
         }
         #endregion

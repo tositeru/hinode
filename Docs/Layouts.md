@@ -52,9 +52,57 @@ Layout計算を行う際には親の基準領域からはみ出さないよう�
 
 以下の種類が標準に提供されています。
 
-- LayoutTarget2D: 2Dオブジェクトを表す`ILayoutTarget`.
-- LayoutTarget3D: 2Dオブジェクトを表す`ILayoutTarget`.
+- LayoutTargetObject
 
+#### ILayoutTargetのプロパティについて
+
+ILayoutTargetのプロパティは以下のような意味合いを持ちます。
+
+```
+//    (AnchorAreaSize)
+//    <-     v     ->
+//   |   AnchorArea  |
+// --a--OI---O--o----A--OA--
+//      |   LocalArea   |
+//       <- LocalSize ->
+```
+- AnchorArea: 親領域と関連付けされるAnchorの領域。 ILayoutTargetExtensions#AnchorAreaSizeで取得できます。
+- LocalArea: AnchorAreaにOffsetを追加した領域。こちらが自身の領域となります。
+- O: 中心. Parentが設定されている場合はその中央になります。
+- o: 中心からのOffset
+- a: anchorMin
+- A: anchorMax			ILayoutTarget#AnchorMax
+- OI: 中心からのOffset - 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
+- OA: 中心からのOffset + 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
+
+上の図とプロパティとの対応は以下のものになります。
+
+- Offset: o
+- AnchorMin: a
+- AnchorMax: A
+- LocalSize: LocalSize
+- LocalPos: Offsetを原点とした時の位置になります。
+
+ILayoutTargetのプロパティではありませんが、関連するパラメータとして以下のものがあります。
+
+- AnchorOffsetMin: (a - OI). ILayoutTargetExtensions#AnchorOffsetMinMax()で取得できます。
+- AnchorOffsetMax: (A - OA). ILayoutTargetExtensions#AnchorOffsetMinMax()で取得できます。
+- AnchorAreaSize: ILayoutTargetExtensions#AnchorAreaSize()で取得できます。
+
+AnchorOffsetMin/Maxの符号はそれぞれOから見てa/Aより外側が+になります。
+
+```
+// figure.1 AnchorMin/MaxとOffsetの関係
+///     + | - <- AnchorOffsetMin
+/// --m---a--o-O----M-A--
+///               - | + <- AnchorOffsetMax
+/// O: 原点
+/// o: Offset
+/// a: AnchorMin
+/// A: AnchorMax
+/// m: LocalAreaMin
+/// M: LocalAreaMax
+```
 
 ### LayoutManager
 

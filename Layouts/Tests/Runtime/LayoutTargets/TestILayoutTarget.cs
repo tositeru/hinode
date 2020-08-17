@@ -14,7 +14,8 @@ namespace Hinode.Layouts.Tests
     /// </summary>
     public class TestILayoutTarget
     {
-        readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON = LayoutDefines.NUMBER_PRECISION;
+        static readonly float EPSILON_POS = LayoutDefines.POS_NUMBER_PRECISION;
 
         class SetLocalSizeABTestParam : IABTest
         {
@@ -151,7 +152,7 @@ namespace Hinode.Layouts.Tests
                 (new Vector3(10, 8, 6), new Vector3(0, 0.1f, 0.2f), new Vector3(1, 0.9f, 0.8f), new Vector3(10, 10, 10)),
             };
 
-            foreach(var data in testData)
+            foreach (var data in testData)
             {
                 var errorMessage = $"Fail test... testData=>{data}";
                 var self = new LayoutTargetObject();
@@ -267,6 +268,90 @@ namespace Hinode.Layouts.Tests
                 string tag,
                 Vector3 correctMin,
                 Vector3 correctMax,
+                Vector3 localSize,
+                Vector3 offsetMin,
+                Vector3 offsetMax)[]
+            {
+                ("Normal Case", new Vector3(-1, -1, -1), new Vector3(2, 2, 2), Vector3.one * 10, Vector3.one * 1, Vector3.one * 2),
+                ("Minus OffsetMin Case", new Vector3(1, 1, 1), new Vector3(2, 2, 2), Vector3.one * 10, Vector3.one * -1, Vector3.one * 2),
+                ("Minus OffsetMax Case", new Vector3(-2, -2, -2), new Vector3(-1, -1, -1), Vector3.one * 10, Vector3.one * 2, Vector3.one * -1),
+                ("LocalSize Lower than 0 Case", Vector3.zero, Vector3.zero, Vector3.one * 10, Vector3.one * -100, Vector3.one * -100),
+            };
+
+            foreach (var data in testData)
+            {
+                var errorMessage = $"Fail test... testData=>{data}";
+                var self = new LayoutTargetObject();
+                self.SetLocalSize(data.localSize);
+
+                var parent = new LayoutTargetObject();
+                self.SetParent(parent);
+                var anchorPoint = Vector3.one * 0.5f;
+                self.UpdateLocalSizeWithAnchorParam(anchorPoint, anchorPoint, data.offsetMin, data.offsetMax);
+                Assert.AreEqual(LayoutTargetAnchorMode.Point, self.AnchorMode(), $"AnchorMode Must be Point!! {errorMessage}");
+
+                //AnchorAreaからのoffset値なのでLocalSizeの影響は無いようにしてください。
+                var (min, max) = self.LocalAreaMinMaxPos();
+                AssertionUtils.AreNearlyEqual(data.correctMin, min, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(data.correctMax, max, EPSILON, errorMessage);
+
+                //LocalSizeは変更されるかもしれません。
+                var localSize = Vector3.Max(Vector3.zero, data.offsetMax + data.offsetMin);
+                AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON, errorMessage);
+            }
+        }
+
+        /// <summary>
+		/// <seealso cref="ILayoutTargetExtensions.LocalAreaMinMaxPos(ILayoutTarget)"/>
+        /// </summary>
+        [Test, Description("AnchorMode == Areaの時のテスト")]
+        public void LocalAreaMinMaxPosWhenAreaModePasses()
+        {
+            var testData = new (
+                string tag,
+                Vector3 correctMin,
+                Vector3 correctMax,
+                Vector3 anchorMin,
+                Vector3 anchorMax,
+                Vector3 offsetMin,
+                Vector3 offsetMax,
+                Vector3 parentSize)[]
+            {
+                ("Plus Offset Case", new Vector3(-3, -5, -7), new Vector3(3, 5, 7), Vector3.zero, Vector3.one, Vector3.one, Vector3.one, new Vector3(4, 8, 12)),
+                ("Minus Offset Case", new Vector3(-1, -3, -5), new Vector3(1, 3, 5), Vector3.zero, Vector3.one, Vector3.one * -1, Vector3.one * -1, new Vector3(4, 8, 12)),
+                ("Variant AnchorMin/Max for Each Element Case ", new Vector3(-11, -9, -7), new Vector3(12, 10, 8), new Vector3(0, 0.1f, 0.2f), new Vector3(1, 0.9f, 0.8f), Vector3.one, Vector3.one*2, new Vector3(20, 20, 20)),
+                ("LocalSize Lower than 0 Case", new Vector3(-2, -2, -2), new Vector3(4, 4, 4), Vector3.zero, Vector3.one, Vector3.one*2, Vector3.one*4, new Vector3(-10, -200, -300)), // Case LocalSize Lower than 0.
+            };
+
+            foreach (var data in testData)
+            {
+                var errorMessage = $"Fail test... testData=>{data}";
+                var self = new LayoutTargetObject();
+
+                var parent = new LayoutTargetObject();
+                parent.SetLocalSize(data.parentSize);
+                self.SetParent(parent);
+                self.UpdateLocalSizeWithAnchorParam(data.anchorMin, data.anchorMax, data.offsetMin, data.offsetMax);
+                Assert.AreEqual(LayoutTargetAnchorMode.Area, self.AnchorMode(), $"AnchorMode Must be Area!! {errorMessage}");
+
+                var (min, max) = self.LocalAreaMinMaxPos();
+                AssertionUtils.AreNearlyEqual(data.correctMin, min, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(data.correctMax, max, EPSILON, errorMessage);
+            }
+        }
+        #endregion
+
+        #region AnchorOffsetMinMax
+        /// <summary>
+		/// <seealso cref="ILayoutTargetExtensions.AnchorOffsetMinMax(ILayoutTarget)"/>
+        /// </summary>
+        [Test, Description("AnchorMode == Pointの時のテスト")]
+        public void AnchorOffsetMinMaxWhenPointModePasses()
+        {
+            var testData = new (
+                string tag,
+                Vector3 correctMin,
+                Vector3 correctMax,
                 Vector3 offsetMin,
                 Vector3 offsetMax)[]
             {
@@ -294,10 +379,10 @@ namespace Hinode.Layouts.Tests
         }
 
         /// <summary>
-		/// <seealso cref="ILayoutTargetExtensions.LocalAreaMinMaxPos(ILayoutTarget)"/>
+		/// <seealso cref="ILayoutTargetExtensions.AnchorOffsetMinMax(ILayoutTarget)"/>
         /// </summary>
         [Test, Description("AnchorMode == Areaの時のテスト")]
-        public void LocalAreaMinMaxPosWhenAreaModePasses()
+        public void AnchorOffsetMinMaxWhenAreaModePasses()
         {
             var testData = new (
                 string tag,
@@ -375,42 +460,20 @@ namespace Hinode.Layouts.Tests
             {
                 var anchorMin = _self.AnchorMin;
                 var anchorMax = _self.AnchorMax;
+                var offset = _self.Offset;
 
                 var anchorLocalSize = _parent.LocalSize.Mul(_self.AnchorMax - _self.AnchorMin);
-                var anchorMinPos = -(anchorLocalSize * 0.5f + _self.AnchorOffsetMin);
-                var anchorMaxPos = anchorLocalSize * 0.5f + _self.AnchorOffsetMax;
-                var anchorCenterPos = (anchorMaxPos + anchorMinPos) * 0.5f;
-
-                var localMinPos = anchorCenterPos - _localSize * 0.5f;
-                var localMaxPos = anchorCenterPos + _localSize * 0.5f;
 
                 _self.SetParent(_parent);
-                Debug.Log($"test-- anchorMinPos={anchorMinPos} anchorMaxPos={anchorMaxPos} anchorCenterPos={anchorCenterPos}");
-                Debug.Log($"test-- localSize={_localSize} localMinPos={localMinPos} localMaxPos={localMaxPos}");
                 _self.SetLocalSize(_localSize);
 
-                Vector3 offsetMin, offsetMax;
-                switch (_self.AnchorMode())
-                {
-                    case LayoutTargetAnchorMode.Point:
-                        offsetMin = -1 * localMinPos;
-                        offsetMax = localMaxPos;
-                        break;
-                    case LayoutTargetAnchorMode.Area:
-                        offsetMin = -1 * (localMinPos + anchorLocalSize * 0.5f);
-                        offsetMax = (localMaxPos - anchorLocalSize * 0.5f);
-                        break;
-                    default:
-                        throw new System.NotImplementedException();
-                }
-                AssertionUtils.AreNearlyEqual(offsetMin, _self.AnchorOffsetMin, EPSILON);
-                AssertionUtils.AreNearlyEqual(offsetMax, _self.AnchorOffsetMax, EPSILON);
-                Debug.Log($"Success to Caluculate anchorOffsetMin/Max! offsetMin={offsetMin}, offsetMax{offsetMax}");
-
                 AssertionUtils.AreNearlyEqual(_localSize, _self.LocalSize, EPSILON);
+                Debug.Log($"Success to Set LocalSize! localSize={_localSize}");
+
                 AssertionUtils.AreNearlyEqual(anchorMin, _self.AnchorMin, EPSILON);
                 AssertionUtils.AreNearlyEqual(anchorMax, _self.AnchorMax, EPSILON);
-                Debug.Log($"Success not to Change Values(anchorMin/Max localSize)!!");
+                AssertionUtils.AreNearlyEqual(offset, _self.Offset, EPSILON);
+                Debug.Log($"Success not to Change Values(anchorMin/Max Offset)!!");
             };
 
             {
@@ -435,6 +498,62 @@ namespace Hinode.Layouts.Tests
 
                 var localSize = Vector3.one * 10f;
                 validateFunc(self, parent, localSize);
+            }
+            Debug.Log($"Success to Anchor Area Mode!");
+        }
+
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.SetOffset(ILayoutTarget, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.LocalSize"/>
+        /// <seealso cref="LayoutTargetObject.AnchorMin"/>
+        /// <seealso cref="LayoutTargetObject.AnchorMax"/>
+        /// <seealso cref="LayoutTargetObject.Offset"/>
+        /// </summary>
+        [Test, Description("テスト用にLayoutTargetObjectを使用しています。")]
+        public void SetOffsetPasses()
+        {
+            System.Action<LayoutTargetObject, LayoutTargetObject, Vector3> validateFunc = (_self, _parent, _offset) =>
+            {
+                var anchorMin = _self.AnchorMin;
+                var anchorMax = _self.AnchorMax;
+                var localSize = _self.LocalSize;
+
+                var anchorLocalSize = _parent.LocalSize.Mul(_self.AnchorMax - _self.AnchorMin);
+
+                _self.SetParent(_parent);
+                _self.SetOffset(_offset);
+
+                AssertionUtils.AreNearlyEqual(_offset, _self.Offset, EPSILON);
+                Debug.Log($"Success to Set Offset! offset={_offset}");
+
+                AssertionUtils.AreNearlyEqual(anchorMin, _self.AnchorMin, EPSILON);
+                AssertionUtils.AreNearlyEqual(anchorMax, _self.AnchorMax, EPSILON);
+                AssertionUtils.AreNearlyEqual(localSize, _self.LocalSize, EPSILON);
+                Debug.Log($"Success not to Change Values(anchorMin/Max LocalSize)!!");
+            };
+
+            {
+                var self = new LayoutTargetObject();
+                var anchorPos = Vector3.one * 0.5f;
+                self.UpdateLocalSizeWithAnchorParam(anchorPos, anchorPos, Vector3.one * 10f, Vector3.one * 20f);
+
+                var parent = new LayoutTargetObject();
+                parent.SetLocalSize(new Vector3(100, 100, 100));
+
+                var offset = Vector3.one * 10f;
+                validateFunc(self, parent, offset);
+            }
+            Debug.Log($"Success to Anchor Point Mode!");
+
+            {
+                var self = new LayoutTargetObject();
+                self.UpdateLocalSizeWithAnchorParam(Vector3.zero, Vector3.one, Vector3.one * 10f, Vector3.one * 20f);
+
+                var parent = new LayoutTargetObject();
+                parent.SetLocalSize(new Vector3(100, 100, 100));
+
+                var offset = Vector3.one * 10f;
+                validateFunc(self, parent, offset);
             }
             Debug.Log($"Success to Anchor Area Mode!");
         }
