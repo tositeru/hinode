@@ -7,8 +7,8 @@ namespace Hinode.Layouts
     /// <summary>
     /// 2D空間のオフセットを表すクラス
     /// 以下の単位を指定できます。
-    /// - Pixel
-    /// - Ratio
+    /// - Pixel: ピクセル
+    /// - Ratio: 比率.どの値に対応した比率かは使用側に依存します。
     /// <seealso cref="Hinode.Layouts.Tests.TestLayoutOffset"/>
     /// </summary>
     [System.Serializable]

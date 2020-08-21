@@ -308,3 +308,9 @@ helper.OnAdded.Add((addedValue) => ...);
 helper.OnRemoved.Add((removedValue) => ...);
 helper.OnCleared.Add(() => ...);
 ```
+### Math
+
+Hinodeでは以下の数学ライブラリを用意しています。
+
+- フーリエ変換
+- IndexCombinationEnumerable: 指定した長さの配列に対する添字の全ての組み合わせを列挙するEnumerable
