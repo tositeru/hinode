@@ -62,10 +62,17 @@ namespace Hinode.Layouts
 
         public virtual void Dispose()
         {
-            _onDisposed.Instance?.Invoke(this);
+            try
+            {
+                _onDisposed.Instance?.Invoke(this);
+            }
+            catch(System.Exception e)
+            {
+                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#OnDisposed {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
+            }
             _onDisposed.Clear();
 
-            Target?.OnDisposed.Remove(AutoRemoveTarget);
+            Target = null;
         }
 
         #region ILayout interface
