@@ -15,9 +15,6 @@ namespace Hinode.Layouts.Tests
     {
         class TestLayout : LayoutBase
         {
-            public override bool DoChanged { get; }
-            public override Vector3 UnitSize { get; }
-
             public override void UpdateUnitSize()
             { }
 

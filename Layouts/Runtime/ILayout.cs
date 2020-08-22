@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Hinode.Layouts
 {
     public delegate void ILayoutOnDisposed(ILayout self);
+    public delegate void ILayoutOnChanged(ILayout self, bool doChanged);
 
     /// <summary>
 	/// <seealso cref="ILayoutTarget"/>
@@ -13,6 +14,7 @@ namespace Hinode.Layouts
     public interface ILayout : System.IDisposable
     {
         NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get;}
+        NotInvokableDelegate<ILayoutOnChanged> OnChanged { get; }
 
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
@@ -33,7 +35,11 @@ namespace Hinode.Layouts
 	/// </summary>
     public abstract class LayoutBase : ILayout
     {
+        virtual protected void InnerOnChangedTarget(ILayoutTarget current, ILayoutTarget prev) { }
+        virtual protected void InnerOnChanged(bool doChanged) { }
+
         SmartDelegate<ILayoutOnDisposed> _onDisposed = new SmartDelegate<ILayoutOnDisposed>();
+        protected SmartDelegate<ILayoutOnChanged> _onChanged = new SmartDelegate<ILayoutOnChanged>();
 
         ILayoutTarget _target;
         public ILayoutTarget Target
@@ -41,6 +47,7 @@ namespace Hinode.Layouts
             get => _target;
             set
             {
+                var prev = _target;
                 if(_target != null)
                 {
                     _target.OnDisposed.Remove(AutoRemoveTarget);
@@ -50,6 +57,8 @@ namespace Hinode.Layouts
                 {
                     _target.OnDisposed.Add(AutoRemoveTarget);
                 }
+                DoChanged = _target != prev;
+                InnerOnChangedTarget(_target, prev);
             }
         }
 
@@ -76,10 +85,43 @@ namespace Hinode.Layouts
         }
 
         #region ILayout interface
-        public NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get => _onDisposed; }
+        bool _doChanged = false;
+        Vector3 _unitSize;
 
-        public abstract bool DoChanged { get; }
-        public abstract Vector3 UnitSize { get; }
+        public NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get => _onDisposed; }
+        public NotInvokableDelegate<ILayoutOnChanged> OnChanged { get => _onChanged; }
+
+        public bool DoChanged
+        {
+            get => _doChanged;
+            protected set
+            {
+                if (_doChanged == value) return;
+                _doChanged = value;
+
+                try
+                {
+                    InnerOnChanged(_doChanged);
+                    _onChanged.Instance?.Invoke(this, _doChanged);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#DoChanged {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
+                }
+            }
+        }
+
+        /// <summary>
+        /// このプロパティを変更してもDoChangedに影響は与えませんので注意してください。
+        /// </summary>
+        public Vector3 UnitSize
+        {
+            get => _unitSize;
+            protected set
+            {
+                _unitSize = value;
+            }
+        }
 
         public abstract void UpdateUnitSize();
         public abstract void UpdateLayout();
