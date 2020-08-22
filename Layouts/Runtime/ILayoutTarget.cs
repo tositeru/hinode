@@ -21,6 +21,7 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedChildren(ILayoutTarget self, ILayoutTarget child, ILayoutTargetOnChangedChildMode mode);
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
+	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
 
 	/// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
@@ -99,8 +100,9 @@ namespace Hinode.Layouts
         NotInvokableDelegate<ILayoutTargetOnChangedChildren> OnChangedChildren { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
 
-        ILayoutTarget Parent { get; }
+		ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }
         int ChildCount { get; }
 

@@ -17,6 +17,7 @@ namespace Hinode.Layouts
         SmartDelegate<ILayoutTargetOnChangedChildren> _onChangedChildren = new SmartDelegate<ILayoutTargetOnChangedChildren>();
         SmartDelegate<ILayoutTargetOnChangedLocalPos> _onChangedLocalPos = new SmartDelegate<ILayoutTargetOnChangedLocalPos>();
         SmartDelegate<ILayoutTargetOnChangedLocalSize> _onChangedLocalSize = new SmartDelegate<ILayoutTargetOnChangedLocalSize>();
+        SmartDelegate<ILayoutTargetOnChangedOffset> _onChangedOffset = new SmartDelegate<ILayoutTargetOnChangedOffset>();
 
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
@@ -104,6 +105,7 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedChildren> OnChangedChildren { get => _onChangedChildren; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get => _onChangedLocalPos; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get => _onChangedLocalSize; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get => _onChangedOffset; }
 
         public ILayoutTarget Parent { get => _parent; }
         public IEnumerable<ILayoutTarget> Children { get => _children; }
@@ -166,6 +168,7 @@ namespace Hinode.Layouts
         {
             NormalizeAnchorPos(ref anchorMin, ref anchorMax);
             var prevLocalSize = LocalSize;
+            var prevOffset = Offset;
 
             var anchorAreaSize = this.ParentLocalSize().Mul(anchorMax - anchorMin);
             _localSize = anchorAreaSize + offsetMin + offsetMax;
@@ -180,12 +183,14 @@ namespace Hinode.Layouts
             _offset = (maxPos + minPos) * 0.5f;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
+            OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
         public void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 anchorMin, Vector3 anchorMax, Vector3 offset)
         {
             NormalizeAnchorPos(ref anchorMin, ref anchorMax);
             var prevLocalSize = LocalSize;
+            var prevOffset = Offset;
             localSize = Vector3.Max(localSize, Vector3.zero);
 
             _anchorMin = anchorMin;
@@ -194,6 +199,7 @@ namespace Hinode.Layouts
             _offset = offset;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
+            OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
         void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
@@ -227,13 +233,29 @@ namespace Hinode.Layouts
 
         void OnUpdateLocalSizeWithExceptionCheck(Vector3 prevLocalSize)
         {
+            if (prevLocalSize.AreNearlyEqual(_localSize)) return;
+
             try
             {
                 _onChangedLocalSize.Instance?.Invoke(this, prevLocalSize);
             }
             catch (System.Exception e)
             {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Update UpdateLocalSize: {e.Message}", LayoutDefines.LOG_SELECTOR);
+                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Update LocalSize: {e.Message}", LayoutDefines.LOG_SELECTOR);
+            }
+        }
+
+        void OnUpdateOffsetWithExceptionCheck(Vector3 prevOffset)
+        {
+            if (prevOffset.AreNearlyEqual(_offset)) return;
+
+            try
+            {
+                _onChangedOffset.Instance?.Invoke(this, prevOffset);
+            }
+            catch (System.Exception e)
+            {
+                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Update Offset: {e.Message}", LayoutDefines.LOG_SELECTOR);
             }
         }
         #endregion

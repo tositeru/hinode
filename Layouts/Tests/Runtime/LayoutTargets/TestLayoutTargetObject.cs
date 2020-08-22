@@ -804,6 +804,38 @@ namespace Hinode.Layouts.Tests
         }
 
         /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedLocalSizeInUpdateLocalSizeWithAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var prevLocalSize = self.LocalSize;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            {
+                var callCounter = 0;
+                self.OnChangedLocalSize.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change LocalSize
+                self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
 		/// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
@@ -816,6 +848,101 @@ namespace Hinode.Layouts.Tests
             self.SetParent(parent);
 
             self.OnChangedLocalSize.Add((_self, __) => {
+                throw new System.Exception();
+            });
+
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            var localSize = parent.LocalSize.Mul(anchorMax - anchorMin) + (offsetMin + offsetMax);
+            AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
+
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedOffsetコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenNotChangeOffsetPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var prevLocalSize = self.LocalSize;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            {
+                var callCounter = 0;
+                self.OnChangedOffset.Add((_self, __) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change Offset
+                var offset = Vector3.one * 1f;
+                self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin + offset, offsetMax + offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevOffset) recievedData = default;
+            self.OnChangedOffset.Add((_self, _prevOffset) => {
+                callCounter++;
+                recievedData = (_self, _prevOffset);
+            });
+
+            var prevOffset = self.Offset;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevOffset, recievedData.prevOffset);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenThrowExcptionPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            self.OnChangedOffset.Add((_self, __) => {
                 throw new System.Exception();
             });
 
@@ -941,6 +1068,130 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
             AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedLocalSizeInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            {
+                var callCounter = 0;
+                self.OnChangedLocalSize.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change LocalSize
+                self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevOffset) recievedData = default;
+            self.OnChangedOffset.Add((_self, _prevOffset) => {
+                callCounter++;
+                recievedData = (_self, _prevOffset);
+            });
+
+            var prevOffset = self.Offset;
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevOffset, recievedData.prevOffset);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenThrowExcptionPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            self.OnChangedOffset.Add((_self, __) => {
+                throw new System.Exception();
+            });
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
+
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalOffset"/>
+        /// </summary>
+        [Test, Description("LocalOffsetが変更されないケースでOnChangedLocalOffsetコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            {
+                var callCounter = 0;
+                self.OnChangedOffset.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change Offset
+                self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
         }
         #endregion
 

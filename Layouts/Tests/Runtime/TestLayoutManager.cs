@@ -23,9 +23,7 @@ namespace Hinode.Layouts.Tests
             public int CallUpdateUnitSizeCounter { get; private set; }
             public int CallUpdateLayoutCounter { get; private set; }
 
-            bool _doChanged = false;
-            public override bool DoChanged { get => _doChanged; }
-            public void SetDoChanged(bool doChanged) => _doChanged = doChanged;
+            public void SetDoChanged(bool doChanged) => DoChanged = doChanged;
 
             public override void UpdateUnitSize()
             {
@@ -36,11 +34,6 @@ namespace Hinode.Layouts.Tests
             {
                 CallUpdateLayoutCounter++;
             }
-
-            #region ILayout interface
-            Vector3 _unitSize = default;
-            public override Vector3 UnitSize { get => _unitSize; }
-            #endregion
         }
 
         /// <summary>
