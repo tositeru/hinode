@@ -55,7 +55,7 @@ namespace Hinode
                 if (Equals(_v, value)) return;
                 _v = value;
                 _didUpdated = true;
-                _onChangedValueDelegate.Instance?.Invoke(_v);
+                _onChangedValueDelegate.SafeDynamicInvoke(_v, () => $"UpdateObserver#Value");
             }
         }
         public object RawValue

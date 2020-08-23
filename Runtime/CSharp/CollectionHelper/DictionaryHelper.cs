@@ -82,14 +82,7 @@ namespace Hinode
                 bool doChangedCount = InnerAdd(key, value);
                 if (doChangedCount)
                 {
-                    try
-                    {
-                        _onChangedCount.Instance?.Invoke(this, Count);
-                    }
-                    catch (System.Exception e)
-                    {
-                        Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Indexers[{key}]: {e.Message}");
-                    }
+                    _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Indexers[{key}]");
                 }
             }
         }
@@ -98,14 +91,7 @@ namespace Hinode
         {
             if (InnerAdd(key, value))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Add({key})");
             }
             return this;
         }
@@ -122,14 +108,7 @@ namespace Hinode
 
             if (doChangedCount)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Add Items");
             }
             return this;
         }
@@ -143,28 +122,14 @@ namespace Hinode
         {
             if(ContainsKey(key))
             {
-                try
-                {
-                    _onSwaped.Instance?.Invoke(key, _field[key], value);
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Add: {e.Message}");
-                }
+                _onSwaped.SafeDynamicInvoke(key, _field[key], value, () => $"DictionaryHelper#Swap Add({key})");
                 _field[key] = value;
                 return false;
             }
             else
             {
                 _field.Add(key, value);
-                try
-                {
-                    _onAdded.Instance?.Invoke(key, value);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Add: {e.Message}");
-                }
+                _onAdded.SafeDynamicInvoke(key, value, () => $"DictionaryHelper#Add({key})");
                 return true;
             }
         }
@@ -173,14 +138,7 @@ namespace Hinode
         {
             if(InnerRemove(key))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Remove: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Remove({key})");
             }
             return this;
         }
@@ -197,14 +155,7 @@ namespace Hinode
 
             if (doChangedCount)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Remove: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Remove Items");
             }
             return this;
         }
@@ -213,14 +164,7 @@ namespace Hinode
         {
             if(!ContainsKey(key)) return false;
 
-            try
-            {
-                _onRemoved.Instance?.Invoke(key, _field[key]);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Remove: {e.Message}");
-            }
+            _onRemoved.SafeDynamicInvoke(key, _field[key], () => $"DictionaryHelper#Remove({key})");
 
             _field.Remove(key);
             return true;
@@ -232,35 +176,14 @@ namespace Hinode
 
             foreach(var t in TupleItems)
             {
-                try
-                {
-                    _onRemoved.Instance?.Invoke(t.key, t.value);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Clear: {e.Message}");
-                }
+                _onRemoved.SafeDynamicInvoke(t.key, t.value, () => $"DictionaryHelper#Clear Remove({t.key})");
             }
 
             _field.Clear();
 
-            try
-            {
-                _onCleared.Instance?.Invoke();
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Remove: {e.Message}");
-            }
+            _onCleared.SafeDynamicInvoke(() => $"DictionaryHelper#Clear");
 
-            try
-            {
-                _onChangedCount.Instance?.Invoke(this, Count);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! DictionaryHelper#Remove: {e.Message}");
-            }
+            _onChangedCount.SafeDynamicInvoke(this, Count, () => $"DictionaryHelper#Clear");
             return this;
         }
 

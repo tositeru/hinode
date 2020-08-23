@@ -53,7 +53,7 @@ namespace Hinode
             if (!_didUpdated) return false;
 
             _currentValue = v;
-            _onChangedValueDelegate.Instance?.Invoke(_currentValue);
+            _onChangedValueDelegate.SafeDynamicInvoke(_currentValue, () => $"PredicateUpdateObserver#Update");
             return true;
         }
 

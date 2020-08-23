@@ -51,14 +51,7 @@ namespace Hinode
         {
             if(InnerAdd(item))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"HashSetHelper#Add");
             }
             return this;
         }
@@ -75,14 +68,7 @@ namespace Hinode
 
             if(isAdd)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"HashSetHelper#Add");
             }
             return this;
         }
@@ -94,14 +80,7 @@ namespace Hinode
 
             _field.Add(item);
 
-            try
-            {
-                _onAdded.Instance?.Invoke(item);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Add: {e.Message}");
-            }
+            _onAdded.SafeDynamicInvoke(item, () => $"HashSetHelper#Add");
             return true;
         }
 
@@ -109,14 +88,7 @@ namespace Hinode
         {
             if (InnerRemove(item))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Remove: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"HashSetHelper#Remove");
             }
             return this;
         }
@@ -133,14 +105,7 @@ namespace Hinode
 
             if(isRemove)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Remove: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"HashSetHelper#Remove");
             }
 
             return this;
@@ -153,14 +118,7 @@ namespace Hinode
 
             _field.Remove(item);
 
-            try
-            {
-                _onRemoved.Instance?.Invoke(item);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Remove: {e.Message}");
-            }
+            _onRemoved.SafeDynamicInvoke(item, () => $"HashSetHelper#Remove");
             return true;
         }
 
@@ -177,23 +135,9 @@ namespace Hinode
 
             if(isRemove)
             {
-                try
-                {
-                    _onCleared.Instance?.Invoke();
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Clear: {e.Message}");
-                }
+                _onCleared.SafeDynamicInvoke(() => $"HashSetHelper#Clear");
 
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, 0);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! HashSetHelper#Clear: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, 0, () => $"HashSetHelper#Clear");
             }
             return this;
         }
