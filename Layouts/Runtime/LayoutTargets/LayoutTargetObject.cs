@@ -21,6 +21,7 @@ namespace Hinode.Layouts
 
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
+        ListHelper<ILayout> _layouts = new ListHelper<ILayout>();
 
         Vector3 _localPos;
 
@@ -32,25 +33,33 @@ namespace Hinode.Layouts
         public LayoutTargetObject()
         {
             _children.OnAdded.Add(_child => {
-                try
-                {
-                    _onChangedChildren.Instance?.Invoke(this, _child, ILayoutTargetOnChangedChildMode.Add);
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Add Child: {e.Message}", LayoutDefines.LOG_SELECTOR);
-                }
+                _onChangedChildren.SafeDynamicInvoke(this, _child, ILayoutTargetOnChangedChildMode.Add, () => $"LayoutTargetObject#Add Child", LayoutDefines.LOG_SELECTOR);
             });
             _children.OnRemoved.Add(_child => {
-                try
-                {
-                    _onChangedChildren.Instance?.Invoke(this, _child, ILayoutTargetOnChangedChildMode.Remove);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Remove Child: {e.Message}", LayoutDefines.LOG_SELECTOR);
-                }
+                _onChangedChildren.SafeDynamicInvoke(this, _child, ILayoutTargetOnChangedChildMode.Remove, () => $"LayoutTargetObject#Remove Child", LayoutDefines.LOG_SELECTOR);
             });
+
+            _layouts.OnAdded.Add((_item, _index) => {
+                if (_item == null) return;
+                _item.OnDisposed.Add(LayoutOnDisposed);
+                _item.OnChangedOperationPriority.Add(LayoutOnChangedOperationPriority);
+                _layouts.Sort(ILayoutDefaultComparer.Default);
+            });
+            _layouts.OnRemoved.Add((_item, _index) => {
+                if (_item == null) return;
+                _item.OnDisposed.Remove(LayoutOnDisposed);
+                _item.OnChangedOperationPriority.Remove(LayoutOnChangedOperationPriority);
+            });
+        }
+
+        void LayoutOnDisposed(ILayout layout)
+        {
+            _layouts.Remove(layout);
+        }
+
+        void LayoutOnChangedOperationPriority(ILayout layout, int prevPriority)
+        {
+            _layouts.Sort(ILayoutDefaultComparer.Default);
         }
 
         public LayoutTargetObject SetParent(LayoutTargetObject parent)
@@ -104,6 +113,8 @@ namespace Hinode.Layouts
         public IEnumerable<ILayoutTarget> Children { get => _children; }
         public int ChildCount { get => _children.Count; }
 
+        public IReadOnlyListHelper<ILayout> Layouts { get => _layouts; }
+
         public Vector3 LocalPos
         {
             get => _localPos;
@@ -150,6 +161,24 @@ namespace Hinode.Layouts
             _onChangedLocalPos.Clear();
             _onChangedLocalSize.Clear();
         }
+
+        public void AddLayout(ILayout layout)
+        {
+            if (_layouts.Contains(layout)) return;
+
+            var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority >=_l.OperationPriority);
+            if(insertIndex != -1)
+                _layouts.InsertTo(insertIndex, layout);
+            else
+                _layouts.Add(layout);
+        }
+
+        public void RemoveLayout(ILayout layout)
+        {
+            if (!_layouts.Contains(layout)) return;
+            _layouts.Remove(layout);
+        }
+
 
         public void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
         {

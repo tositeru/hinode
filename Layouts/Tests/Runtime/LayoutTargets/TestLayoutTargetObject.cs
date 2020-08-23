@@ -717,6 +717,153 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
+        #region Layouts
+        class LayoutClass : LayoutBase
+        {
+            public LayoutClass(int priority)
+            {
+                OperationPriority = priority;
+            }
+
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
+            public override void UpdateLayout() {}
+            public override void UpdateUnitSize() {}
+
+            public override string ToString()
+            {
+                return $"LayoutClass priority={OperationPriority}";
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void AddLayoutPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100),
+                new LayoutClass(200),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach(var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[2],
+                    layoutObjs[0],
+                    layoutObjs[1],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.RemoveLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void RemoveLayoutPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100),
+                new LayoutClass(0),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            layoutTarget.RemoveLayout(layoutObjs[2]); // test point
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[1],
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void ILayoutOnChangedOperationPriorityPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(0),
+                new LayoutClass(100),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            layoutObjs[0].OperationPriority = layoutObjs[1].OperationPriority + 1;
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[2],
+                    layoutObjs[1],
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void AddRemoveLayout_SetCallbacksPasses()
+        {
+            var layoutObjs = new LayoutClass(0);
+            Assert.AreEqual(0, layoutObjs.OnDisposed.RegistedDelegateCount);
+            Assert.AreEqual(0, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+
+            var layoutTarget = new LayoutTargetObject();
+            {
+                layoutTarget.AddLayout(layoutObjs);
+
+                Assert.AreEqual(1, layoutObjs.OnDisposed.RegistedDelegateCount);
+                Assert.AreEqual(1, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+            }
+
+            {
+                layoutTarget.RemoveLayout(layoutObjs);
+                Assert.AreEqual(0, layoutObjs.OnDisposed.RegistedDelegateCount);
+                Assert.AreEqual(0, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+            }
+        }
+
+        #endregion
+
         #region UpdateLocalSizeWithAnchorParam
         /// <summary>
         /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
