@@ -90,14 +90,7 @@ namespace Hinode.Layouts
 
         public virtual void Dispose()
         {
-            try
-            {
-                _onDisposed.Instance?.Invoke(this);
-            }
-            catch(System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#OnDisposed {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
-            }
+            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutBase#OnDisposed", LayoutDefines.LOG_SELECTOR);
             _onDisposed.Clear();
             _onChanged.Clear();
             _onChangedOperationPriority.Clear();
@@ -137,12 +130,12 @@ namespace Hinode.Layouts
                 try
                 {
                     InnerOnChanged(_doChanged);
-                    _onChanged.Instance?.Invoke(this, _doChanged);
                 }
                 catch (System.Exception e)
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#DoChanged {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
                 }
+                _onChanged.SafeDynamicInvoke(this, _doChanged, () => $"LayoutBase#DoChanged", LayoutDefines.LOG_SELECTOR);
             }
         }
 

@@ -71,14 +71,7 @@ namespace Hinode.Layouts
                 _parent.OnChangedLocalSize.Add(ParentOnChangedLocalSize);
             }
 
-            try
-            {
-                _onChangedParent.Instance?.Invoke(this, _parent, prevParent);
-            }
-            catch(System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#SetParent: {e.Message}", LayoutDefines.LOG_SELECTOR);
-            }
+            _onChangedParent.SafeDynamicInvoke(this, _parent, prevParent, () => $"LayoutTargetObject#SetParent", LayoutDefines.LOG_SELECTOR);
             return this;
         }
 
@@ -119,14 +112,7 @@ namespace Hinode.Layouts
                 var prevLocalPos = _localPos;
                 _localPos = value;
 
-                try
-                {
-                    _onChangedLocalPos.Instance?.Invoke(this, prevLocalPos);
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Set LocalPos: {e.Message}", LayoutDefines.LOG_SELECTOR);
-                }
+                _onChangedLocalPos.SafeDynamicInvoke(this, prevLocalPos, () => $"LayoutTargetObject#Set LocalPos", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -156,7 +142,8 @@ namespace Hinode.Layouts
             //_children.Clear();
             SetParent(null);
 
-            _onDisposed.Instance?.Invoke(this);
+            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutTargetObject#Dispose", LayoutDefines.LOG_SELECTOR);
+
             _onDisposed.Clear();
             _onChangedParent.Clear();
             _onChangedChildren.Clear();
@@ -235,28 +222,14 @@ namespace Hinode.Layouts
         {
             if (prevLocalSize.AreNearlyEqual(_localSize)) return;
 
-            try
-            {
-                _onChangedLocalSize.Instance?.Invoke(this, prevLocalSize);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Update LocalSize: {e.Message}", LayoutDefines.LOG_SELECTOR);
-            }
+            _onChangedLocalSize.SafeDynamicInvoke(this, prevLocalSize, () => $"LayoutTargetObject#Update LocalSize", LayoutDefines.LOG_SELECTOR);
         }
 
         void OnUpdateOffsetWithExceptionCheck(Vector3 prevOffset)
         {
             if (prevOffset.AreNearlyEqual(_offset)) return;
 
-            try
-            {
-                _onChangedOffset.Instance?.Invoke(this, prevOffset);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutTargetObject#Update Offset: {e.Message}", LayoutDefines.LOG_SELECTOR);
-            }
+            _onChangedOffset.SafeDynamicInvoke(this, prevOffset, () => $"LayoutTargetObject#Update Offset", LayoutDefines.LOG_SELECTOR);
         }
         #endregion
     }

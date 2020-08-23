@@ -135,14 +135,7 @@ namespace Hinode.Layouts
 
         void InvokeOnChangedValue(ValueKind kinds)
         {
-            try
-            {
-                _onChangedValue.Instance?.Invoke(this, kinds);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutOffset#OnChangedValue valueKinds={kinds}{System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
-            }
+            _onChangedValue.SafeDynamicInvoke(this, kinds, () => $"LayoutOffset#OnChangedValue valueKinds={kinds}", LayoutDefines.LOG_SELECTOR);
         }
     }
 }
