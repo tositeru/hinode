@@ -6,6 +6,18 @@ namespace Hinode.Layouts
 {
     public delegate void ILayoutOnDisposed(ILayout self);
     public delegate void ILayoutOnChanged(ILayout self, bool doChanged);
+    public delegate void ILayoutOnChangedOperationPriority(ILayout self, int prevPriority);
+
+    /// <summary>
+    /// Layoutの処理対象となるものを表すenum
+    /// </summary>
+    [System.Flags]
+    public enum LayoutOperationTarget
+    {
+        Self,
+        Children,
+        Parent,
+    }
 
     /// <summary>
 	/// <seealso cref="ILayoutTarget"/>
@@ -15,10 +27,14 @@ namespace Hinode.Layouts
     {
         NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get;}
         NotInvokableDelegate<ILayoutOnChanged> OnChanged { get; }
+        NotInvokableDelegate<ILayoutOnChangedOperationPriority> OnChangedOperationPriority { get; }
 
+        int OperationPriority { get; set; }
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
         Vector3 UnitSize { get; }
+
+        LayoutOperationTarget OperationTargetFlags { get; }
 
         void UpdateUnitSize();
         void UpdateLayout();
@@ -40,6 +56,9 @@ namespace Hinode.Layouts
 
         SmartDelegate<ILayoutOnDisposed> _onDisposed = new SmartDelegate<ILayoutOnDisposed>();
         protected SmartDelegate<ILayoutOnChanged> _onChanged = new SmartDelegate<ILayoutOnChanged>();
+        SmartDelegate<ILayoutOnChangedOperationPriority> _onChangedOperationPriority = new SmartDelegate<ILayoutOnChangedOperationPriority>();
+
+        [SerializeField] int _operationPriority = 0;
 
         ILayoutTarget _target;
         public ILayoutTarget Target
@@ -80,6 +99,8 @@ namespace Hinode.Layouts
                 Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#OnDisposed {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
             }
             _onDisposed.Clear();
+            _onChanged.Clear();
+            _onChangedOperationPriority.Clear();
 
             Target = null;
         }
@@ -90,6 +111,20 @@ namespace Hinode.Layouts
 
         public NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get => _onDisposed; }
         public NotInvokableDelegate<ILayoutOnChanged> OnChanged { get => _onChanged; }
+        public NotInvokableDelegate<ILayoutOnChangedOperationPriority> OnChangedOperationPriority { get => _onChangedOperationPriority; }
+
+        public int OperationPriority
+        {
+            get => _operationPriority;
+            set
+            {
+                if (_operationPriority == value) return;
+                var prevPriority = _operationPriority;
+                _operationPriority = value;
+
+                _onChangedOperationPriority.SafeDynamicInvoke(this, prevPriority, () => $"LayoutBase#OnChangedOperationPriority", LayoutDefines.LOG_SELECTOR);
+            }
+        }
 
         public bool DoChanged
         {
@@ -122,6 +157,8 @@ namespace Hinode.Layouts
                 _unitSize = value;
             }
         }
+
+        public abstract LayoutOperationTarget OperationTargetFlags { get; }
 
         public abstract void UpdateUnitSize();
         public abstract void UpdateLayout();

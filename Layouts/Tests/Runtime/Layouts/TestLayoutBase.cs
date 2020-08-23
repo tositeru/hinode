@@ -41,12 +41,93 @@ namespace Hinode.Layouts.Tests
 
             public int CallCounterOnChanged { get; set; }
             public bool DoChangedOnChanged { get; set; }
+
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
             protected override void InnerOnChanged(bool doChanged)
             {
                 CallCounterOnChanged++;
                 DoChangedOnChanged = doChanged;
             }
         }
+
+        #region OperationPriority Property
+        /// <summary>
+        /// <seealso cref="LayoutBase.OperationPriority"/>
+        /// </summary>
+        [Test]
+        public void OperationPriorityPasses()
+        {
+            var layout = new LayoutClass();
+            layout.OperationPriority = 100;
+            Assert.AreEqual(100, layout.OperationPriority);
+
+            layout.OperationPriority = 101;
+            Assert.AreEqual(101, layout.OperationPriority);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutBase.OperationPriority"/>
+        /// <seealso cref="LayoutBase.OnChangedOperationPriority"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOperationPriorityPasses()
+        {
+            var layout = new LayoutClass();
+
+            int callCounter = 0;
+            (ILayout self, int prevPriority) recievedValues = default;
+            layout.OnChangedOperationPriority.Add((_self, _prev) => {
+                callCounter++;
+                recievedValues.self = _self;
+                recievedValues.prevPriority = _prev;
+            });
+
+            var prevPriority = layout.OperationPriority;
+            layout.OperationPriority = layout.OperationPriority + 1;
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(layout, recievedValues.self);
+            Assert.AreEqual(prevPriority, recievedValues.prevPriority);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutBase.OperationPriority"/>
+        /// <seealso cref="LayoutBase.OnChangedOperationPriority"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOperationPriority_WhenNotChangePasses()
+        {
+            var layout = new LayoutClass();
+
+            int callCounter = 0;
+            layout.OnChangedOperationPriority.Add((_self, _prev) => {
+                callCounter++;
+            });
+
+            layout.OperationPriority = layout.OperationPriority;
+
+            Assert.AreEqual(0, callCounter);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutBase.OperationPriority"/>
+        /// <seealso cref="LayoutBase.OnChangedOperationPriority"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOperationPriority_WhenThrowExceptionPasses()
+        {
+            var layout = new LayoutClass();
+            layout.OnChangedOperationPriority.Add((_self, _prev) => {
+                throw new System.Exception();
+            });
+
+            var value = layout.OperationPriority + 1;
+            layout.OperationPriority = value;
+
+            Assert.AreEqual(value, layout.OperationPriority);
+        }
+        #endregion
 
         #region Target Property
         /// <summary>

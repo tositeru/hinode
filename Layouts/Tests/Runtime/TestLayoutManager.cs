@@ -23,6 +23,8 @@ namespace Hinode.Layouts.Tests
             public int CallUpdateUnitSizeCounter { get; private set; }
             public int CallUpdateLayoutCounter { get; private set; }
 
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
             public void SetDoChanged(bool doChanged) => DoChanged = doChanged;
 
             public override void UpdateUnitSize()

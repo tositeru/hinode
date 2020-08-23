@@ -15,6 +15,8 @@ namespace Hinode.Layouts.Tests
     {
         class TestLayout : LayoutBase
         {
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
             public override void UpdateUnitSize()
             { }
 
