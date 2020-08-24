@@ -14,9 +14,12 @@ namespace Hinode.Layouts
     [System.Flags]
     public enum LayoutOperationTarget
     {
-        Self,
-        Children,
-        Parent,
+        Self_LocalPos = 0x1 << 0,
+        Self_LocalArea = 0x1 << 1,
+        Children_LocalPos = 0x1 << 2,
+        Children_LocalArea = 0x1 << 3,
+        Parent_LocalPos = 0x1 << 4,
+        Parent_LocalArea = 0x1 << 5,
     }
 
     /// <summary>
