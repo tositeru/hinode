@@ -30,14 +30,8 @@ namespace Hinode.Layouts
 
         public void CaluculateLayouts()
         {
-            foreach(var l in Layouts
-                .Where(_l => _l.ContainsTarget() && _l.DoChanged))
-            {
-                l.UpdateUnitSize();
-            }
-
             foreach (var l in Layouts
-                .Where(_l => _l.ContainsTarget()))
+                .Where(_l => _l.ContainsTarget() && _l.Validate()))
             {
                 l.UpdateLayout();
             }

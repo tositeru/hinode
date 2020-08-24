@@ -14,7 +14,6 @@ namespace Hinode.Layouts.Tests
         class LayoutClass : LayoutBase
         {
             bool _doChanged;
-            Vector3 _unitSize;
 
             public void SetDoChanged(bool doChanged)
             {
@@ -25,9 +24,7 @@ namespace Hinode.Layouts.Tests
             {
             }
 
-            public override void UpdateUnitSize()
-            {
-            }
+            public override bool Validate() => true;
 
             public int CallCounterOnChangedTarget { get; set; }
             public ILayoutTarget CurrentOnChangedTarget { get; set;}

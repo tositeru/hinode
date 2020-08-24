@@ -35,11 +35,10 @@ namespace Hinode.Layouts
         int OperationPriority { get; set; }
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
-        Vector3 UnitSize { get; }
 
         LayoutOperationTarget OperationTargetFlags { get; }
 
-        void UpdateUnitSize();
+        bool Validate();
         void UpdateLayout();
     }
 
@@ -103,7 +102,6 @@ namespace Hinode.Layouts
 
         #region ILayout interface
         bool _doChanged = false;
-        Vector3 _unitSize;
 
         public NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get => _onDisposed; }
         public NotInvokableDelegate<ILayoutOnChanged> OnChanged { get => _onChanged; }
@@ -142,21 +140,9 @@ namespace Hinode.Layouts
             }
         }
 
-        /// <summary>
-        /// このプロパティを変更してもDoChangedに影響は与えませんので注意してください。
-        /// </summary>
-        public Vector3 UnitSize
-        {
-            get => _unitSize;
-            protected set
-            {
-                _unitSize = value;
-            }
-        }
-
         public abstract LayoutOperationTarget OperationTargetFlags { get; }
 
-        public abstract void UpdateUnitSize();
+        public abstract bool Validate();
         public abstract void UpdateLayout();
         #endregion
     }
