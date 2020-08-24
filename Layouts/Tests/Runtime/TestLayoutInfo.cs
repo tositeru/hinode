@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Hinode.Tests;
+using System.Linq;
 
 namespace Hinode.Layouts.Tests
 {
@@ -68,6 +69,60 @@ namespace Hinode.Layouts.Tests
             info.UnitSize = size;
 
             AssertionUtils.AreNearlyEqual(size, info.UnitSize);
+        }
+        #endregion
+
+        #region Assign
+        /// <summary>
+        /// <seealso cref="LayoutInfo.Assign(LayoutInfo)"/>
+        /// </summary>
+        [Test]
+        public void AssignPasses()
+        {
+            var info = new LayoutInfo();
+            var other = new LayoutInfo();
+            other.UnitSize = Vector3.one * 100f;
+
+            info.Assign(other);
+
+            AssertionUtils.AreNearlyEqual(other.UnitSize, info.UnitSize);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutInfo.Assign(LayoutInfo)"/>
+        /// </summary>
+        [Test]
+        public void OnChangedValue_InAssignPasses()
+        {
+            var info = new LayoutInfo();
+            var other = new LayoutInfo();
+
+            var callCounter = 0;
+            (LayoutInfo self, LayoutInfo.ValueKind kinds) recievedValues = default;
+            info.OnChangedValue.Add((_self, _kinds) => {
+                callCounter++;
+                recievedValues = (_self, _kinds);
+            });
+            //例外が発生しても他のコールバックは実行されるようにしてください。
+            info.OnChangedValue.Add((_, __) => throw new System.Exception());
+
+            var flagCombination = IndexCombinationEnumerable.GetFlagEnumCombination(
+                System.Enum.GetValues(typeof(LayoutInfo.ValueKind)).OfType<LayoutInfo.ValueKind>()
+            );
+            foreach(var kinds in flagCombination)
+            {
+                var errorMessage = $"Fail test... kinds={kinds}";
+                if (0 != (kinds & LayoutInfo.ValueKind.UnitSize))
+                    other.UnitSize = other.UnitSize + Vector3.one;
+
+                callCounter = 0;
+                recievedValues = default;
+
+                info.Assign(other); //test point
+
+                Assert.AreSame(info, recievedValues.self, errorMessage);
+                Assert.AreEqual(kinds, recievedValues.kinds, errorMessage);
+            }
         }
         #endregion
     }

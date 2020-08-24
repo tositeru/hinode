@@ -40,5 +40,21 @@ namespace Hinode.Layouts
                 _onChangedValue.SafeDynamicInvoke(this, ValueKind.UnitSize, () => $"LayoutInfo#UnitSize", LayoutDefines.LOG_SELECTOR);
             }
         }
+
+        /// <summary>
+        /// 他のLayoutInfoからパラメータをコピーする
+        /// </summary>
+        /// <param name="other"></param>
+        public void Assign(LayoutInfo other)
+        {
+            ValueKind changedKinds = 0;
+            if (!_unitSize.AreNearlyEqual(other.UnitSize, LayoutDefines.NUMBER_PRECISION))
+            {
+                _unitSize = other.UnitSize;
+                changedKinds |= ValueKind.UnitSize;
+            }
+
+            _onChangedValue.SafeDynamicInvoke(this, changedKinds, () => $"LayoutInfo#Assign", LayoutDefines.LOG_SELECTOR);
+        }
     }
 }
