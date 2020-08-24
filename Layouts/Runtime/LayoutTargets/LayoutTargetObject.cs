@@ -18,11 +18,11 @@ namespace Hinode.Layouts
         SmartDelegate<ILayoutTargetOnChangedLocalPos> _onChangedLocalPos = new SmartDelegate<ILayoutTargetOnChangedLocalPos>();
         SmartDelegate<ILayoutTargetOnChangedLocalSize> _onChangedLocalSize = new SmartDelegate<ILayoutTargetOnChangedLocalSize>();
         SmartDelegate<ILayoutTargetOnChangedOffset> _onChangedOffset = new SmartDelegate<ILayoutTargetOnChangedOffset>();
+        SmartDelegate<ILayoutTargetOnChangedLayoutInfo> _onChangedLayoutInfo = new SmartDelegate<ILayoutTargetOnChangedLayoutInfo>();
 
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
         ListHelper<ILayout> _layouts = new ListHelper<ILayout>();
-
         Vector3 _localPos;
 
         Vector3 _localSize;
@@ -49,6 +49,10 @@ namespace Hinode.Layouts
                 if (_item == null) return;
                 _item.OnDisposed.Remove(LayoutOnDisposed);
                 _item.OnChangedOperationPriority.Remove(LayoutOnChangedOperationPriority);
+            });
+
+            LayoutInfo.OnChangedValue.Add((_info, _kinds) => {
+                _onChangedLayoutInfo.SafeDynamicInvoke(this, _kinds, () => $"LayoutInfo#OnChangedValue In LayoutTargetObject", LayoutDefines.LOG_SELECTOR);
             });
         }
 
@@ -101,6 +105,13 @@ namespace Hinode.Layouts
             UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
         }
 
+        public void SetLayoutInfo(LayoutInfo layoutInfo)
+        {
+            if (LayoutInfo == layoutInfo) return;
+
+            LayoutInfo.Assign(layoutInfo);
+        }
+
         #region ILayoutTarget interface
         public NotInvokableDelegate<ILayoutTargetOnDisposed> OnDisposed { get => _onDisposed; }
         public NotInvokableDelegate<ILayoutTargetOnChangedParent> OnChangedParent { get => _onChangedParent; }
@@ -108,12 +119,14 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get => _onChangedLocalPos; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get => _onChangedLocalSize; }
         public NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get => _onChangedOffset; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get => _onChangedLayoutInfo; }
 
         public ILayoutTarget Parent { get => _parent; }
         public IEnumerable<ILayoutTarget> Children { get => _children; }
         public int ChildCount { get => _children.Count; }
 
         public IReadOnlyListHelper<ILayout> Layouts { get => _layouts; }
+        public LayoutInfo LayoutInfo { get; } = new LayoutInfo();
 
         public Vector3 LocalPos
         {

@@ -1380,5 +1380,45 @@ namespace Hinode.Layouts.Tests
             }
         }
         #endregion
+
+        #region LayoutInfo Property
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.LayoutInfo"/>
+        /// </summary>
+        [Test]
+        public void LayoutInfoPropertyPasses()
+        {
+            var target = new LayoutTargetObject();
+
+            var other = new LayoutInfo();
+
+            var callCounter = 0;
+            (ILayoutTarget self, LayoutInfo.ValueKind kinds) recievedValues = default;
+            target.OnChangedLayoutInfo.Add((_self, _kinds) => {
+                callCounter++;
+                recievedValues = (_self, _kinds);
+            });
+            //例外が発生しても他のコールバックは実行されるようにしてください。
+            target.OnChangedLayoutInfo.Add((_, __) => throw new System.Exception());
+
+            var flagCombination = IndexCombinationEnumerable.GetFlagEnumCombination(
+                System.Enum.GetValues(typeof(LayoutInfo.ValueKind)).OfType<LayoutInfo.ValueKind>()
+            );
+            foreach (var kinds in flagCombination)
+            {
+                var errorMessage = $"Fail test... kinds={kinds}";
+                if (0 != (kinds & LayoutInfo.ValueKind.UnitSize))
+                    other.UnitSize = other.UnitSize + Vector3.one;
+
+                callCounter = 0;
+                recievedValues = default;
+
+                target.LayoutInfo.Assign(other); //test point
+
+                Assert.AreSame(target, recievedValues.self, errorMessage);
+                Assert.AreEqual(kinds, recievedValues.kinds, errorMessage);
+            }
+        }
+        #endregion
     }
 }

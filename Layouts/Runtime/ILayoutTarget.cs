@@ -22,6 +22,7 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
+	public delegate void ILayoutTargetOnChangedLayoutInfo(ILayoutTarget self, LayoutInfo.ValueKind kind);
 
 	/// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
@@ -101,6 +102,7 @@ namespace Hinode.Layouts
         NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get; }
 
 		ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }
@@ -110,6 +112,12 @@ namespace Hinode.Layouts
         /// 並び順はILayoutTarget内で操作されますので、変更しないようにしてください。
         /// </summary>
 		IReadOnlyListHelper<ILayout> Layouts { get; }
+
+		/// <summary>
+        /// null値は許容しません。
+        /// ILayoutTargetのインスタンスを生成した時に生成し、そのインスタンスを使い回すようにしてください。
+        /// </summary>
+		LayoutInfo LayoutInfo { get; }
 
         Vector3 LocalPos { get; set; }
 
