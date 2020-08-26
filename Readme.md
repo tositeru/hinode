@@ -27,6 +27,7 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
         - Json Serializer
     - [Text Resources](./Docs/CSharpUtilityClasses.md#Text-Resources)
     - [Collection Helper](./Docs/CSharpUtilityClasses.md#Collection-Helper)
+    - [Math](./Docs/CSharpUtilityClasses.md#Math)
 - [Unityの便利クラス](./Docs/UnityUtiliryClaesses.md)
     - [ChildObject](./Docs/UnityUtiliryClaesses.md#ChildObject)
     - [SceneObject](./Docs/UnityUtiliryClaesses.md#SceneObject)

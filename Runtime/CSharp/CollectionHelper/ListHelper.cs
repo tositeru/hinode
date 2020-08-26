@@ -75,26 +75,10 @@ namespace Hinode
             get => _field[index];
             set
             {
-                try
-                {
-                    if (default != _field[index])
-                    _onRemoved.Instance?.Invoke(_field[index], index);
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Indexers[{index}] Remove PrevElement: {e.Message}");
-                }
+                _onRemoved.SafeDynamicInvoke(_field[index], index, () => $"ListHelper#Indexers[{index}] Remove PrevElement");
                 _field[index] = value;
 
-                try
-                {
-                    if (default != value)
-                        _onAdded.Instance?.Invoke(value, index);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Indexers[{index}] Add NewElement: {e.Message}");
-                }
+                _onAdded.SafeDynamicInvoke(value, index, () => "ListHelper#Indexers[{index}] Add NewElement");
             }
         }
 
@@ -105,14 +89,7 @@ namespace Hinode
         {
             if(InnerResize(size))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Resize: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#Resize");
             }
             return this;
         }
@@ -138,14 +115,7 @@ namespace Hinode
         {
             if(InnerAdd(item))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#Add");
             }
             return this;
         }
@@ -161,14 +131,7 @@ namespace Hinode
             }
             if (isAdd)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Add: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#Add");
             }
             return this;
         }
@@ -176,14 +139,7 @@ namespace Hinode
         bool InnerAdd(T item)
         {
             _field.Add(item);
-            try
-            {
-                _onAdded.Instance?.Invoke(item, Count - 1);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Add: {e.Message}");
-            }
+            _onAdded.SafeDynamicInvoke(item, Count - 1, () => $"ListHelper#Add");
             return true;
         }
 
@@ -216,26 +172,12 @@ namespace Hinode
                     .Zip(Enumerable.Range(0, addCount), (_v, _i) => (_v, _i + index)))
                 {
                     _field[i] = v;
-                    try
-                    {
-                        _onAdded.Instance?.Invoke(v, i);
-                    }
-                    catch(System.Exception e)
-                    {
-                        Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#InsertTo: {e.Message}");
-                    }
+                    _onAdded.SafeDynamicInvoke(v, i, () => $"ListHelper#InsertTo insert Index={i}");
                 }
 
                 if(doChangedCount)
                 {
-                    try
-                    {
-                        _onChangedCount.Instance?.Invoke(this, Count);
-                    }
-                    catch (System.Exception e)
-                    {
-                        Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#InsertTo: {e.Message}");
-                    }
+                    _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#InsertTo");
                 }
             }
             return this;
@@ -251,14 +193,7 @@ namespace Hinode
         {
             if(InnerRemoveAt(index))
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Remove: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#Remove");
             }
             return this;
         }
@@ -282,14 +217,7 @@ namespace Hinode
 
             if(isRemove)
             {
-                try
-                {
-                    _onChangedCount.Instance?.Invoke(this, Count);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#RemoveAt: {e.Message}");
-                }
+                _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#RemoveAt");
             }
             return this;
         }
@@ -299,18 +227,9 @@ namespace Hinode
             if (!IsValidIndex(index))
                 return false;
 
-            try
-            {
-                _onRemoved.Instance?.Invoke(_field[index], index);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#RemoveAt: {e.Message}");
-            }
-            finally
-            {
-                _field.RemoveAt(index);
-            }
+            var target =_field[index];
+            _field.RemoveAt(index);
+            _onRemoved.SafeDynamicInvoke(target, index, () => $"ListHelper#RemoveAt");
             return true;
         }
 
@@ -324,24 +243,9 @@ namespace Hinode
                 InnerRemoveAt(Count-1);
             }
 
-            try
-            {
-                _onCleared.Instance?.Invoke();
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Clear: {e.Message}");
-            }
+            _onCleared.SafeDynamicInvoke(() => $"ListHelper#Clear");
 
-            try
-            {
-                _onChangedCount.Instance?.Invoke(this, Count);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Remove: {e.Message}");
-            }
-
+            _onChangedCount.SafeDynamicInvoke(this, Count, () => $"ListHelper#Remove");
             return this;
         }
 
@@ -352,26 +256,12 @@ namespace Hinode
             if (!IsValidIndex(fromIndex)) throw new System.ArgumentOutOfRangeException($"Invalid fromIndex({fromIndex})...");
             if (!IsValidIndex(toIndex)) throw new System.ArgumentOutOfRangeException($"Invalid toIndex({toIndex})...");
 
-            try
-            {
-                _onRemoved.Instance?.Invoke(_field[toIndex], toIndex);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#MoveTo(from={fromIndex}, to={toIndex}): {e.Message}");
-            }
+            _onRemoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
 
             _field[toIndex] = _field[fromIndex];
             _field[fromIndex] = default(T);
 
-            try
-            {
-                _onMoved.Instance?.Invoke(_field[toIndex], toIndex);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#MoveTo(from={fromIndex}, to={toIndex}): {e.Message}");
-            }
+            _onMoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
 
             return this;
         }
@@ -387,15 +277,8 @@ namespace Hinode
             _field[toIndex] = _field[fromIndex];
             _field[fromIndex] = swap;
 
-            try
-            {
-                _onMoved.Instance?.Invoke(_field[fromIndex], fromIndex);
-                _onMoved.Instance?.Invoke(_field[toIndex], toIndex);
-            }
-            catch (System.Exception e)
-            {
-                Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#MoveTo(from={fromIndex}, to={toIndex}): {e.Message}");
-            }
+            _onMoved.SafeDynamicInvoke(_field[fromIndex], fromIndex, () => $"ListHelper#MoveTo in from(from={fromIndex}, to={toIndex})");
+            _onMoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo in to(from={fromIndex}, to={toIndex})");
 
             return this;
         }
@@ -408,14 +291,7 @@ namespace Hinode
 
             for(var i=0; i<Count; ++i)
             {
-                try
-                {
-                    _onMoved.Instance?.Invoke(_field[i], i);
-                }
-                catch(System.Exception e)
-                {
-                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! ListHelper#Sort(index={i}): {e.Message}");
-                }
+                _onMoved.SafeDynamicInvoke(_field[i], i, () => $"ListHelper#Sort(index={i})");
             }
             return this;
         }

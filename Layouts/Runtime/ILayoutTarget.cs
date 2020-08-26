@@ -21,6 +21,8 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedChildren(ILayoutTarget self, ILayoutTarget child, ILayoutTargetOnChangedChildMode mode);
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
+	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
+	public delegate void ILayoutTargetOnChangedLayoutInfo(ILayoutTarget self, LayoutInfo.ValueKind kind);
 
 	/// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
@@ -99,10 +101,23 @@ namespace Hinode.Layouts
         NotInvokableDelegate<ILayoutTargetOnChangedChildren> OnChangedChildren { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get; }
 
-        ILayoutTarget Parent { get; }
+		ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }
         int ChildCount { get; }
+
+		/// <summary>
+        /// 並び順はILayoutTarget内で操作されますので、変更しないようにしてください。
+        /// </summary>
+		IReadOnlyListHelper<ILayout> Layouts { get; }
+
+		/// <summary>
+        /// null値は許容しません。
+        /// ILayoutTargetのインスタンスを生成した時に生成し、そのインスタンスを使い回すようにしてください。
+        /// </summary>
+		LayoutInfo LayoutInfo { get; }
 
         Vector3 LocalPos { get; set; }
 
@@ -111,14 +126,17 @@ namespace Hinode.Layouts
         Vector3 AnchorMax { get; }
         Vector3 Offset { get; }
 
+		void AddLayout(ILayout layout);
+		void RemoveLayout(ILayout layout);
+
 		/// <summary>
 		/// LocalSizeに関係するパラメータを一括で更新する関数。
 		/// AnchorMin/MaxとAnchorAreaからのoffsetを指定してください。
 		///
 		/// 計算の結果は以下の条件を守るようにしてください。
-        /// - LocalSize.xyz >= 0
+		/// - LocalSize.xyz >= 0
 		/// - LocalAreaMin <= LocalAreaMax
-        /// 
+		/// 
 		/// OnChangedLocalSizeは一度だけ呼び出すように実装していください。
 		///
 		/// figure.1 AnchorMin/MaxとOffsetの関係
@@ -280,6 +298,19 @@ namespace Hinode.Layouts
             return self.AnchorMin.AreNearlyEqual(self.AnchorMax, LayoutDefines.NUMBER_PRECISION)
                 ? LayoutTargetAnchorMode.Point
                 : LayoutTargetAnchorMode.Area;
+        }
+    }
+
+	/// <summary>
+    /// ILayoutのデフォルトIComparer
+    /// </summary>
+    public class ILayoutDefaultComparer : IComparer<ILayout>
+    {
+		public readonly static ILayoutDefaultComparer Default = new ILayoutDefaultComparer();
+
+		public int Compare(ILayout x, ILayout y)
+        {
+			return x.OperationPriority.CompareTo(y.OperationPriority);
         }
     }
 }

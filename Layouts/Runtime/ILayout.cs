@@ -5,6 +5,22 @@ using UnityEngine;
 namespace Hinode.Layouts
 {
     public delegate void ILayoutOnDisposed(ILayout self);
+    public delegate void ILayoutOnChanged(ILayout self, bool doChanged);
+    public delegate void ILayoutOnChangedOperationPriority(ILayout self, int prevPriority);
+
+    /// <summary>
+    /// Layoutの処理対象となるものを表すenum
+    /// </summary>
+    [System.Flags]
+    public enum LayoutOperationTarget
+    {
+        Self_LocalPos = 0x1 << 0,
+        Self_LocalArea = 0x1 << 1,
+        Children_LocalPos = 0x1 << 2,
+        Children_LocalArea = 0x1 << 3,
+        Parent_LocalPos = 0x1 << 4,
+        Parent_LocalArea = 0x1 << 5,
+    }
 
     /// <summary>
 	/// <seealso cref="ILayoutTarget"/>
@@ -13,12 +29,16 @@ namespace Hinode.Layouts
     public interface ILayout : System.IDisposable
     {
         NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get;}
+        NotInvokableDelegate<ILayoutOnChanged> OnChanged { get; }
+        NotInvokableDelegate<ILayoutOnChangedOperationPriority> OnChangedOperationPriority { get; }
 
+        int OperationPriority { get; set; }
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
-        Vector3 UnitSize { get; }
 
-        void UpdateUnitSize();
+        LayoutOperationTarget OperationTargetFlags { get; }
+
+        bool Validate();
         void UpdateLayout();
     }
 
@@ -33,7 +53,14 @@ namespace Hinode.Layouts
 	/// </summary>
     public abstract class LayoutBase : ILayout
     {
+        virtual protected void InnerOnChangedTarget(ILayoutTarget current, ILayoutTarget prev) { }
+        virtual protected void InnerOnChanged(bool doChanged) { }
+
         SmartDelegate<ILayoutOnDisposed> _onDisposed = new SmartDelegate<ILayoutOnDisposed>();
+        protected SmartDelegate<ILayoutOnChanged> _onChanged = new SmartDelegate<ILayoutOnChanged>();
+        SmartDelegate<ILayoutOnChangedOperationPriority> _onChangedOperationPriority = new SmartDelegate<ILayoutOnChangedOperationPriority>();
+
+        [SerializeField] int _operationPriority = 0;
 
         ILayoutTarget _target;
         public ILayoutTarget Target
@@ -41,6 +68,7 @@ namespace Hinode.Layouts
             get => _target;
             set
             {
+                var prev = _target;
                 if(_target != null)
                 {
                     _target.OnDisposed.Remove(AutoRemoveTarget);
@@ -50,6 +78,8 @@ namespace Hinode.Layouts
                 {
                     _target.OnDisposed.Add(AutoRemoveTarget);
                 }
+                DoChanged = _target != prev;
+                InnerOnChangedTarget(_target, prev);
             }
         }
 
@@ -62,19 +92,57 @@ namespace Hinode.Layouts
 
         public virtual void Dispose()
         {
-            _onDisposed.Instance?.Invoke(this);
+            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutBase#OnDisposed", LayoutDefines.LOG_SELECTOR);
             _onDisposed.Clear();
+            _onChanged.Clear();
+            _onChangedOperationPriority.Clear();
 
-            Target?.OnDisposed.Remove(AutoRemoveTarget);
+            Target = null;
         }
 
         #region ILayout interface
+        bool _doChanged = false;
+
         public NotInvokableDelegate<ILayoutOnDisposed> OnDisposed { get => _onDisposed; }
+        public NotInvokableDelegate<ILayoutOnChanged> OnChanged { get => _onChanged; }
+        public NotInvokableDelegate<ILayoutOnChangedOperationPriority> OnChangedOperationPriority { get => _onChangedOperationPriority; }
 
-        public abstract bool DoChanged { get; }
-        public abstract Vector3 UnitSize { get; }
+        public int OperationPriority
+        {
+            get => _operationPriority;
+            set
+            {
+                if (_operationPriority == value) return;
+                var prevPriority = _operationPriority;
+                _operationPriority = value;
 
-        public abstract void UpdateUnitSize();
+                _onChangedOperationPriority.SafeDynamicInvoke(this, prevPriority, () => $"LayoutBase#OnChangedOperationPriority", LayoutDefines.LOG_SELECTOR);
+            }
+        }
+
+        public bool DoChanged
+        {
+            get => _doChanged;
+            protected set
+            {
+                if (_doChanged == value) return;
+                _doChanged = value;
+
+                try
+                {
+                    InnerOnChanged(_doChanged);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"Exception!! LayoutBase#DoChanged {System.Environment.NewLine}{e.Message}", LayoutDefines.LOG_SELECTOR);
+                }
+                _onChanged.SafeDynamicInvoke(this, _doChanged, () => $"LayoutBase#DoChanged", LayoutDefines.LOG_SELECTOR);
+            }
+        }
+
+        public abstract LayoutOperationTarget OperationTargetFlags { get; }
+
+        public abstract bool Validate();
         public abstract void UpdateLayout();
         #endregion
     }

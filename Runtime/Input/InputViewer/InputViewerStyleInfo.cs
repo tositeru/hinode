@@ -35,7 +35,7 @@ namespace Hinode
                 {
                     _font = Resources.Load<Font>("Arial");
                 }
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 
@@ -46,7 +46,7 @@ namespace Hinode
             {
                 if (_fontColor == value) return;
                 _fontColor = value;
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 
@@ -57,7 +57,7 @@ namespace Hinode
             {
                 if (_buttonColorAtFree == value) return;
                 _buttonColorAtFree = value;
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 
@@ -68,7 +68,7 @@ namespace Hinode
             {
                 if (_buttonColorAtDown == value) return;
                 _buttonColorAtDown = value;
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 
@@ -79,7 +79,7 @@ namespace Hinode
             {
                 if (_buttonColorAtPush == value) return;
                 _buttonColorAtFree = value;
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 
@@ -90,7 +90,7 @@ namespace Hinode
             {
                 if (_buttonColorAtUp == value) return;
                 _buttonColorAtUp = value;
-                _onChanged.Instance?.Invoke(this);
+                _onChanged.SafeDynamicInvoke(this, () => $"Font", InputLoggerDefines.SELECTOR_MAIN);
             }
         }
 

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Linq;
 using Hinode.Tests;
+using static System.Math;
 
 namespace Hinode.Layouts.Tests
 {
@@ -717,6 +718,153 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
+        #region Layouts
+        class LayoutClass : LayoutBase
+        {
+            public LayoutClass(int priority)
+            {
+                OperationPriority = priority;
+            }
+
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
+            public override void UpdateLayout() {}
+            public override bool Validate() => true;
+
+            public override string ToString()
+            {
+                return $"LayoutClass priority={OperationPriority}";
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void AddLayoutPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100),
+                new LayoutClass(200),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach(var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[2],
+                    layoutObjs[0],
+                    layoutObjs[1],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.RemoveLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void RemoveLayoutPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100),
+                new LayoutClass(0),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            layoutTarget.RemoveLayout(layoutObjs[2]); // test point
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[1],
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void ILayoutOnChangedOperationPriorityPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(0),
+                new LayoutClass(100),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            layoutObjs[0].OperationPriority = layoutObjs[1].OperationPriority + 1;
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[2],
+                    layoutObjs[1],
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test]
+        public void AddRemoveLayout_SetCallbacksPasses()
+        {
+            var layoutObjs = new LayoutClass(0);
+            Assert.AreEqual(0, layoutObjs.OnDisposed.RegistedDelegateCount);
+            Assert.AreEqual(0, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+
+            var layoutTarget = new LayoutTargetObject();
+            {
+                layoutTarget.AddLayout(layoutObjs);
+
+                Assert.AreEqual(1, layoutObjs.OnDisposed.RegistedDelegateCount);
+                Assert.AreEqual(1, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+            }
+
+            {
+                layoutTarget.RemoveLayout(layoutObjs);
+                Assert.AreEqual(0, layoutObjs.OnDisposed.RegistedDelegateCount);
+                Assert.AreEqual(0, layoutObjs.OnChangedOperationPriority.RegistedDelegateCount);
+            }
+        }
+
+        #endregion
+
         #region UpdateLocalSizeWithAnchorParam
         /// <summary>
         /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
@@ -804,6 +952,38 @@ namespace Hinode.Layouts.Tests
         }
 
         /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedLocalSizeInUpdateLocalSizeWithAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var prevLocalSize = self.LocalSize;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            {
+                var callCounter = 0;
+                self.OnChangedLocalSize.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change LocalSize
+                self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
 		/// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
@@ -816,6 +996,101 @@ namespace Hinode.Layouts.Tests
             self.SetParent(parent);
 
             self.OnChangedLocalSize.Add((_self, __) => {
+                throw new System.Exception();
+            });
+
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            var localSize = parent.LocalSize.Mul(anchorMax - anchorMin) + (offsetMin + offsetMax);
+            AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
+
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedOffsetコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenNotChangeOffsetPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var prevLocalSize = self.LocalSize;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            {
+                var callCounter = 0;
+                self.OnChangedOffset.Add((_self, __) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change Offset
+                var offset = Vector3.one * 1f;
+                self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin + offset, offsetMax + offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevOffset) recievedData = default;
+            self.OnChangedOffset.Add((_self, _prevOffset) => {
+                callCounter++;
+                recievedData = (_self, _prevOffset);
+            });
+
+            var prevOffset = self.Offset;
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offsetMin = new Vector3(1, 2, 0f);
+            var offsetMax = new Vector3(10f, 20f, 0f);
+            self.UpdateLocalSizeWithAnchorParam(anchorMin, anchorMax, offsetMin, offsetMax);
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevOffset, recievedData.prevOffset);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenThrowExcptionPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            self.OnChangedOffset.Add((_self, __) => {
                 throw new System.Exception();
             });
 
@@ -942,6 +1217,130 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
             AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
         }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
+        /// </summary>
+        [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedLocalSizeInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            {
+                var callCounter = 0;
+                self.OnChangedLocalSize.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change LocalSize
+                self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevOffset) recievedData = default;
+            self.OnChangedOffset.Add((_self, _prevOffset) => {
+                callCounter++;
+                recievedData = (_self, _prevOffset);
+            });
+
+            var prevOffset = self.Offset;
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedData.self);
+            Assert.AreEqual(prevOffset, recievedData.prevOffset);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenThrowExcptionPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            self.OnChangedOffset.Add((_self, __) => {
+                throw new System.Exception();
+            });
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            AssertionUtils.AreNearlyEqual(localSize, self.LocalSize, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMin, self.AnchorMin, EPSILON);
+            AssertionUtils.AreNearlyEqual(anchorMax, self.AnchorMax, EPSILON);
+            AssertionUtils.AreNearlyEqual(offset, self.Offset, EPSILON);
+
+            var (localMinPos, localMaxPos) = self.LocalAreaMinMaxPos();
+            AssertionUtils.AreNearlyEqual((localMaxPos + localMinPos) * 0.5f, self.Offset, EPSILON);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.UpdateLocalSizeWithSizeAndAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLocalOffset"/>
+        /// </summary>
+        [Test, Description("LocalOffsetが変更されないケースでOnChangedLocalOffsetコールバックが呼び出されないかどうかのテスト")]
+        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 0));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            var localSize = new Vector3(20, 40);
+            var anchorMin = new Vector3(0, 0.5f, 0f);
+            var anchorMax = new Vector3(1, 0.5f, 0f);
+            var offset = new Vector3(10, 20, 30);
+            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+            {
+                var callCounter = 0;
+                self.OnChangedOffset.Add((_self, _prevSize) => {
+                    callCounter++;
+                });
+
+                //test point : Case not change Offset
+                self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, anchorMin, anchorMax, offset);
+
+                Assert.AreEqual(0, callCounter);
+            }
+        }
         #endregion
 
         #region Follow Parent Area(Anchor)
@@ -979,6 +1378,118 @@ namespace Hinode.Layouts.Tests
                 AssertionUtils.AreNearlyEqual(Vector3.one, self.AnchorMax, EPSILON, errorMessage);
                 AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
                 AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
+            }
+        }
+        #endregion
+
+        #region LayoutInfo Property
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.LayoutInfo"/>
+        /// </summary>
+        [Test]
+        public void LayoutInfoPropertyPasses()
+        {
+            var target = new LayoutTargetObject();
+            var other = new LayoutInfo();
+            target.LayoutInfo.MaxSize = other.MaxSize = Vector3.one * 100f; // Callbackの呼び出しのみをテストするので、MinSizeより下回らないようにしています。
+
+            var callCounter = 0;
+            (ILayoutTarget self, LayoutInfo.ValueKind kinds) recievedValues = default;
+            target.OnChangedLayoutInfo.Add((_self, _kinds) => {
+                callCounter++;
+                recievedValues = (_self, _kinds);
+            });
+            //例外が発生しても他のコールバックは実行されるようにしてください。
+            target.OnChangedLayoutInfo.Add((_, __) => throw new System.Exception());
+
+            var flagCombination = IndexCombinationEnumerable.GetFlagEnumCombination(
+                System.Enum.GetValues(typeof(LayoutInfo.ValueKind)).OfType<LayoutInfo.ValueKind>()
+            );
+            foreach (var kinds in flagCombination)
+            {
+                var errorMessage = $"Fail test... kinds={kinds}";
+                if (0 != (kinds & LayoutInfo.ValueKind.LayoutSize))
+                    other.LayoutSize = other.LayoutSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.MinSize))
+                    other.MinSize = other.MinSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.MaxSize))
+                    other.MaxSize = other.MaxSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.IgnoreLayoutGroup))
+                    other.IgnoreLayoutGroup = !other.IgnoreLayoutGroup;
+                if (0 != (kinds & LayoutInfo.ValueKind.SizeGrowInGroup))
+                    other.SizeGrowInGroup = other.SizeGrowInGroup + 1f;
+                if (0 != (kinds & LayoutInfo.ValueKind.OrderInGroup))
+                    other.OrderInGroup = other.OrderInGroup + 1;
+
+                callCounter = 0;
+                recievedValues = default;
+
+                target.LayoutInfo.Assign(other); //test point
+
+                Assert.AreSame(target, recievedValues.self, errorMessage);
+                Assert.AreEqual(kinds, recievedValues.kinds, errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.LocalSize"/>
+        /// <seealso cref="LayoutInfo.MinSize"/>
+        /// <seealso cref="LayoutInfo.MaxSize"/>
+        /// </summary>
+        [Test, Description("LayoutInfo#MinSize/MaxSizeが指定されている時はILayoutTarget#LocalSizeに制限がかかるようにするテスト")]
+        public void LayoutInfoMinMaxSizePasses()
+        {
+            var layoutTarget = new LayoutTargetObject();
+            layoutTarget.SetLocalSize(Vector3.one * 100f);
+
+            var minValue = -10f;
+            var maxValue = 1000f;
+            var rnd = new System.Random();
+            for(var i=0; i<1000; ++i)
+            {
+                var min = layoutTarget.LayoutInfo.MinSize;
+                var max = layoutTarget.LayoutInfo.MaxSize;
+                var localSize = layoutTarget.LocalSize;
+                if ((rnd.Next() % 2) == 0)
+                {
+                    min = new Vector3(
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue)
+                    );
+                    max = new Vector3(
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue)
+                    );
+                    var tmp = Vector3.Min(min, max);
+                    max = Vector3.Max(min, max);
+                    min = tmp;
+
+                    layoutTarget.LayoutInfo.SetMinMaxSize(min, max);
+                }
+                else
+                {
+                    localSize = new Vector3(
+                        rnd.Range(0, maxValue),
+                        rnd.Range(0, maxValue),
+                        rnd.Range(0, maxValue)
+                    );
+                    layoutTarget.SetLocalSize(localSize);
+                }
+
+                //LayoutInfo#UNFIXED_VALUEを考慮に入れた処理
+                var correctLocalSize = localSize;
+                if (min.x >= 0) correctLocalSize.x = Max(correctLocalSize.x, min.x);
+                if (min.y >= 0) correctLocalSize.y = Max(correctLocalSize.y, min.y);
+                if (min.z >= 0) correctLocalSize.z = Max(correctLocalSize.z, min.z);
+
+                if (max.x >= 0) correctLocalSize.x = Min(correctLocalSize.x, max.x);
+                if (max.y >= 0) correctLocalSize.y = Min(correctLocalSize.y, max.y);
+                if (max.z >= 0) correctLocalSize.z = Min(correctLocalSize.z, max.z);
+
+                var errorMessage = $"Fail Test... LocalSize={localSize:F4}, MinSize={layoutTarget.LayoutInfo.MinSize:F4}, MaxSize={layoutTarget.LayoutInfo.MaxSize:F4}";
+                AssertionUtils.AreNearlyEqual(correctLocalSize, layoutTarget.LocalSize, LayoutDefines.POS_NUMBER_PRECISION, errorMessage);
             }
         }
         #endregion

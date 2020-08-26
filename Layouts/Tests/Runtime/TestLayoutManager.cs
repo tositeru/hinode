@@ -17,30 +17,20 @@ namespace Hinode.Layouts.Tests
         {
             public void ResetCounter()
             {
-                CallUpdateUnitSizeCounter = 0;
                 CallUpdateLayoutCounter = 0;
             }
-            public int CallUpdateUnitSizeCounter { get; private set; }
             public int CallUpdateLayoutCounter { get; private set; }
 
-            bool _doChanged = false;
-            public override bool DoChanged { get => _doChanged; }
-            public void SetDoChanged(bool doChanged) => _doChanged = doChanged;
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
 
-            public override void UpdateUnitSize()
-            {
-                CallUpdateUnitSizeCounter++;
-            }
+            public void SetDoChanged(bool doChanged) => DoChanged = doChanged;
+
+            public override bool Validate() => true;
 
             public override void UpdateLayout()
             {
                 CallUpdateLayoutCounter++;
             }
-
-            #region ILayout interface
-            Vector3 _unitSize = default;
-            public override Vector3 UnitSize { get => _unitSize; }
-            #endregion
         }
 
         /// <summary>
@@ -128,7 +118,6 @@ namespace Hinode.Layouts.Tests
                 foreach(var l in layouts) { l.ResetCounter(); l.SetDoChanged(true); }
 
                 manager.CaluculateLayouts();
-                Assert.AreEqual(layouts.Length, layouts.Sum(_l => _l.CallUpdateUnitSizeCounter));
                 Assert.AreEqual(layouts.Length, layouts.Sum(_l => _l.CallUpdateLayoutCounter));
             }
             Debug.Log($"Success when All ILayout#DoChanged is true!");
@@ -140,7 +129,6 @@ namespace Hinode.Layouts.Tests
                 layouts[0].SetDoChanged(false);
 
                 manager.CaluculateLayouts();
-                Assert.AreEqual(layouts.Length-2, layouts.Sum(_l => _l.CallUpdateUnitSizeCounter));
                 Assert.AreEqual(layouts.Length, layouts.Sum(_l => _l.CallUpdateLayoutCounter));
             }
             Debug.Log($"Success when a two in ILayout#DoChanged is false!");
@@ -173,7 +161,6 @@ namespace Hinode.Layouts.Tests
                 .Zip(Enumerable.Range(0, layouts.Length), (_t, _i) => (_t.Item1, _t.Item2, _i)))
             {
                 var errorMessage = $"Fail... index={index}";
-                Assert.AreEqual(d.callCounterUnitSize, l.CallUpdateUnitSizeCounter, errorMessage);
                 Assert.AreEqual(d.callCounterLayout, l.CallUpdateLayoutCounter, errorMessage);
             }
         }
