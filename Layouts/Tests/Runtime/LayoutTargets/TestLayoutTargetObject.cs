@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using System.Linq;
 using Hinode.Tests;
+using static System.Math;
 
 namespace Hinode.Layouts.Tests
 {
@@ -1389,8 +1390,8 @@ namespace Hinode.Layouts.Tests
         public void LayoutInfoPropertyPasses()
         {
             var target = new LayoutTargetObject();
-
             var other = new LayoutInfo();
+            target.LayoutInfo.MaxSize = other.MaxSize = Vector3.one * 100f; // Callbackの呼び出しのみをテストするので、MinSizeより下回らないようにしています。
 
             var callCounter = 0;
             (ILayoutTarget self, LayoutInfo.ValueKind kinds) recievedValues = default;
@@ -1407,8 +1408,18 @@ namespace Hinode.Layouts.Tests
             foreach (var kinds in flagCombination)
             {
                 var errorMessage = $"Fail test... kinds={kinds}";
-                if (0 != (kinds & LayoutInfo.ValueKind.UnitSize))
-                    other.UnitSize = other.UnitSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.LayoutSize))
+                    other.LayoutSize = other.LayoutSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.MinSize))
+                    other.MinSize = other.MinSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.MaxSize))
+                    other.MaxSize = other.MaxSize + Vector3.one;
+                if (0 != (kinds & LayoutInfo.ValueKind.IgnoreLayoutGroup))
+                    other.IgnoreLayoutGroup = !other.IgnoreLayoutGroup;
+                if (0 != (kinds & LayoutInfo.ValueKind.SizeGrowInGroup))
+                    other.SizeGrowInGroup = other.SizeGrowInGroup + 1f;
+                if (0 != (kinds & LayoutInfo.ValueKind.OrderInGroup))
+                    other.OrderInGroup = other.OrderInGroup + 1;
 
                 callCounter = 0;
                 recievedValues = default;
@@ -1417,6 +1428,68 @@ namespace Hinode.Layouts.Tests
 
                 Assert.AreSame(target, recievedValues.self, errorMessage);
                 Assert.AreEqual(kinds, recievedValues.kinds, errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.LocalSize"/>
+        /// <seealso cref="LayoutInfo.MinSize"/>
+        /// <seealso cref="LayoutInfo.MaxSize"/>
+        /// </summary>
+        [Test, Description("LayoutInfo#MinSize/MaxSizeが指定されている時はILayoutTarget#LocalSizeに制限がかかるようにするテスト")]
+        public void LayoutInfoMinMaxSizePasses()
+        {
+            var layoutTarget = new LayoutTargetObject();
+            layoutTarget.SetLocalSize(Vector3.one * 100f);
+
+            var minValue = -10f;
+            var maxValue = 1000f;
+            var rnd = new System.Random();
+            for(var i=0; i<1000; ++i)
+            {
+                var min = layoutTarget.LayoutInfo.MinSize;
+                var max = layoutTarget.LayoutInfo.MaxSize;
+                var localSize = layoutTarget.LocalSize;
+                if ((rnd.Next() % 2) == 0)
+                {
+                    min = new Vector3(
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue)
+                    );
+                    max = new Vector3(
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue),
+                        rnd.Range(minValue, maxValue)
+                    );
+                    var tmp = Vector3.Min(min, max);
+                    max = Vector3.Max(min, max);
+                    min = tmp;
+
+                    layoutTarget.LayoutInfo.SetMinMaxSize(min, max);
+                }
+                else
+                {
+                    localSize = new Vector3(
+                        rnd.Range(0, maxValue),
+                        rnd.Range(0, maxValue),
+                        rnd.Range(0, maxValue)
+                    );
+                    layoutTarget.SetLocalSize(localSize);
+                }
+
+                //LayoutInfo#UNFIXED_VALUEを考慮に入れた処理
+                var correctLocalSize = localSize;
+                if (min.x >= 0) correctLocalSize.x = Max(correctLocalSize.x, min.x);
+                if (min.y >= 0) correctLocalSize.y = Max(correctLocalSize.y, min.y);
+                if (min.z >= 0) correctLocalSize.z = Max(correctLocalSize.z, min.z);
+
+                if (max.x >= 0) correctLocalSize.x = Min(correctLocalSize.x, max.x);
+                if (max.y >= 0) correctLocalSize.y = Min(correctLocalSize.y, max.y);
+                if (max.z >= 0) correctLocalSize.z = Min(correctLocalSize.z, max.z);
+
+                var errorMessage = $"Fail Test... LocalSize={localSize:F4}, MinSize={layoutTarget.LayoutInfo.MinSize:F4}, MaxSize={layoutTarget.LayoutInfo.MaxSize:F4}";
+                AssertionUtils.AreNearlyEqual(correctLocalSize, layoutTarget.LocalSize, LayoutDefines.POS_NUMBER_PRECISION, errorMessage);
             }
         }
         #endregion

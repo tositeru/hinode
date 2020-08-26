@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using static System.Math;
 
 namespace Hinode.Layouts
 {
@@ -52,6 +53,11 @@ namespace Hinode.Layouts
             });
 
             LayoutInfo.OnChangedValue.Add((_info, _kinds) => {
+                if(0 != (_kinds & LayoutInfo.ValueKind.MinSize)
+                    || 0 != (_kinds & LayoutInfo.ValueKind.MaxSize))
+                {
+                    this.SetLocalSize(LocalSize);
+                }
                 _onChangedLayoutInfo.SafeDynamicInvoke(this, _kinds, () => $"LayoutInfo#OnChangedValue In LayoutTargetObject", LayoutDefines.LOG_SELECTOR);
             });
         }
@@ -200,7 +206,7 @@ namespace Hinode.Layouts
             var prevOffset = Offset;
 
             var anchorAreaSize = this.ParentLocalSize().Mul(anchorMax - anchorMin);
-            _localSize = anchorAreaSize + offsetMin + offsetMax;
+            _localSize = LimitLocalSizeByLayoutInfo(anchorAreaSize + offsetMin + offsetMax);
 
             NormalizeLocalSize(ref _localSize, ref offsetMin, ref offsetMax, anchorAreaSize);
 
@@ -224,11 +230,25 @@ namespace Hinode.Layouts
 
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
-            _localSize = localSize;
+            _localSize = LimitLocalSizeByLayoutInfo(localSize);
             _offset = offset;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
+        }
+
+        Vector3 LimitLocalSizeByLayoutInfo(Vector3 localSize)
+        {
+            var min = LayoutInfo.MinSize;
+            if (min.x >= 0) localSize.x = Max(min.x, localSize.x);
+            if (min.y >= 0) localSize.y = Max(min.y, localSize.y);
+            if (min.z >= 0) localSize.z = Max(min.z, localSize.z);
+
+            var max = LayoutInfo.MaxSize;
+            if (max.x >= 0) localSize.x = Min(max.x, localSize.x);
+            if (max.y >= 0) localSize.y = Min(max.y, localSize.y);
+            if (max.z >= 0) localSize.z = Min(max.z, localSize.z);
+            return localSize;
         }
 
         void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
