@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using System.Linq;
+using System.Reflection;
 
 namespace Hinode.Tests
 {
@@ -31,6 +32,8 @@ namespace Hinode.Tests
             var failCounter = 0;
             for (var i = 0; i < loopCount; ++i)
             {
+                ResetDoUse();
+
                 InitParams(rnd);
                 try
                 {
@@ -49,5 +52,38 @@ namespace Hinode.Tests
             Assert.IsTrue(isSuccess);
         }
 
+        void ResetDoUse()
+        {
+            var useParamFields = GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(_f => _f.FieldType.IsSubclassOf(typeof(UseParam<>)));
+            foreach(var field in useParamFields)
+            {
+                var inst = field.GetValue(this);
+                var doUseProp = inst.GetType().GetProperty("DoUse");
+                doUseProp.SetValue(inst, false);
+            }
+        }
+
+        public class UseParam<T>
+        {
+            public string ParamName { get; private set; }
+            public bool DoUse { get; set; }
+            public T Value { get; set; }
+
+            public UseParam(string name)
+            {
+                ParamName = name;
+            }
+
+            public (string name, string paramText) ToText()
+            {
+                return ($"{ParamName}:DoUse={DoUse}", Value.ToString());
+            }
+
+            public (string name, string paramText) ToText(System.Func<T, string> paramTextFunc)
+            {
+                return ($"{ParamName}:DoUse={DoUse}", paramTextFunc(Value));
+            }
+        }
     }
 }
