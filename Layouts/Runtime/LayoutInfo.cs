@@ -14,7 +14,27 @@ namespace Hinode.Layouts
         public static readonly float UNFIXED_VALUE = -1f;
         public static readonly Vector3 UNFIXED_VECTOR3 = Vector3.one * -1f;
 
-        public delegate void OnChangedValueDelegate(LayoutInfo self, ValueKind kind);
+        public class OnChangedValueParam
+        {
+            public Vector3 LayoutSize { get; private set; }
+            public Vector3 MinSize { get; private set; }
+            public Vector3 MaxSize { get; private set; }
+            public bool IgnoreLayoutGroup { get; private set; }
+            public float SizeGrowInGroup { get; private set; }
+            public int OrderInGroup { get; private set; }
+
+            public OnChangedValueParam(LayoutInfo info)
+            {
+                LayoutSize = info.LayoutSize;
+                MinSize = info.MinSize;
+                MaxSize = info.MaxSize;
+                IgnoreLayoutGroup = info.IgnoreLayoutGroup;
+                SizeGrowInGroup = info.SizeGrowInGroup;
+                OrderInGroup = info.OrderInGroup;
+            }
+        }
+
+        public delegate void OnChangedValueDelegate(LayoutInfo self, ValueKind kind, OnChangedValueParam prevInfo);
 
         [System.Flags]
         public enum ValueKind
@@ -55,8 +75,9 @@ namespace Hinode.Layouts
                 var v = Inner_GetSize(value);
                 if (_layoutSize.AreNearlyEqual(v, LayoutDefines.NUMBER_PRECISION))
                     return;
+                var prevInfo = new OnChangedValueParam(this);
                 _layoutSize = v;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.LayoutSize, () => $"LayoutInfo#LayoutSize", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.LayoutSize, prevInfo, () => $"LayoutInfo#LayoutSize", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -78,8 +99,9 @@ namespace Hinode.Layouts
                 Vector3 v = Inner_GetMinValue(value, MaxSize);
                 if (_minSize.AreNearlyEqual(v, LayoutDefines.NUMBER_PRECISION))
                     return;
+                var prevInfo = new OnChangedValueParam(this);
                 _minSize = v;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.MinSize, () => $"LayoutInfo#MinSize", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.MinSize, prevInfo, () => $"LayoutInfo#MinSize", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -101,8 +123,9 @@ namespace Hinode.Layouts
                 var v = Inner_GetMaxValue(MinSize, value);
                 if (_maxSize.AreNearlyEqual(v, LayoutDefines.NUMBER_PRECISION))
                     return;
-                _maxSize= v;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.MaxSize, () => $"LayoutInfo#MaxSize", LayoutDefines.LOG_SELECTOR);
+                var prevInfo = new OnChangedValueParam(this);
+                _maxSize = v;
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.MaxSize, prevInfo, () => $"LayoutInfo#MaxSize", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -115,8 +138,9 @@ namespace Hinode.Layouts
             set
             {
                 if (_ignoreLayoutGroup == value) return;
+                var prevInfo = new OnChangedValueParam(this);
                 _ignoreLayoutGroup = value;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.IgnoreLayoutGroup, () => "LayoutInfo#IgnoreLayoutGroup", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.IgnoreLayoutGroup, prevInfo, () => "LayoutInfo#IgnoreLayoutGroup", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -132,8 +156,9 @@ namespace Hinode.Layouts
             {
                 var v = Max(0f, value);
                 if (MathUtils.AreNearlyEqual(_sizeGrowInGroup, v, LayoutDefines.NUMBER_PRECISION)) return;
+                var prevInfo = new OnChangedValueParam(this);
                 _sizeGrowInGroup = v;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.SizeGrowInGroup, () => "LayoutInfo#SizeGrowInGroup", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.SizeGrowInGroup, prevInfo, () => "LayoutInfo#SizeGrowInGroup", LayoutDefines.LOG_SELECTOR);
             }
         }
 
@@ -148,20 +173,39 @@ namespace Hinode.Layouts
             set
             {
                 if (_orderInGroup == value) return;
+                var prevInfo = new OnChangedValueParam(this);
                 _orderInGroup = value;
-                _onChangedValue.SafeDynamicInvoke(this, ValueKind.OrderInGroup, () => "LayoutInfo#SizeGrowInGroup", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, ValueKind.OrderInGroup, prevInfo, () => "LayoutInfo#SizeGrowInGroup", LayoutDefines.LOG_SELECTOR);
             }
+        }
+
+        public LayoutInfo()
+        { }
+
+        public LayoutInfo(LayoutInfo other)
+        {
+            Assign(other);
         }
 
         /// <summary>
         /// 実際のレイアウト計算で使用されるLayoutSizeを返します。
         ///
+        /// 返り値の要素の値は以下の条件から決定されます。
+        /// - layoutSize == UNFIXED_VALUEの時
+        ///   Max(MinSize, target#LocalSize)
+        /// - layoutSize != UNFIXED_VALUEの時
+        ///   Min(layoutSize, Max(MinSize, target#LocalSize))
+        ///   
+        /// MinSizeより小さくなる場合がありますので注意してください。
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
         public Vector3 GetLayoutSize(ILayoutTarget target)
         {
-            var result = Vector3.Min(Vector3.Max(MinSize, target.LocalSize), LayoutSize);
+            var result = Vector3.Max(MinSize, target.LocalSize);
+            if (LayoutSize.x >= 0) result.x = Min(result.x, LayoutSize.x);
+            if (LayoutSize.y >= 0) result.y = Min(result.y, LayoutSize.y);
+            if (LayoutSize.z >= 0) result.z = Min(result.z, LayoutSize.z);
             return result;
         }
 
@@ -173,10 +217,11 @@ namespace Hinode.Layouts
         /// <returns></returns>
         public LayoutInfo SetMinMaxSize(Vector3 min, Vector3 max)
         {
+            var prevInfo = new OnChangedValueParam(this);
             ValueKind changedKinds = Inner_SetMinMaxSize(min, max);
             if(changedKinds != 0)
             {
-                _onChangedValue.SafeDynamicInvoke(this, changedKinds, () => $"LayoutInfo#SetMinMaxSize", LayoutDefines.LOG_SELECTOR);
+                _onChangedValue.SafeDynamicInvoke(this, changedKinds, prevInfo, () => $"LayoutInfo#SetMinMaxSize", LayoutDefines.LOG_SELECTOR);
             }
             return this;
         }
@@ -187,6 +232,8 @@ namespace Hinode.Layouts
         /// <param name="other"></param>
         public void Assign(LayoutInfo other)
         {
+            var prevInfo = new OnChangedValueParam(this);
+
             ValueKind changedKinds = 0;
             if (!_layoutSize.AreNearlyEqual(other.LayoutSize, LayoutDefines.NUMBER_PRECISION))
             {
@@ -213,7 +260,10 @@ namespace Hinode.Layouts
                 changedKinds |= ValueKind.OrderInGroup;
             }
 
-            _onChangedValue.SafeDynamicInvoke(this, changedKinds, () => $"LayoutInfo#Assign", LayoutDefines.LOG_SELECTOR);
+            if(changedKinds != 0)
+            {
+                _onChangedValue.SafeDynamicInvoke(this, changedKinds, prevInfo, () => $"LayoutInfo#Assign", LayoutDefines.LOG_SELECTOR);
+            }
         }
 
         Vector3 Inner_GetSize(Vector3 size)
