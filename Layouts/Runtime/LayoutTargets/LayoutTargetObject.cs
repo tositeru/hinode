@@ -52,12 +52,35 @@ namespace Hinode.Layouts
                 _item.OnChangedOperationPriority.Remove(LayoutOnChangedOperationPriority);
             });
 
-            LayoutInfo.OnChangedValue.Add((_info, _kinds) => {
+            LayoutInfo.OnChangedValue.Add((_info, _kinds, _prevInfo) => {
                 if(0 != (_kinds & LayoutInfo.ValueKind.MinSize)
                     || 0 != (_kinds & LayoutInfo.ValueKind.MaxSize))
                 {
                     this.SetLocalSize(LocalSize);
                 }
+                else if(0 != (_kinds & LayoutInfo.ValueKind.LayoutSize))
+                {
+                    //子のサイズを更新する
+                    foreach(var child in Children)
+                    {
+                        //変更前のOffsetMin/Maxを計算しています。
+                        var parentLayoutSize = LocalSize;
+                        if (_prevInfo.LayoutSize.x >= 0) parentLayoutSize.x = Min(_prevInfo.LayoutSize.x, parentLayoutSize.x);
+                        if (_prevInfo.LayoutSize.y >= 0) parentLayoutSize.y = Min(_prevInfo.LayoutSize.y, parentLayoutSize.y);
+                        if (_prevInfo.LayoutSize.z >= 0) parentLayoutSize.z = Min(_prevInfo.LayoutSize.z, parentLayoutSize.z);
+
+                        var prevAnchorAreaSize = parentLayoutSize.Mul(child.AnchorMax - child.AnchorMin);
+                        var max = prevAnchorAreaSize * 0.5f;
+                        var min = -max;
+
+                        var halfSize = child.LocalSize * 0.5f;
+                        var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
+                        var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
+
+                        child.UpdateLocalSizeWithAnchorParam(child.AnchorMin, child.AnchorMax, offsetMin, offsetMax);
+                    }
+                }
+
                 _onChangedLayoutInfo.SafeDynamicInvoke(this, _kinds, () => $"LayoutInfo#OnChangedValue In LayoutTargetObject", LayoutDefines.LOG_SELECTOR);
             });
         }
@@ -102,10 +125,18 @@ namespace Hinode.Layouts
         {
             if (parent != Parent) return;
 
-            var prevAnchorAreaSize = prevLocalSize.Mul(AnchorMax - AnchorMin);
+            //変更前のOffsetMin/Maxを計算しています。
+            var parentLayoutSize = prevLocalSize;
+            if (parent.LayoutInfo.LayoutSize.x >= 0) parentLayoutSize.x = Min(parent.LayoutInfo.LayoutSize.x, parentLayoutSize.x);
+            if (parent.LayoutInfo.LayoutSize.y >= 0) parentLayoutSize.y = Min(parent.LayoutInfo.LayoutSize.y, parentLayoutSize.y);
+            if (parent.LayoutInfo.LayoutSize.z >= 0) parentLayoutSize.z = Min(parent.LayoutInfo.LayoutSize.z, parentLayoutSize.z);
+
+            var prevAnchorAreaSize = parentLayoutSize.Mul(AnchorMax - AnchorMin);
             var max = prevAnchorAreaSize*0.5f;
             var min = -max;
-            var (localMin, localMax) = this.LocalAreaMinMaxPos();
+
+            var halfSize = LocalSize * 0.5f;
+            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
             var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
 
             UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
@@ -205,7 +236,10 @@ namespace Hinode.Layouts
             var prevLocalSize = LocalSize;
             var prevOffset = Offset;
 
-            var anchorAreaSize = this.ParentLocalSize().Mul(anchorMax - anchorMin);
+            var parentLayoutSize = Parent != null
+                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+                : Vector3.zero;
+            var anchorAreaSize = parentLayoutSize.Mul(anchorMax - anchorMin);
             _localSize = LimitLocalSizeByLayoutInfo(anchorAreaSize + offsetMin + offsetMax);
 
             NormalizeLocalSize(ref _localSize, ref offsetMin, ref offsetMax, anchorAreaSize);
@@ -221,18 +255,18 @@ namespace Hinode.Layouts
             OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
-        public void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 anchorMin, Vector3 anchorMax, Vector3 offset)
+        public void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 offset)
         {
-            NormalizeAnchorPos(ref anchorMin, ref anchorMax);
             var prevLocalSize = LocalSize;
             var prevOffset = Offset;
             localSize = Vector3.Max(localSize, Vector3.zero);
 
-            _anchorMin = anchorMin;
-            _anchorMax = anchorMax;
             _localSize = LimitLocalSizeByLayoutInfo(localSize);
             _offset = offset;
 
+            var parentLayoutSize = Parent != null
+                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+                : Vector3.zero;
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
@@ -251,14 +285,14 @@ namespace Hinode.Layouts
             return localSize;
         }
 
-        void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
+        static void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
         {
             var tmpMin = Vector3.Min(min, max);
             max = Vector3.Max(min, max);
             min = tmpMin;
         }
 
-        void NormalizeLocalSize(ref Vector3 localSize, ref Vector3 offsetMin, ref Vector3 offsetMax, Vector3 anchorAreaSize)
+        static void NormalizeLocalSize(ref Vector3 localSize, ref Vector3 offsetMin, ref Vector3 offsetMax, Vector3 anchorAreaSize)
         {
             if (localSize.x < 0)
             {

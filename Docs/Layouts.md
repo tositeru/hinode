@@ -104,6 +104,20 @@ AnchorOffsetMin/Maxの符号はそれぞれOから見てa/Aより外側が+に�
 /// M: LocalAreaMax
 ```
 
+### LayoutInfo
+
+`LayoutInfo`は`ILayoutTarget`の追加のパラメータを表します。
+
+`ILayoutTarget#LayoutInfo`からパラメータにアクセスすることが可能です。
+
+以下のパラメータが提供されています。
+
+- MinSize/MaxSize: ILayoutTarget#LocalSizeの値の範囲。指定されていない時は`LayoutInfo#UNFIXED_VALUE`が設定されています。
+- LayoutSize: 他のILayoutTargetから参照される、`ILayoutTarget#LocalSize`の値。`ILayoutTarget#LocalSize`がこれより小さい時は`ILayoutTarget#LocalSize`そのまま使用されます。指定されていない時は`LayoutInfo#UNFIXED_VALUE`が設定されています。
+- IgnoreLayoutGroup: `ILayoutGroup`の処理対象となるかどうかのフラグ
+- SizeGrowInGroup: `ILayoutGroup`内のサイズ比率。CSSのFlexboxのgrowプロパティと同じ意味合いになります。
+- OrderInGroup: `ILayoutGroup`内の順番。小さいほど先頭に配置されます。CSSのFlexboxのorderプロパティと同じ意味合いになります。
+
 ### LayoutManager
 
 `LayoutManager`はシーン上に存在する`ILayout`を管理するクラスになります。

@@ -40,18 +40,20 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
+            var prevSize = info.LayoutSize;
             var size = Vector3.one * 100f;
             info.LayoutSize = size;
 
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(info, recievedValue.self);
             Assert.AreEqual(LayoutInfo.ValueKind.LayoutSize, recievedValue.kind);
+            Assert.AreEqual(prevSize, recievedValue.prevInfo.LayoutSize);
         }
 
         /// <summary>
@@ -63,7 +65,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -123,18 +125,20 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
+            var prevMinSize = info.MinSize;
             var size = Vector3.one * 100f;
             info.MinSize = size;
 
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(info, recievedValue.self);
             Assert.AreEqual(LayoutInfo.ValueKind.MinSize, recievedValue.kind);
+            Assert.AreEqual(prevMinSize, recievedValue.prevInfo.MinSize);
         }
 
         /// <summary>
@@ -146,7 +150,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -206,18 +210,20 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
+            var prevMaxSize = info.MaxSize;
             var size = Vector3.one * 100f;
             info.MaxSize = size;
 
             Assert.AreEqual(1, callCounter);
             Assert.AreSame(info, recievedValue.self);
             Assert.AreEqual(LayoutInfo.ValueKind.MaxSize, recievedValue.kind);
+            Assert.AreEqual(prevMaxSize, recievedValue.prevInfo.MaxSize);
         }
 
         /// <summary>
@@ -229,7 +235,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -291,16 +297,17 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
             {
                 callCounter = 0;
                 recievedValue = default;
 
+                var prev = (info.MinSize, info.MaxSize);
                 var min = Vector3.one * 10f;
                 var max = Vector3.one * 100f;
                 info.SetMinMaxSize(min, max);
@@ -308,6 +315,8 @@ namespace Hinode.Layouts.Tests
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.MinSize | LayoutInfo.ValueKind.MaxSize, recievedValue.kind);
+                Assert.AreEqual(prev.MinSize, recievedValue.prevInfo.MinSize);
+                Assert.AreEqual(prev.MaxSize, recievedValue.prevInfo.MaxSize);
             }
             Debug.Log($"Success to OnChangedValue When SetMinMaxSize()!");
 
@@ -315,6 +324,7 @@ namespace Hinode.Layouts.Tests
                 callCounter = 0;
                 recievedValue = default;
 
+                var prev = (info.MinSize, info.MaxSize);
                 var min = info.MinSize + Vector3.one;
                 var max = info.MaxSize;
                 info.SetMinMaxSize(min, max);
@@ -322,6 +332,8 @@ namespace Hinode.Layouts.Tests
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.MinSize, recievedValue.kind);
+                Assert.AreEqual(prev.MinSize, recievedValue.prevInfo.MinSize);
+                Assert.AreEqual(prev.MaxSize, recievedValue.prevInfo.MaxSize);
             }
             Debug.Log($"Success to OnChangedValue When SetMinMaxSize(min, same max)!");
 
@@ -329,6 +341,7 @@ namespace Hinode.Layouts.Tests
                 callCounter = 0;
                 recievedValue = default;
 
+                var prev = (info.MinSize, info.MaxSize);
                 var min = info.MinSize;
                 var max = info.MaxSize + Vector3.one;
                 info.SetMinMaxSize(min, max);
@@ -336,6 +349,8 @@ namespace Hinode.Layouts.Tests
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.MaxSize, recievedValue.kind);
+                Assert.AreEqual(prev.MinSize, recievedValue.prevInfo.MinSize);
+                Assert.AreEqual(prev.MaxSize, recievedValue.prevInfo.MaxSize);
             }
             Debug.Log($"Success to OnChangedValue When SetMinMaxSize(same min, max)!");
         }
@@ -349,7 +364,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -397,10 +412,9 @@ namespace Hinode.Layouts.Tests
                 var errorMessage = $"Fail test... LayoutSize={info.LayoutSize:F4}, MinSize={info.MinSize:F4}, Target LocalSize={target.LocalSize: F4}";
                 var result = info.GetLayoutSize(target);
                 var correct = Vector3.Max(info.MinSize, target.LocalSize);
-                correct = Vector3.Min(correct, info.LayoutSize);
-                correct.x = correct.x < 0 ? LayoutInfo.UNFIXED_VALUE : correct.x;
-                correct.y = correct.y < 0 ? LayoutInfo.UNFIXED_VALUE : correct.y;
-                correct.z = correct.z < 0 ? LayoutInfo.UNFIXED_VALUE : correct.z;
+                correct.x = info.LayoutSize.x < 0 ? correct.x : Min(correct.x, info.LayoutSize.x);
+                correct.y = info.LayoutSize.y < 0 ? correct.y : Min(correct.y, info.LayoutSize.y);
+                correct.z = info.LayoutSize.z < 0 ? correct.z : Min(correct.z, info.LayoutSize.z);
                 AssertionUtils.AreNearlyEqual(correct, result, LayoutDefines.NUMBER_PRECISION, errorMessage);
             }
         }
@@ -430,17 +444,19 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
             {
+                var prevIgnore = info.IgnoreLayoutGroup;
                 info.IgnoreLayoutGroup = true;
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.IgnoreLayoutGroup, recievedValue.kind);
+                Assert.AreEqual(prevIgnore, recievedValue.prevInfo.IgnoreLayoutGroup);
             }
 
             {
@@ -461,7 +477,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -502,17 +518,19 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
             {
+                var prevGrow = info.SizeGrowInGroup;
                 info.SizeGrowInGroup = 2f;
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.SizeGrowInGroup, recievedValue.kind);
+                Assert.AreEqual(prevGrow, recievedValue.prevInfo.SizeGrowInGroup);
             }
 
             {
@@ -533,7 +551,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -574,17 +592,19 @@ namespace Hinode.Layouts.Tests
             var info = new LayoutInfo();
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kind) recievedValue = default;
-            info.OnChangedValue.Add((_self, _kind) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kind, LayoutInfo.OnChangedValueParam prevInfo) recievedValue = default;
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 callCounter++;
-                recievedValue = (_self, _kind);
+                recievedValue = (_self, _kind, _prev);
             });
 
             {
+                var prevOrder = info.OrderInGroup;
                 info.OrderInGroup += 2;
                 Assert.AreEqual(1, callCounter);
                 Assert.AreSame(info, recievedValue.self);
                 Assert.AreEqual(LayoutInfo.ValueKind.OrderInGroup, recievedValue.kind);
+                Assert.AreEqual(prevOrder, recievedValue.prevInfo.OrderInGroup);
             }
 
             {
@@ -605,7 +625,7 @@ namespace Hinode.Layouts.Tests
         {
             var info = new LayoutInfo();
 
-            info.OnChangedValue.Add((_self, _kind) => {
+            info.OnChangedValue.Add((_self, _kind, _prev) => {
                 throw new System.Exception();
             });
 
@@ -652,19 +672,20 @@ namespace Hinode.Layouts.Tests
             info.MaxSize = other.MaxSize = Vector3.one * 100f; // Callbackの呼び出しのみをテストするので、MinSizeより下回らないようにしています。
 
             var callCounter = 0;
-            (LayoutInfo self, LayoutInfo.ValueKind kinds) recievedValues = default;
-            info.OnChangedValue.Add((_self, _kinds) => {
+            (LayoutInfo self, LayoutInfo.ValueKind kinds, LayoutInfo.OnChangedValueParam prevInfo) recievedValues = default;
+            info.OnChangedValue.Add((_self, _kinds, _prev) => {
                 callCounter++;
-                recievedValues = (_self, _kinds);
+                recievedValues = (_self, _kinds, _prev);
             });
             //例外が発生しても他のコールバックは実行されるようにしてください。
-            info.OnChangedValue.Add((_, __) => throw new System.Exception());
+            info.OnChangedValue.Add((_, __, ___) => throw new System.Exception());
 
             var flagCombination = IndexCombinationEnumerable.GetFlagEnumCombination(
                 System.Enum.GetValues(typeof(LayoutInfo.ValueKind)).OfType<LayoutInfo.ValueKind>()
             );
             foreach(var kinds in flagCombination)
             {
+                var prev = new LayoutInfo(info);
                 var errorMessage = $"Fail test... kinds={kinds}";
                 if (0 != (kinds & LayoutInfo.ValueKind.LayoutSize))
                     other.LayoutSize = other.LayoutSize + Vector3.one;
@@ -686,6 +707,14 @@ namespace Hinode.Layouts.Tests
 
                 Assert.AreSame(info, recievedValues.self, errorMessage);
                 Assert.AreEqual(kinds, recievedValues.kinds, errorMessage);
+
+                Assert.AreNotSame(info, recievedValues.prevInfo);
+                Assert.AreEqual(prev.LayoutSize, recievedValues.prevInfo.LayoutSize);
+                Assert.AreEqual(prev.MinSize, recievedValues.prevInfo.MinSize);
+                Assert.AreEqual(prev.MaxSize, recievedValues.prevInfo.MaxSize);
+                Assert.AreEqual(prev.IgnoreLayoutGroup, recievedValues.prevInfo.IgnoreLayoutGroup);
+                Assert.AreEqual(prev.SizeGrowInGroup, recievedValues.prevInfo.SizeGrowInGroup);
+                Assert.AreEqual(prev.OrderInGroup, recievedValues.prevInfo.OrderInGroup);
             }
         }
         #endregion

@@ -48,6 +48,7 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
     - [基準領域](./Docs/Layouts.md#基準領域)
     - [ILayout](./Docs/Layouts.md#ILayout)
     - [ILayoutTarget](./Docs/Layouts.md#ILayoutTarget)
+    - [LayoutInfo](./Docs/Layouts.md#LayoutInfo)
     - [LayoutManager](./Docs/Layouts.md#LayoutManager)
     - [組み込みのILayout](./Docs/Layouts.md#組み込みのILayout)
 - [MVCフレームワーク](./Docs/MVCFramework.md)

@@ -138,7 +138,8 @@ namespace Hinode.Layouts
                 var R = GetR(self.transform);
                 var ROffset = CalROffset(self);
 
-                self.LayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(R.rect.size, R.anchorMin, R.anchorMax, ROffset);
+                self.LayoutTarget.SetAnchor(R.anchorMin, R.anchorMax);
+                self.LayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(R.rect.size, ROffset);
 
                 self.LayoutTarget.LocalPos = R.anchoredPosition3D;
             }
