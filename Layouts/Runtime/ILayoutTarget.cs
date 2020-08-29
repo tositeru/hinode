@@ -159,7 +159,7 @@ namespace Hinode.Layouts
 		/// <param name="anchorMax"></param>
 		/// <param name="offsetMin"></param>
 		/// <param name="offsetMax"></param>
-		void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax);
+		void UpdateAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax);
 
         /// <summary>
 		/// LocalSizeに関係するパラメータを一括で更新する関数。
@@ -169,7 +169,7 @@ namespace Hinode.Layouts
 		/// </summary>
 		/// <param name="localSize"></param>
 		/// <param name="offset">アンカー領域の中央からのオフセット。AnchorOffsetMin/Maxに影響を与えます</param>
-        void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 offset);
+        void UpdateLocalSize(Vector3 localSize, Vector3 offset);
     }
 
 
@@ -256,7 +256,7 @@ namespace Hinode.Layouts
         {
             localSize = Vector3.Max(localSize, Vector3.zero);
 
-            self.UpdateLocalSizeWithSizeAndAnchorParam(localSize, self.Offset);
+            self.UpdateLocalSize(localSize, self.Offset);
         }
 
 		/// <summary>
@@ -266,7 +266,7 @@ namespace Hinode.Layouts
 		/// <param name="offset"></param>
 		public static void SetOffset(this ILayoutTarget self, Vector3 offset)
         {
-			self.UpdateLocalSizeWithSizeAndAnchorParam(self.LocalSize, offset);
+			self.UpdateLocalSize(self.LocalSize, offset);
 		}
 
 		/// <summary>
@@ -278,7 +278,7 @@ namespace Hinode.Layouts
 		public static void SetAnchor(this ILayoutTarget self, Vector3 min, Vector3 max)
         {
 			var offset = self.AnchorOffsetMinMax();
-			self.UpdateLocalSizeWithAnchorParam(min, max, offset.offsetMin, offset.offsetMax);
+			self.UpdateAnchorParam(min, max, offset.offsetMin, offset.offsetMax);
         }
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace Hinode.Layouts
 		/// <param name="max"></param>
         public static void SetAnchorOffset(this ILayoutTarget self, Vector3 min, Vector3 max)
         {
-            self.UpdateLocalSizeWithAnchorParam(self.AnchorMin, self.AnchorMax, min, max);
+            self.UpdateAnchorParam(self.AnchorMin, self.AnchorMax, min, max);
         }
 
         /// <summary>

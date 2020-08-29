@@ -72,7 +72,7 @@ namespace Hinode.Layouts.Tests
             protected override void TestMethod()
             {
                 var self = new LayoutTargetObject();
-                self.UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, OffsetMin, OffsetMax);
+                self.UpdateAnchorParam(AnchorMin, AnchorMax, OffsetMin, OffsetMax);
 
                 self.SetLocalSize(LocalSize);
 
@@ -160,7 +160,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(data.parentSize);
                 self.SetParent(parent);
-                self.UpdateLocalSizeWithAnchorParam(data.anchorMin, data.anchorMax, Vector3.zero, Vector3.zero);
+                self.UpdateAnchorParam(data.anchorMin, data.anchorMax, Vector3.zero, Vector3.zero);
                 Assert.AreEqual(LayoutTargetAnchorMode.Area, self.AnchorMode(), $"AnchorMode Must be Area!! {errorMessage}");
                 AssertionUtils.AreNearlyEqual(data.correct, self.AnchorAreaSize(), EPSILON, errorMessage);
             }
@@ -187,7 +187,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(data.parentSize);
                 self.SetParent(parent);
-                self.UpdateLocalSizeWithAnchorParam(data.anchorPoint, data.anchorPoint, Vector3.zero, Vector3.zero);
+                self.UpdateAnchorParam(data.anchorPoint, data.anchorPoint, Vector3.zero, Vector3.zero);
                 Assert.AreEqual(LayoutTargetAnchorMode.Point, self.AnchorMode(), $"AnchorMode Must be Point!! {errorMessage}");
                 AssertionUtils.AreNearlyEqual(data.correct, self.AnchorAreaSize(), EPSILON, errorMessage);
             }
@@ -202,7 +202,7 @@ namespace Hinode.Layouts.Tests
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(Vector3.one * 100f);
             var self = new LayoutTargetObject();
-            self.UpdateLocalSizeWithAnchorParam(Vector3.zero, Vector3.one, Vector3.zero, Vector3.zero);
+            self.UpdateAnchorParam(Vector3.zero, Vector3.one, Vector3.zero, Vector3.zero);
             self.SetParent(parent);
 
             var minValue = -10f;
@@ -303,7 +303,7 @@ namespace Hinode.Layouts.Tests
                 parent.SetLocalSize(Vector3.one * 100);
                 self.SetParent(parent);
 
-                self.UpdateLocalSizeWithAnchorParam(data.anchorPoint, data.anchorPoint, Vector3.zero, Vector3.zero);
+                self.UpdateAnchorParam(data.anchorPoint, data.anchorPoint, Vector3.zero, Vector3.zero);
                 Assert.AreEqual(LayoutTargetAnchorMode.Point, self.AnchorMode(), $"AnchorMode Must be Point!! {errorMessage}");
 
                 var (min, max) = self.AnchorAreaMinMaxPos();
@@ -333,7 +333,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(data.parentSize);
                 self.SetParent(parent);
-                self.UpdateLocalSizeWithAnchorParam(data.anchorMin, data.anchorMax, Vector3.zero, Vector3.zero);
+                self.UpdateAnchorParam(data.anchorMin, data.anchorMax, Vector3.zero, Vector3.zero);
                 Assert.AreEqual(LayoutTargetAnchorMode.Area, self.AnchorMode(), $"AnchorMode Must be Area!! {errorMessage}");
 
                 var (min, max) = self.AnchorAreaMinMaxPos();
@@ -373,7 +373,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 self.SetParent(parent);
                 var anchorPoint = Vector3.one * 0.5f;
-                self.UpdateLocalSizeWithAnchorParam(anchorPoint, anchorPoint, data.offsetMin, data.offsetMax);
+                self.UpdateAnchorParam(anchorPoint, anchorPoint, data.offsetMin, data.offsetMax);
                 Assert.AreEqual(LayoutTargetAnchorMode.Point, self.AnchorMode(), $"AnchorMode Must be Point!! {errorMessage}");
 
                 //AnchorAreaからのoffset値なのでLocalSizeの影響は無いようにしてください。
@@ -417,7 +417,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(data.parentSize);
                 self.SetParent(parent);
-                self.UpdateLocalSizeWithAnchorParam(data.anchorMin, data.anchorMax, data.offsetMin, data.offsetMax);
+                self.UpdateAnchorParam(data.anchorMin, data.anchorMax, data.offsetMin, data.offsetMax);
                 Assert.AreEqual(LayoutTargetAnchorMode.Area, self.AnchorMode(), $"AnchorMode Must be Area!! {errorMessage}");
 
                 var (min, max) = self.LocalAreaMinMaxPos();
@@ -455,7 +455,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 self.SetParent(parent);
                 var anchorPoint = Vector3.one * 0.5f;
-                self.UpdateLocalSizeWithAnchorParam(anchorPoint, anchorPoint, data.offsetMin, data.offsetMax);
+                self.UpdateAnchorParam(anchorPoint, anchorPoint, data.offsetMin, data.offsetMax);
                 Assert.AreEqual(LayoutTargetAnchorMode.Point, self.AnchorMode(), $"AnchorMode Must be Point!! {errorMessage}");
 
                 var (min, max) = self.LocalAreaMinMaxPos();
@@ -494,7 +494,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(data.parentSize);
                 self.SetParent(parent);
-                self.UpdateLocalSizeWithAnchorParam(data.anchorMin, data.anchorMax, data.offsetMin, data.offsetMax);
+                self.UpdateAnchorParam(data.anchorMin, data.anchorMax, data.offsetMin, data.offsetMax);
                 Assert.AreEqual(LayoutTargetAnchorMode.Area, self.AnchorMode(), $"AnchorMode Must be Area!! {errorMessage}");
 
                 var (min, max) = self.LocalAreaMinMaxPos();
@@ -565,7 +565,7 @@ namespace Hinode.Layouts.Tests
             {
                 var self = new LayoutTargetObject();
                 var anchorPos = Vector3.one * 0.5f;
-                self.UpdateLocalSizeWithAnchorParam(anchorPos, anchorPos, Vector3.one * 10f, Vector3.one * 20f);
+                self.UpdateAnchorParam(anchorPos, anchorPos, Vector3.one * 10f, Vector3.one * 20f);
 
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));
@@ -577,7 +577,7 @@ namespace Hinode.Layouts.Tests
 
             {
                 var self = new LayoutTargetObject();
-                self.UpdateLocalSizeWithAnchorParam(Vector3.zero, Vector3.one, Vector3.one * 10f, Vector3.one * 20f);
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, Vector3.one * 10f, Vector3.one * 20f);
 
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));
@@ -621,7 +621,7 @@ namespace Hinode.Layouts.Tests
             {
                 var self = new LayoutTargetObject();
                 var anchorPos = Vector3.one * 0.5f;
-                self.UpdateLocalSizeWithAnchorParam(anchorPos, anchorPos, Vector3.one * 10f, Vector3.one * 20f);
+                self.UpdateAnchorParam(anchorPos, anchorPos, Vector3.one * 10f, Vector3.one * 20f);
 
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));
@@ -633,7 +633,7 @@ namespace Hinode.Layouts.Tests
 
             {
                 var self = new LayoutTargetObject();
-                self.UpdateLocalSizeWithAnchorParam(Vector3.zero, Vector3.one, Vector3.one * 10f, Vector3.one * 20f);
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, Vector3.one * 10f, Vector3.one * 20f);
 
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));

@@ -139,7 +139,7 @@ namespace Hinode.Layouts
                 var ROffset = CalROffset(self);
 
                 self.LayoutTarget.SetAnchor(R.anchorMin, R.anchorMax);
-                self.LayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(R.rect.size, ROffset);
+                self.LayoutTarget.UpdateLocalSize(R.rect.size, ROffset);
 
                 self.LayoutTarget.LocalPos = R.anchoredPosition3D;
             }

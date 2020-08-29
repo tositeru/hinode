@@ -77,7 +77,7 @@ namespace Hinode.Layouts
                         var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
                         var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
 
-                        child.UpdateLocalSizeWithAnchorParam(child.AnchorMin, child.AnchorMax, offsetMin, offsetMax);
+                        child.UpdateAnchorParam(child.AnchorMin, child.AnchorMax, offsetMin, offsetMax);
                     }
                 }
 
@@ -139,7 +139,7 @@ namespace Hinode.Layouts
             var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
             var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
 
-            UpdateLocalSizeWithAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
         }
 
         public void SetLayoutInfo(LayoutInfo layoutInfo)
@@ -230,7 +230,7 @@ namespace Hinode.Layouts
         }
 
 
-        public void UpdateLocalSizeWithAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
+        public void UpdateAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
         {
             NormalizeAnchorPos(ref anchorMin, ref anchorMax);
             var prevLocalSize = LocalSize;
@@ -255,7 +255,7 @@ namespace Hinode.Layouts
             OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
-        public void UpdateLocalSizeWithSizeAndAnchorParam(Vector3 localSize, Vector3 offset)
+        public void UpdateLocalSize(Vector3 localSize, Vector3 offset)
         {
             var prevLocalSize = LocalSize;
             var prevOffset = Offset;

@@ -392,7 +392,7 @@ namespace Hinode.Layouts.Tests
             protected override void TestMethod()
             {
                 _target.LayoutTarget.SetAnchor(_paramAnchorMinMax.min, _paramAnchorMinMax.max);
-                _target.LayoutTarget.UpdateLocalSizeWithSizeAndAnchorParam(
+                _target.LayoutTarget.UpdateLocalSize(
                     _paramLocalSize.value,
                     _paramOffset.value);
                 _target.LayoutTarget.LocalPos = _paramLocalPos.value;
