@@ -1,0 +1,19 @@
+{
+    "name": "Hinode.Layouts.Editor",
+    "references": [
+        "GUID:9f1fdaef15a7b4001961009abd3aa659",
+        "GUID:be99853fc7531475aabb3e4e05a662a0",
+        "GUID:c9e86959c848d4665ba6de4f9a397c06"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

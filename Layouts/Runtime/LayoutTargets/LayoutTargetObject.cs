@@ -11,6 +11,7 @@ namespace Hinode.Layouts
 	/// 
 	/// <seealso cref="ILayoutTarget"/>
 	/// </summary>
+    [System.Serializable]
     public class LayoutTargetObject : ILayoutTarget
     {
         SmartDelegate<ILayoutTargetOnDisposed> _onDisposed = new SmartDelegate<ILayoutTargetOnDisposed>();
@@ -24,12 +25,12 @@ namespace Hinode.Layouts
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
         ListHelper<ILayout> _layouts = new ListHelper<ILayout>();
-        Vector3 _localPos;
+        [SerializeField] Vector3 _localPos;
 
-        Vector3 _localSize;
-        Vector3 _anchorMin;
-        Vector3 _anchorMax;
-        Vector3 _offset;
+        [SerializeField] Vector3 _localSize;
+        [SerializeField] Vector3 _anchorMin;
+        [SerializeField] Vector3 _anchorMax;
+        [SerializeField] Vector3 _offset;
 
         public LayoutTargetObject()
         {

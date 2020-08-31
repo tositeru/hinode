@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Hinode.Layouts
 {
@@ -45,12 +46,12 @@ namespace Hinode.Layouts
         public RectTransform R { get => transform as RectTransform; }
 
 
-        LayoutTargetObject _target;
+        [SerializeField] LayoutTargetObject _target;
         public LayoutTargetObject LayoutTarget
         {
             get
             {
-                if(_target == null)
+                if (_target == null)
                 {
                     _target = new LayoutTargetObject();
                     CopyToLayoutTarget();
@@ -63,7 +64,7 @@ namespace Hinode.Layouts
         {
             if(transform is RectTransform)
             {
-                _updater = new RectTransformUpdater();
+                if(!(_updater is RectTransformUpdater)) _updater = new RectTransformUpdater();
             }
             else
             {
@@ -84,7 +85,7 @@ namespace Hinode.Layouts
         /// </summary>
         public void CopyToLayoutTarget()
         {
-            if (Updater == null) return;
+            Assert.IsNotNull(Updater);
             Updater.CopyToLayoutTarget(this);
         }
 
@@ -95,12 +96,12 @@ namespace Hinode.Layouts
         /// </summary>
         public void CopyToTransform()
         {
-            if (Updater == null) return;
+            Assert.IsNotNull(Updater);
             Updater.CopyToTransform(this);
         }
 
         #region Unity Callbacks
-        private void Start()
+        private void Awake()
         {
             AutoDetectUpdater();
         }

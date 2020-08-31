@@ -175,6 +175,16 @@ namespace Hinode.Layouts
 
     public static partial class ILayoutTargetExtensions
     {
+		/// <summary>
+        /// レイアウト計算用のサイズを返します。
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+		public static Vector3 LayoutSize(this ILayoutTarget self)
+        {
+			return self.LayoutInfo.GetLayoutSize(self);
+        }
+
         /// <summary>
 		/// ParentがNullの場合は0サイズを返します。
 		/// </summary>
@@ -302,6 +312,18 @@ namespace Hinode.Layouts
             return self.AnchorMin.AreNearlyEqual(self.AnchorMax, LayoutDefines.NUMBER_PRECISION)
                 ? LayoutTargetAnchorMode.Point
                 : LayoutTargetAnchorMode.Area;
+        }
+
+		/// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+		public static void ClearLayouts(this ILayoutTarget self)
+        {
+			while(0 < self.Layouts.Count)
+            {
+				self.RemoveLayout(self.Layouts[self.Layouts.Count-1]);
+            }
         }
     }
 
