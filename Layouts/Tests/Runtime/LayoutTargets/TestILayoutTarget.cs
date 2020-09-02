@@ -112,6 +112,21 @@ namespace Hinode.Layouts.Tests
             test.RunTest(settings);
         }
 
+        #region PivotOffset
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.PivotOffset(ILayoutTarget)"/>
+        /// </summary>
+        [Test]
+        public void PivotOffsetPasses()
+        {
+            var target = new LayoutTargetObject();
+            target.UpdateLocalSize(Vector3.one * 100f, Vector3.zero);
+
+            target.Pivot = Vector3.one;
+            AssertionUtils.AreNearlyEqual(target.LocalSize*-0.5f, target.PivotOffset(), LayoutDefines.NUMBER_PRECISION);
+        }
+        #endregion
+
         #region ParentLocalSize
         /// <summary>
         /// <seealso cref="ILayoutTargetExtensions.ParentLocalSize(ILayoutTarget)"/>

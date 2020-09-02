@@ -20,6 +20,7 @@ namespace Hinode.Layouts
         SmartDelegate<ILayoutTargetOnChangedLocalPos> _onChangedLocalPos = new SmartDelegate<ILayoutTargetOnChangedLocalPos>();
         SmartDelegate<ILayoutTargetOnChangedLocalSize> _onChangedLocalSize = new SmartDelegate<ILayoutTargetOnChangedLocalSize>();
         SmartDelegate<ILayoutTargetOnChangedOffset> _onChangedOffset = new SmartDelegate<ILayoutTargetOnChangedOffset>();
+        SmartDelegate<ILayoutTargetOnChangedPivot> _onChangedPivot = new SmartDelegate<ILayoutTargetOnChangedPivot>();
         SmartDelegate<ILayoutTargetOnChangedLayoutInfo> _onChangedLayoutInfo = new SmartDelegate<ILayoutTargetOnChangedLayoutInfo>();
 
         LayoutTargetObject _parent;
@@ -31,6 +32,7 @@ namespace Hinode.Layouts
         [SerializeField] Vector3 _anchorMin;
         [SerializeField] Vector3 _anchorMax;
         [SerializeField] Vector3 _offset;
+        [SerializeField] Vector3 _pivot = Vector3.one * 0.5f;
 
         public LayoutTargetObject()
         {
@@ -157,6 +159,7 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get => _onChangedLocalPos; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get => _onChangedLocalSize; }
         public NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get => _onChangedOffset; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get => _onChangedPivot; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get => _onChangedLayoutInfo; }
 
         public ILayoutTarget Parent { get => _parent; }
@@ -192,7 +195,25 @@ namespace Hinode.Layouts
         }
         public Vector3 Offset
         {
-            get => _offset;
+            get => _offset + this.PivotOffset();
+        }
+
+        /// <summary>
+        /// 合わせてOnChangedOffsetコールバックが呼び出される可能性があります。
+        /// </summary>
+        public Vector3 Pivot
+        {
+            get => _pivot;
+            set
+            {
+                if (_pivot.AreNearlyEqual(value, LayoutDefines.NUMBER_PRECISION))
+                    return;
+                var prev = _pivot;
+                _pivot = value;
+
+                var pivotOffset = CalPivotOffset(LocalSize, _pivot);
+                _onChangedPivot.SafeDynamicInvoke(this, prev, () => $"LayoutTargetObject#Pivot", LayoutDefines.LOG_SELECTOR);
+            }
         }
 
         public virtual void Dispose()
@@ -211,6 +232,9 @@ namespace Hinode.Layouts
             _onChangedChildren.Clear();
             _onChangedLocalPos.Clear();
             _onChangedLocalSize.Clear();
+            _onChangedOffset.Clear();
+            _onChangedPivot.Clear();
+            _onChangedLayoutInfo.Clear();
         }
 
         public void AddLayout(ILayout layout)
@@ -263,6 +287,7 @@ namespace Hinode.Layouts
             localSize = Vector3.Max(localSize, Vector3.zero);
 
             _localSize = LimitLocalSizeByLayoutInfo(localSize);
+
             _offset = offset;
 
             var parentLayoutSize = Parent != null
@@ -284,6 +309,11 @@ namespace Hinode.Layouts
             if (max.y >= 0) localSize.y = Min(max.y, localSize.y);
             if (max.z >= 0) localSize.z = Min(max.z, localSize.z);
             return localSize;
+        }
+
+        static Vector3 CalPivotOffset(Vector3 localSize, Vector3 pivot)
+        {
+            return -localSize.Mul((pivot - Vector3.one * 0.5f));
         }
 
         static void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)

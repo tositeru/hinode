@@ -22,6 +22,7 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
+	public delegate void ILayoutTargetOnChangedPivot(ILayoutTarget self, Vector3 prevPivot);
 	public delegate void ILayoutTargetOnChangedLayoutInfo(ILayoutTarget self, LayoutInfo.ValueKind kind);
 
 	/// <summary>
@@ -52,7 +53,7 @@ namespace Hinode.Layouts
 	/// - AnchorArea: 親領域と関連付けされるAnchorの領域。 ILayoutTargetExtensions#AnchorAreaSizeで取得できます。
 	/// - LocalArea: AnchorAreaにOffsetを追加した領域。こちらが自身の領域となります。
 	/// - O: 中心. Parentが設定されている場合はその中央になります。
-	/// - o: 中心からのOffset		ILayoutTarget#Offset
+	/// - o: 中心からのOffset		ILayoutTarget#Offset + ILayoutTargetExtensions#PivotOffset
 	/// - a: anchorMin			ILayoutTarget#AnchorMin
 	/// - A: anchorMax			ILayoutTarget#AnchorMax
 	/// - OI: 中心からのOffset - 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
@@ -102,6 +103,7 @@ namespace Hinode.Layouts
         NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get; }
 
 		ILayoutTarget Parent { get; }
@@ -124,7 +126,12 @@ namespace Hinode.Layouts
         Vector3 LocalSize { get; }
         Vector3 AnchorMin { get; }
         Vector3 AnchorMax { get; }
-        Vector3 Offset { get; }
+
+		/// <summary>
+		/// 実際のOffset値にPivotOffsetを加えた値を返すようにしてください。
+		/// </summary>
+		Vector3 Offset { get; }
+		Vector3 Pivot { get; set; }
 
 		void AddLayout(ILayout layout);
 		void RemoveLayout(ILayout layout);
@@ -176,10 +183,21 @@ namespace Hinode.Layouts
     public static partial class ILayoutTargetExtensions
     {
 		/// <summary>
-        /// レイアウト計算用のサイズを返します。
+        /// Pivotによるオフセットを計算します。
+        /// ILayoutTarget#Offsetの影響はないものになります。
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
+		public static Vector3 PivotOffset(this ILayoutTarget self)
+        {
+			return -self.LocalSize.Mul(self.Pivot - Vector3.one * 0.5f);
+		}
+
+		/// <summary>
+		/// レイアウト計算用のサイズを返します。
+		/// </summary>
+		/// <param name="self"></param>
+		/// <returns></returns>
 		public static Vector3 LayoutSize(this ILayoutTarget self)
         {
 			return self.LayoutInfo.GetLayoutSize(self);
