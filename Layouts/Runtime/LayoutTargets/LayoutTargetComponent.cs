@@ -45,7 +45,6 @@ namespace Hinode.Layouts
 
         public RectTransform R { get => transform as RectTransform; }
 
-
         [SerializeField] LayoutTargetObject _target;
         public LayoutTargetObject LayoutTarget
         {
@@ -64,7 +63,7 @@ namespace Hinode.Layouts
         {
             if(transform is RectTransform)
             {
-                if(!(_updater is RectTransformUpdater)) _updater = new RectTransformUpdater();
+                if(!(_updater is RectTransformUpdater)) _updater = new RectTransformUpdater(this);
             }
             else
             {
@@ -130,8 +129,22 @@ namespace Hinode.Layouts
 
         public class RectTransformUpdater : ILayoutTargetUpdater
         {
+            DrivenRectTransformTracker _tracker;
+
+            public RectTransformUpdater(LayoutTargetComponent self)
+            {
+                var R = GetR(self.transform);
+
+                _tracker.Add(self, R, DrivenTransformProperties.AnchoredPosition3D);
+                _tracker.Add(self, R, DrivenTransformProperties.AnchorMin);
+                _tracker.Add(self, R, DrivenTransformProperties.AnchorMax);
+                _tracker.Add(self, R, DrivenTransformProperties.Pivot);
+                _tracker.Add(self, R, DrivenTransformProperties.SizeDelta);
+            }
+
             public RectTransform GetR(Transform transform)
                 => transform as RectTransform;
+
 
             public void CopyToLayoutTarget(LayoutTargetComponent self)
             {
@@ -147,6 +160,8 @@ namespace Hinode.Layouts
 
             public void CopyToTransform(LayoutTargetComponent self)
             {
+                _tracker.Clear();
+
                 //RのPivotを考慮にいれる必要あり
                 var R = GetR(self.transform);
                 var layout = self.LayoutTarget;
@@ -154,9 +169,16 @@ namespace Hinode.Layouts
 
                 R.anchorMin = layout.AnchorMin;
                 R.anchorMax = layout.AnchorMax;
+                R.pivot = layout.Pivot;
                 R.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, layout.LocalSize.x);
                 R.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, layout.LocalSize.y);
                 R.anchoredPosition3D = layout.LocalPos + layout.Offset - (Vector3)ROffset;
+
+                _tracker.Add(self, R, DrivenTransformProperties.AnchoredPosition3D);
+                _tracker.Add(self, R, DrivenTransformProperties.AnchorMin);
+                _tracker.Add(self, R, DrivenTransformProperties.AnchorMax);
+                _tracker.Add(self, R, DrivenTransformProperties.Pivot);
+                _tracker.Add(self, R, DrivenTransformProperties.SizeDelta);
             }
 
             /// <summary>
