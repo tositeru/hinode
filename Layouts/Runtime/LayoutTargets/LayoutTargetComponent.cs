@@ -85,7 +85,7 @@ namespace Hinode.Layouts
         /// </summary>
         public void CopyToLayoutTarget()
         {
-            Assert.IsNotNull(Updater);
+            Assert.IsNotNull(Updater, $"Updater is Null...");
             Updater.CopyToLayoutTarget(this);
         }
 
@@ -96,7 +96,7 @@ namespace Hinode.Layouts
         /// </summary>
         public void CopyToTransform()
         {
-            Assert.IsNotNull(Updater);
+            Assert.IsNotNull(Updater, $"Updater is Null...");
             Updater.CopyToTransform(this);
         }
 

@@ -40,6 +40,7 @@ namespace Hinode.Layouts
 
         bool Validate();
         void UpdateLayout();
+        void ForceUpdateLayout();
     }
 
     public static partial class ILayoutExtensions
@@ -144,6 +145,12 @@ namespace Hinode.Layouts
 
         public abstract bool Validate();
         public abstract void UpdateLayout();
+
+        public void ForceUpdateLayout()
+        {
+            DoChanged = true;
+            UpdateLayout();
+        }
         #endregion
     }
 
