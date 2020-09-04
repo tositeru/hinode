@@ -45,14 +45,14 @@ namespace Hinode.Tests
 
         public static void AreNearlyEqual(float correct, float got, float epsilon=float.Epsilon, string message="")
         {
-            Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+            Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct:F8}, got={got:F8}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector2 correct, Vector2 got, float epsilon=float.Epsilon, string message="")
         {
             Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector3 correct, Vector3 got, float epsilon=float.Epsilon, string message="")
@@ -60,7 +60,7 @@ namespace Hinode.Tests
             Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
                 && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector4 correct, Vector4 got, float epsilon=float.Epsilon, string message="")
@@ -69,7 +69,7 @@ namespace Hinode.Tests
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
                 && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
                 && Utils.AreFloatsEqual(correct.w, got.w, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreEqual<TKey, TValue>(Dictionary<TKey, TValue> correct, Dictionary<TKey, TValue> got, string message)
