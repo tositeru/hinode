@@ -19,6 +19,8 @@ namespace Hinode.Layouts
         SmartDelegate<ILayoutTargetOnChangedChildren> _onChangedChildren = new SmartDelegate<ILayoutTargetOnChangedChildren>();
         SmartDelegate<ILayoutTargetOnChangedLocalPos> _onChangedLocalPos = new SmartDelegate<ILayoutTargetOnChangedLocalPos>();
         SmartDelegate<ILayoutTargetOnChangedLocalSize> _onChangedLocalSize = new SmartDelegate<ILayoutTargetOnChangedLocalSize>();
+
+        SmartDelegate<ILayoutTargetOnChangedAnchorMinMax> _onChangedAnchorMinMax = new SmartDelegate<ILayoutTargetOnChangedAnchorMinMax>();
         SmartDelegate<ILayoutTargetOnChangedOffset> _onChangedOffset = new SmartDelegate<ILayoutTargetOnChangedOffset>();
         SmartDelegate<ILayoutTargetOnChangedPivot> _onChangedPivot = new SmartDelegate<ILayoutTargetOnChangedPivot>();
         SmartDelegate<ILayoutTargetOnChangedLayoutInfo> _onChangedLayoutInfo = new SmartDelegate<ILayoutTargetOnChangedLayoutInfo>();
@@ -159,6 +161,7 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get => _onChangedLocalPos; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get => _onChangedLocalSize; }
         public NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get => _onChangedOffset; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedAnchorMinMax> OnChangedAnchorMinMax { get => _onChangedAnchorMinMax; }
         public NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get => _onChangedPivot; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get => _onChangedLayoutInfo; }
 
@@ -280,6 +283,8 @@ namespace Hinode.Layouts
 
             NormalizeLocalSize(ref _localSize, ref offsetMin, ref offsetMax, anchorAreaSize);
 
+            var prevAnchorMin = _anchorMin;
+            var prevAnchorMax = _anchorMax;
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
 
@@ -289,6 +294,7 @@ namespace Hinode.Layouts
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
+            OnUpdateAnchorMinMaxWithExceptionCheck(prevAnchorMin, prevAnchorMax);
         }
 
         public void UpdateLocalSize(Vector3 localSize, Vector3 offset)
@@ -369,6 +375,18 @@ namespace Hinode.Layouts
 
             _onChangedOffset.SafeDynamicInvoke(this, prevOffset, () => $"LayoutTargetObject#Update Offset", LayoutDefines.LOG_SELECTOR);
         }
+
+        void OnUpdateAnchorMinMaxWithExceptionCheck(Vector3 prevAnchorMin, Vector3 prevAnchorMax)
+        {
+            if (prevAnchorMin.AreNearlyEqual(_anchorMin)
+                && prevAnchorMax.AreNearlyEqual(_anchorMax))
+            {
+                return;
+            }
+
+            _onChangedAnchorMinMax.SafeDynamicInvoke(this, prevAnchorMin, prevAnchorMax, () => $"LayoutTargetObject#Update AnchorMin/Max", LayoutDefines.LOG_SELECTOR);
+        }
+
         #endregion
     }
 }

@@ -22,6 +22,7 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
+	public delegate void ILayoutTargetOnChangedAnchorMinMax(ILayoutTarget self, Vector3 prevAnchorMin, Vector3 prevAnchorMax);
 	public delegate void ILayoutTargetOnChangedPivot(ILayoutTarget self, Vector3 prevPivot);
 	public delegate void ILayoutTargetOnChangedLayoutInfo(ILayoutTarget self, LayoutInfo.ValueKind kind);
 
@@ -105,6 +106,7 @@ namespace Hinode.Layouts
 		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedAnchorMinMax> OnChangedAnchorMinMax { get; }
 
 		ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }

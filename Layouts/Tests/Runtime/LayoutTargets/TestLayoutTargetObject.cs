@@ -731,7 +731,7 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
-        #region AnchorMin
+        #region AnchorMin/Max
         /// <summary>
 		/// <seealso cref="LayoutTargetObject.AnchorMin"/>
 		/// </summary>
@@ -739,25 +739,67 @@ namespace Hinode.Layouts.Tests
         public void AnchorMinPasses()
         {
             var self = new LayoutTargetObject();
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevMin, Vector3 prevMax) recievedValues = default;
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                callCounter++;
+                recievedValues = (_self, _prevMin, _prevMax);
+            });
+
+            var prevAnchorMin = self.AnchorMin;
+            var prevAnchorMax = self.AnchorMax;
             var anchorMin = new Vector3(0.5f, 0.5f, 0.5f);
             self.SetAnchor(anchorMin, Vector3.one);
 
             Assert.AreEqual(anchorMin, self.AnchorMin);
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedValues.self);
+            AssertionUtils.AreNearlyEqual(prevAnchorMin, recievedValues.prevMin, float.Epsilon);
+            AssertionUtils.AreNearlyEqual(prevAnchorMax, recievedValues.prevMax, float.Epsilon);
         }
-        #endregion
 
-        #region AnchorMax
         /// <summary>
         /// <seealso cref="LayoutTargetObject.AnchorMax"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
         /// </summary>
         [Test]
         public void AnchorMaxPasses()
         {
             var self = new LayoutTargetObject();
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevMin, Vector3 prevMax) recievedValues = default;
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                callCounter++;
+                recievedValues = (_self, _prevMin, _prevMax);
+            });
+
+            var prevAnchorMin = self.AnchorMin;
+            var prevAnchorMax = self.AnchorMax;
             var anchorMax = new Vector3(0.5f, 0.5f, 0.5f);
             self.SetAnchor(Vector3.zero, anchorMax);
 
             Assert.AreEqual(anchorMax, self.AnchorMax);
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedValues.self);
+            AssertionUtils.AreNearlyEqual(prevAnchorMin, recievedValues.prevMin, float.Epsilon);
+            AssertionUtils.AreNearlyEqual(prevAnchorMax, recievedValues.prevMax, float.Epsilon);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
+        /// </summary>
+        [Test]
+        public void OnChangedAnchorMinMax_WhenThrowException()
+        {
+            var self = new LayoutTargetObject();
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                throw new System.Exception();
+            });
+
+            var anchorMin = new Vector3(0.5f, 0.5f, 0.5f);
+            self.SetAnchor(anchorMin, Vector3.one);
+
+            Assert.AreEqual(anchorMin, self.AnchorMin);
         }
         #endregion
 
