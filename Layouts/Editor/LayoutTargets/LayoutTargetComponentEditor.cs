@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 namespace Hinode.Layouts.Editors
 {
@@ -140,14 +141,16 @@ namespace Hinode.Layouts.Editors
                 {
                     inst.LayoutTarget.AddLayout(layout.LayoutInstance);
                 }
+            if(serializedObject.ApplyModifiedProperties())
+            {
+                var inst = target as LayoutTargetComponent;
 
-                foreach (var layout in inst.LayoutTarget.Layouts)
+                foreach(var t in inst.transform.GetHierarchyEnumerable()
+                    .Select(_t => _t.GetComponent<LayoutTargetComponent>())
+                    .Where(_t => _t != null))
                 {
-                    layout.UpdateLayout();
+                    UpdateSelf(t);
                 }
-
-                inst.CopyToTransform();
-                //TODO 他のLayoutTargetComponentの再計算を行う
             }
 
             if (GUILayout.Button("Copy From Transform"))
@@ -155,6 +158,24 @@ namespace Hinode.Layouts.Editors
                 var inst = target as LayoutTargetComponent;
                 inst.CopyToLayoutTarget();
             }
+        }
+
+        static void UpdateSelf(LayoutTargetComponent inst)
+        {
+            inst.AutoDetectUpdater();
+
+            inst.LayoutTarget.ClearLayouts();
+            foreach (var layout in inst.GetComponents<ILayoutComponent>())
+            {
+                inst.LayoutTarget.AddLayout(layout.LayoutInstance);
+            }
+
+            foreach (var layout in inst.LayoutTarget.Layouts)
+            {
+                layout.UpdateLayout();
+            }
+
+            inst.CopyToTransform();
         }
 
         static Vector3 GetAnchorAreaSize(LayoutTargetComponent layoutTargetComponent)
