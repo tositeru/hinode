@@ -239,19 +239,30 @@ namespace Hinode.Layouts
 
         public void AddLayout(ILayout layout)
         {
-            if (_layouts.Contains(layout)) return;
-
-            var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority >=_l.OperationPriority);
-            if(insertIndex != -1)
-                _layouts.InsertTo(insertIndex, layout);
-            else
-                _layouts.Add(layout);
+            if (!_layouts.Contains(layout))
+            {
+                var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority >=_l.OperationPriority);
+                if(insertIndex != -1)
+                    _layouts.InsertTo(insertIndex, layout);
+                else
+                    _layouts.Add(layout);
+            }
+            if(layout.Target != this)
+            {
+                layout.Target = this;
+            }
         }
 
         public void RemoveLayout(ILayout layout)
         {
-            if (!_layouts.Contains(layout)) return;
-            _layouts.Remove(layout);
+            if (_layouts.Contains(layout))
+            {
+                _layouts.Remove(layout);
+            }
+            if(layout.Target == this)
+            {
+                layout.Target = null;
+            }
         }
 
 

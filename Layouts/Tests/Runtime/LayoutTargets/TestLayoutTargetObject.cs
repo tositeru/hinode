@@ -827,6 +827,7 @@ namespace Hinode.Layouts.Tests
                 layoutTarget.Layouts,
                 ""
             );
+            Assert.IsTrue(layoutObjs.All(_l => _l.Target == layoutTarget));
         }
 
         /// <summary>
@@ -850,6 +851,7 @@ namespace Hinode.Layouts.Tests
             }
 
             layoutTarget.RemoveLayout(layoutObjs[2]); // test point
+            Assert.IsNull(layoutObjs[2].Target);
             AssertionUtils.AssertEnumerable(
                 new ILayout[]
                 {
