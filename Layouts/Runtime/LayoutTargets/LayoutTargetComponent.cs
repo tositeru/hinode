@@ -129,6 +129,13 @@ namespace Hinode.Layouts
 
         public class RectTransformUpdater : ILayoutTargetUpdater
         {
+            public static ILayoutTarget Create(RectTransform R)
+            {
+                var layout = new LayoutTargetObject();
+                CopyToLayoutTarget(R, layout);
+                return layout;
+            }
+
             DrivenRectTransformTracker _tracker;
 
             public RectTransformUpdater(LayoutTargetComponent self)
@@ -145,17 +152,20 @@ namespace Hinode.Layouts
             public RectTransform GetR(Transform transform)
                 => transform as RectTransform;
 
+            static void CopyToLayoutTarget(RectTransform R, ILayoutTarget layout)
+            {
+                var ROffset = CalROffset(R, layout);
+
+                layout.SetAnchor(R.anchorMin, R.anchorMax);
+                layout.UpdateLocalSize(R.rect.size, ROffset);
+
+                layout.LocalPos = R.anchoredPosition3D;
+            }
 
             public void CopyToLayoutTarget(LayoutTargetComponent self)
             {
-                //RのPivotを考慮にいれる必要あり
                 var R = GetR(self.transform);
-                var ROffset = CalROffset(self);
-
-                self.LayoutTarget.SetAnchor(R.anchorMin, R.anchorMax);
-                self.LayoutTarget.UpdateLocalSize(R.rect.size, ROffset);
-
-                self.LayoutTarget.LocalPos = R.anchoredPosition3D;
+                CopyToLayoutTarget(R, self.LayoutTarget);
             }
 
             public void CopyToTransform(LayoutTargetComponent self)
@@ -165,7 +175,7 @@ namespace Hinode.Layouts
                 //RのPivotを考慮にいれる必要あり
                 var R = GetR(self.transform);
                 var layout = self.LayoutTarget;
-                var ROffset = CalROffset(self);
+                var ROffset = CalROffset(R, layout);
 
                 R.anchorMin = layout.AnchorMin;
                 R.anchorMax = layout.AnchorMax;
@@ -189,10 +199,8 @@ namespace Hinode.Layouts
             /// </summary>
             /// <param name="R"></param>
             /// <returns></returns>
-            Vector2 CalROffset(LayoutTargetComponent self)
+            static Vector2 CalROffset(RectTransform R, ILayoutTarget layout)
             {
-                var R = GetR(self.transform);
-                var layout = self.LayoutTarget;
                 var parentR = R.parent as RectTransform;
 
                 var anchorSize = parentR != null

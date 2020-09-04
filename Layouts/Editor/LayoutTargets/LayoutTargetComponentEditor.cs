@@ -19,7 +19,7 @@ namespace Hinode.Layouts.Editors
         }
 
         bool _foldoutAnchorTypePreset=true;
-        bool _foldoutAnchorExpandFlag = true;
+        bool _foldoutAnchorOffset = true;
 
         class AnchorPresetInfo
         {
@@ -130,17 +130,44 @@ namespace Hinode.Layouts.Editors
                 }
             }
 
-            if(serializedObject.ApplyModifiedProperties())
+            _foldoutAnchorOffset = EditorGUILayout.Foldout(_foldoutAnchorOffset, "Anchor Offset Min/Max");
+            if (_foldoutAnchorOffset)
             {
-                var inst = target as LayoutTargetComponent;
-
-                inst.AutoDetectUpdater();
-
-                inst.LayoutTarget.ClearLayouts();
-                foreach (var layout in inst.GetComponents<ILayoutComponent>())
+                using (var s = new EditorGUI.IndentLevelScope())
                 {
-                    inst.LayoutTarget.AddLayout(layout.LayoutInstance);
+                    var targetSP = serializedObject.FindProperty("_target");
+                    var anchorMinSP = targetSP.FindPropertyRelative("_anchorMin");
+                    var anchorMaxSP = targetSP.FindPropertyRelative("_anchorMax");
+                    var localSizeSP = targetSP.FindPropertyRelative("_localSize");
+                    var offsetSP = targetSP.FindPropertyRelative("_offset");
+
+                    var inst = this.target as LayoutTargetComponent;
+
+                    var other = new LayoutTargetObject();
+                    other.SetParent(GetParentLayoutTarget(inst));
+                    other.Pivot = inst.LayoutTarget.Pivot;
+                    other.SetAnchor(inst.LayoutTarget.AnchorMin, inst.LayoutTarget.AnchorMax);
+                    other.UpdateLocalSize(inst.LayoutTarget.LocalSize, inst.LayoutTarget.Offset);
+
+                    var (offsetMin, offsetMax) = other.AnchorOffsetMinMax();
+                    var newOffsetMin = EditorGUILayout.Vector3Field("Offset Min", offsetMin);
+                    var newOffsetMax = EditorGUILayout.Vector3Field("Offset Max", offsetMax);
+
+                    if (!offsetMin.AreNearlyEqual(newOffsetMin)
+                        || !offsetMax.AreNearlyEqual(newOffsetMax))
+                    {
+                        other.SetAnchorOffset(newOffsetMin, newOffsetMax);
+
+                        anchorMinSP.vector3Value = other.AnchorMin;
+                        anchorMaxSP.vector3Value = other.AnchorMax;
+                        localSizeSP.vector3Value = other.LocalSize;
+                        offsetSP.vector3Value = other.Offset;
+
+                        other.Dispose();
+                    }
                 }
+            }
+
             if(serializedObject.ApplyModifiedProperties())
             {
                 var inst = target as LayoutTargetComponent;
@@ -176,6 +203,32 @@ namespace Hinode.Layouts.Editors
             }
 
             inst.CopyToTransform();
+        }
+
+        static LayoutTargetObject GetParentLayoutTarget(LayoutTargetComponent layoutTargetComponent)
+        {
+            if (layoutTargetComponent.LayoutTarget.Parent == null)
+            {
+                var parent = layoutTargetComponent.transform.parent;
+                if (parent.TryGetComponent<LayoutTargetComponent>(out var parentLayoutTarget))
+                {
+                    return parentLayoutTarget.LayoutTarget;
+                }
+                else if (parent.transform is RectTransform)
+                {
+                    var parentR = parent.transform as RectTransform;
+                    return LayoutTargetComponent.RectTransformUpdater.Create(parentR) as LayoutTargetObject;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return layoutTargetComponent.LayoutTarget.Parent as LayoutTargetObject;
+            }
+
         }
 
         static Vector3 GetAnchorAreaSize(LayoutTargetComponent layoutTargetComponent)
