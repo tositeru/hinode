@@ -615,13 +615,12 @@ namespace Hinode.Layouts.Tests
         {
             System.Action<LayoutTargetObject, LayoutTargetObject, Vector3> validateFunc = (_self, _parent, _offset) =>
             {
+                _self.SetParent(_parent);
+
                 var anchorMin = _self.AnchorMin;
                 var anchorMax = _self.AnchorMax;
                 var localSize = _self.LocalSize;
 
-                var anchorLocalSize = _parent.LocalSize.Mul(_self.AnchorMax - _self.AnchorMin);
-
-                _self.SetParent(_parent);
                 _self.SetOffset(_offset);
 
                 AssertionUtils.AreNearlyEqual(_offset, _self.Offset, EPSILON);
@@ -630,7 +629,7 @@ namespace Hinode.Layouts.Tests
                 AssertionUtils.AreNearlyEqual(anchorMin, _self.AnchorMin, EPSILON);
                 AssertionUtils.AreNearlyEqual(anchorMax, _self.AnchorMax, EPSILON);
                 AssertionUtils.AreNearlyEqual(localSize, _self.LocalSize, EPSILON);
-                Debug.Log($"Success not to Change Values(anchorMin/Max LocalSize)!!");
+                Debug.Log($"Success not to Change Values(anchorMin/Max LocalSize={localSize})!!");
             };
 
             {
@@ -653,7 +652,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));
 
-                var offset = Vector3.one * 10f;
+                var offset = Vector3.one * 30f;
                 validateFunc(self, parent, offset);
             }
             Debug.Log($"Success to Anchor Area Mode!");
@@ -784,6 +783,7 @@ namespace Hinode.Layouts.Tests
             }
         }
 
+        #region ClearLayouts
         class LayoutClass : LayoutBase
         {
             public LayoutClass(int priority)
@@ -824,5 +824,6 @@ namespace Hinode.Layouts.Tests
             layoutTarget.ClearLayouts();
             Assert.AreEqual(0, layoutTarget.Layouts.Count);
         }
+        #endregion
     }
 }

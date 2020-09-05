@@ -237,7 +237,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParentNullPasses()
+        public void SetParent_NullPasses()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -252,11 +252,17 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParentSwapPasses()
+        public void SetParent_SwapPasses()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
+            removeParent.SetLocalSize(Vector3.one * 100);
             var addParent = new LayoutTargetObject();
+            addParent.SetLocalSize(Vector3.one * 200);
+
+            var offsetMin = Vector3.one * 10f;
+            var offsetMax = Vector3.one * 20f;
+            layout.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
             layout.SetParent(removeParent);
 
             layout.SetParent(addParent); // <- test point
@@ -264,6 +270,14 @@ namespace Hinode.Layouts.Tests
             Assert.AreSame(addParent, layout.Parent);
             Assert.IsFalse(removeParent.Children.Contains(layout));
             Assert.IsTrue(addParent.Children.Contains(layout));
+
+            {
+                var errorMessage = $"親が切り替わってもAnchorOffsetMin/Maxは変更されないようにしてください。";
+                var (_offsetMin, _offsetMax) = layout.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, LayoutDefines.NUMBER_PRECISION, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, LayoutDefines.NUMBER_PRECISION, errorMessage);
+                AssertionUtils.AreNearlyEqual(layout.Parent.LayoutSize() + offsetMin + offsetMax, layout.LocalSize, LayoutDefines.NUMBER_PRECISION, errorMessage);
+            }
         }
 
         /// <summary>
@@ -271,7 +285,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
         /// </summary>
         [Test]
-        public void OnChangedParentInSetParentPasses()
+        public void OnChangedParent_InSetParentPasses()
         {
             var layout = new LayoutTargetObject();
             int callCounter = 0;
@@ -1459,14 +1473,74 @@ namespace Hinode.Layouts.Tests
                 var offsetMax = Vector3.one * 20;
                 self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
 
-                {
-                    var (min, max) = self.AnchorOffsetMinMax();
-                    Debug.Log($"pass localSize={self.LocalSize} offset={min},{max}");
-                }
-
                 parent.SetLocalSize(Vector3.one * 20f); // <- test point
 
                 var errorMessage = $"AnchorMin/Max, AnchorOffsetMin/MaxはParentの領域に追従してSelfの領域が変更されても変更されないようにしてください。";
+                var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(parent.LocalSize + offsetMin + offsetMax, self.LocalSize, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.zero, self.AnchorMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.one, self.AnchorMax, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.IsAutoUpdate"/>
+        /// </summary>
+        [Test]
+        public void IsAutoUpdatePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 100));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            Assert.IsTrue(self.IsAutoUpdate, "Default値はtureにしてください。");
+
+            {
+                var offsetMin = Vector3.one * 10;
+                var offsetMax = Vector3.one * 20;
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
+
+                var prevLocalSize = self.LocalSize;
+                var prevOffset = self.Offset;
+
+                self.IsAutoUpdate = false;
+                parent.SetLocalSize(Vector3.one * 20f); // <- test point
+
+                var errorMessage = $"LayoutTargetObject#IsAutoUpdateがfalseの時はParentの領域に追従しないようにしてください。";
+                var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(prevLocalSize, self.LocalSize, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(prevOffset, self.Offset, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
+            }
+        }
+        #endregion
+
+        #region FollowParent
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.FollowParent()"/>
+        /// </summary>
+        [Test]
+        public void FollowParentPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(Vector3.one * 20f);
+
+            var self = new LayoutTargetObject();
+            self.IsAutoUpdate = false;
+            self.SetParent(parent);
+
+            {
+                var offsetMin = Vector3.one * 10;
+                var offsetMax = Vector3.one * 20;
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
+
+                self.FollowParent(); // test point
+
+                var errorMessage = $"Test Fail...";
                 var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
                 AssertionUtils.AreNearlyEqual(parent.LocalSize + offsetMin + offsetMax, self.LocalSize, EPSILON, errorMessage);
                 AssertionUtils.AreNearlyEqual(Vector3.zero, self.AnchorMin, EPSILON, errorMessage);

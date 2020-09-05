@@ -28,6 +28,9 @@ namespace Hinode.Layouts
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
         ListHelper<ILayout> _layouts = new ListHelper<ILayout>();
+
+        [SerializeField] Vector3 _prevParentSize = Vector3.zero;
+
         [SerializeField] Vector3 _localPos;
 
         [SerializeField] Vector3 _localSize;
@@ -118,6 +121,8 @@ namespace Hinode.Layouts
                 _parent.OnChangedLocalSize.Add(ParentOnChangedLocalSize);
             }
 
+            FollowParent();
+
             _onChangedParent.SafeDynamicInvoke(this, _parent, prevParent, () => $"LayoutTargetObject#SetParent", LayoutDefines.LOG_SELECTOR);
             return this;
         }
@@ -130,21 +135,7 @@ namespace Hinode.Layouts
         {
             if (parent != Parent) return;
 
-            //変更前のOffsetMin/Maxを計算しています。
-            var parentLayoutSize = prevLocalSize;
-            if (parent.LayoutInfo.LayoutSize.x >= 0) parentLayoutSize.x = Min(parent.LayoutInfo.LayoutSize.x, parentLayoutSize.x);
-            if (parent.LayoutInfo.LayoutSize.y >= 0) parentLayoutSize.y = Min(parent.LayoutInfo.LayoutSize.y, parentLayoutSize.y);
-            if (parent.LayoutInfo.LayoutSize.z >= 0) parentLayoutSize.z = Min(parent.LayoutInfo.LayoutSize.z, parentLayoutSize.z);
-
-            var prevAnchorAreaSize = parentLayoutSize.Mul(AnchorMax - AnchorMin);
-            var max = prevAnchorAreaSize*0.5f;
-            var min = -max;
-
-            var halfSize = LocalSize * 0.5f;
-            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
-            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
-
-            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+            if(IsAutoUpdate) FollowParent();
         }
 
         public void SetLayoutInfo(LayoutInfo layoutInfo)
@@ -165,6 +156,9 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get => _onChangedPivot; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get => _onChangedLayoutInfo; }
 
+        public bool IsAutoUpdate { get; set; } = true;
+
+        public Vector3 PrevParentSize { get => _prevParentSize; }
         public ILayoutTarget Parent { get => _parent; }
         public IEnumerable<ILayoutTarget> Children { get => _children; }
         public int ChildCount { get => _children.Count; }
@@ -276,7 +270,7 @@ namespace Hinode.Layouts
             var prevOffset = Offset;
 
             var parentLayoutSize = Parent != null
-                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+                ? Parent.LayoutSize()
                 : Vector3.zero;
             var anchorAreaSize = parentLayoutSize.Mul(anchorMax - anchorMin);
             _localSize = LimitLocalSizeByLayoutInfo(anchorAreaSize + offsetMin + offsetMax);
@@ -291,6 +285,8 @@ namespace Hinode.Layouts
             var minPos = _localSize * -0.5f - offsetMin;
             var maxPos = _localSize * 0.5f + offsetMax;
             _offset = (maxPos + minPos) * 0.5f;
+
+            _prevParentSize = parentLayoutSize;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
@@ -307,11 +303,25 @@ namespace Hinode.Layouts
 
             _offset = offset;
 
-            var parentLayoutSize = Parent != null
-                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+            _prevParentSize = Parent != null
+                ? Parent.LayoutSize()
                 : Vector3.zero;
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
+        }
+
+        public void FollowParent()
+        {
+            //以前のOffsetMin/Maxを計算しています。
+            var prevAnchorAreaSize = _prevParentSize.Mul(AnchorMax - AnchorMin);
+            var max = prevAnchorAreaSize * 0.5f;
+            var min = -max;
+
+            var halfSize = LocalSize * 0.5f;
+            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
+            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
+
+            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
         }
 
         Vector3 LimitLocalSizeByLayoutInfo(Vector3 localSize)
