@@ -15,15 +15,15 @@ namespace Hinode.Tests
             if (gots == null && corrects == null) return;
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots !=null}");
 
-            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
+            Assert.AreEqual(corrects.Count(), gots.Count(), $"{message}: Don't Equal count...");
 
+            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
             var index = 0;
             foreach (var (t, correct) in gots.Zip(corrects, (_t, _c) => (t: _t, c: _c)))
             {
                 Assert.IsTrue(comparer(correct, t), $"{message}: don't be same... index=>{index}, correct={correct}, got={t}");
                 index++;
             }
-            Assert.AreEqual(corrects.Count(), index, $"{message}: Don't Equal count...");
         }
 
         public static void AssertEnumerableByUnordered<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message, System.Func<T, T, bool> comparer =null)

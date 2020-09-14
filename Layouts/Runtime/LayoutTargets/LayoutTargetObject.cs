@@ -192,11 +192,11 @@ namespace Hinode.Layouts
         }
         public Vector3 Offset
         {
-            get => _offset + this.PivotOffset();
+            get => _offset;
         }
 
         /// <summary>
-        /// 合わせてOnChangedOffsetコールバックが呼び出される可能性があります。
+        /// Pivotの変更された場合は現在の位置を変更しないようにするため、UpdateAnchorParam()が呼びだされます。
         /// </summary>
         public Vector3 Pivot
         {
@@ -205,10 +205,11 @@ namespace Hinode.Layouts
             {
                 if (_pivot.AreNearlyEqual(value, LayoutDefines.NUMBER_PRECISION))
                     return;
+                var (offsetMin, offsetMax) = this.AnchorOffsetMinMax();
+
                 var prev = _pivot;
                 _pivot = value;
-
-                var pivotOffset = CalPivotOffset(LocalSize, _pivot);
+                UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
                 _onChangedPivot.SafeDynamicInvoke(this, prev, () => $"LayoutTargetObject#Pivot", LayoutDefines.LOG_SELECTOR);
             }
         }
@@ -282,9 +283,7 @@ namespace Hinode.Layouts
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
 
-            var minPos = _localSize * -0.5f - offsetMin;
-            var maxPos = _localSize * 0.5f + offsetMax;
-            _offset = (maxPos + minPos) * 0.5f;
+            _offset = -offsetMin.Mul(Vector3.one - Pivot) + offsetMax.Mul(Pivot);
 
             _prevParentSize = parentLayoutSize;
 

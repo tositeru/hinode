@@ -1761,7 +1761,8 @@ namespace Hinode.Layouts.Tests
         public void PivotPropertyPasses()
         {
             var target = new LayoutTargetObject();
-            target.UpdateLocalSize(Vector3.one * 100f, Vector3.zero);
+            var correctLocalSize = Vector3.one * 100f;
+            target.UpdateLocalSize(correctLocalSize, Vector3.zero);
 
             var callCounter = 0;
             (ILayoutTarget self, Vector3 prevPivot) recievedValues = default;
@@ -1785,10 +1786,11 @@ namespace Hinode.Layouts.Tests
                 callCounter = 0;
                 recievedValues = default;
 
+                var (offsetMin, offsetMax) = target.AnchorOffsetMinMax();
                 //test point
                 Assert.DoesNotThrow(() => target.Pivot = pivot);
 
-                var errorMessage = $"Fail test... pivot={pivot:F4} prevPivot={prevPivot:F4}";
+                var errorMessage = $"{System.Environment.NewLine}-- Fail test... pivot={pivot.ToString("F4")} prevPivot={prevPivot.ToString("F4")}";
 
                 Assert.AreEqual(1, callCounter, errorMessage);
                 Assert.AreSame(target, recievedValues.self, errorMessage);
@@ -1796,8 +1798,10 @@ namespace Hinode.Layouts.Tests
 
                 AssertionUtils.AreNearlyEqual(pivot, target.Pivot, EPSILON_POS, errorMessage);
 
-                var correctOffset = -target.LocalSize.Mul(pivot - Vector3.one * 0.5f);
-                AssertionUtils.AreNearlyEqual(correctOffset, target.Offset, EPSILON_POS, errorMessage);
+                AssertionUtils.AreNearlyEqual(correctLocalSize, target.LocalSize, LayoutDefines.POS_NUMBER_PRECISION, errorMessage + $" localSize={target.LocalSize.ToString("F4")}{System.Environment.NewLine} Not Change LocalSize...");
+
+                var correctOffset = -offsetMin.Mul(Vector3.one - pivot) + offsetMax.Mul(pivot);
+                AssertionUtils.AreNearlyEqual(correctOffset, target.Offset, EPSILON_POS, errorMessage + $" offsetMin={offsetMin.ToString("F4")} offsetMax={offsetMax.ToString("F4")}{System.Environment.NewLine} Adjest Anchor OffsetMin/Max...");
             }
         }
 

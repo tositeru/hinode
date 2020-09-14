@@ -143,6 +143,9 @@ namespace Hinode.Layouts
 		/// 実際のOffset値にPivotOffsetを加えた値を返すようにしてください。
 		/// </summary>
 		Vector3 Offset { get; }
+		/// <summary>
+        /// 値が変更される場合は現在の位置状況が変更されないようにするため、UpdateAnchorParam()を呼び出すようにしてください。
+        /// </summary>
 		Vector3 Pivot { get; set; }
 
 		void AddLayout(ILayout layout);
