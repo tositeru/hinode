@@ -239,7 +239,7 @@ namespace Hinode.Layouts
         {
             if (!_layouts.Contains(layout))
             {
-                var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority >=_l.OperationPriority);
+                var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority < _l.OperationPriority);
                 if(insertIndex != -1)
                     _layouts.InsertTo(insertIndex, layout);
                 else

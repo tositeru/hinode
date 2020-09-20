@@ -22,7 +22,7 @@ namespace Hinode.Layouts.Tests
         public void OperationTargetFlagsPasses()
         {
             var aspectLayout = new AspectSizeFitter();
-            Assert.AreEqual(LayoutOperationTarget.Self_LocalArea, aspectLayout.OperationTargetFlags);
+            Assert.AreEqual(LayoutOperationTarget.Self_LocalSize | LayoutOperationTarget.Self_Offset, aspectLayout.OperationTargetFlags);
         }
         #endregion
 
@@ -898,7 +898,54 @@ namespace Hinode.Layouts.Tests
         [Test]
         public void ValidatePasses()
         {
-            throw new System.NotImplementedException();
+            {
+                var aspectSizeFitter = new AspectSizeFitter();
+                Assert.IsNull(aspectSizeFitter.Target);
+                Assert.IsFalse(aspectSizeFitter.Validate());
+            }
+            Debug.Log($"Success to Validate(Target is null)!");
+
+            {
+                var aspectSizeFitter = new AspectSizeFitter();
+                var target = new LayoutTargetObject();
+                //target.SetParent(new LayoutTargetObject());
+                aspectSizeFitter.Target = target;
+
+                Assert.IsNotNull(aspectSizeFitter.Target);
+                Assert.IsNull(aspectSizeFitter.Target.Parent);
+                Assert.IsFalse(aspectSizeFitter.Validate());
+            }
+            Debug.Log($"Success to Validate(Target's Parent is null)!");
+
+            {
+                var aspectSizeFitter = new AspectSizeFitter();
+                var target = new LayoutTargetObject();
+                target.SetParent(new LayoutTargetObject());
+                aspectSizeFitter.Target = target;
+                Assert.IsNotNull(aspectSizeFitter.Target);
+                Assert.IsNotNull(aspectSizeFitter.Target.Parent);
+                Assert.IsTrue(aspectSizeFitter.Validate());
+            }
+            Debug.Log($"Success to Validate(Target and it's Parent is not null)!");
+
+            {
+                var aspectSizeFitter = new AspectSizeFitter();
+                aspectSizeFitter.OperationPriority = 0;
+
+                var otherAspectSizeFitter = new AspectSizeFitter();
+                otherAspectSizeFitter.OperationPriority = -100;
+
+                var target = new LayoutTargetObject();
+                target.SetParent(new LayoutTargetObject());
+
+                otherAspectSizeFitter.Target = target;
+                aspectSizeFitter.Target = target;
+                Debug.Log($"test -- index = {target.Layouts.IndexOf(aspectSizeFitter)}, layout count={target.Layouts.Count}");
+                Assert.IsNotNull(aspectSizeFitter.Target);
+                Assert.IsNotNull(aspectSizeFitter.Target.Parent);
+                Assert.IsFalse(aspectSizeFitter.Validate());
+            }
+            Debug.Log($"Success to Validate(Conflict Other Layout's OperationTargetFlags)!");
         }
         #endregion
     }

@@ -132,12 +132,22 @@ namespace Hinode.Layouts
         #region LayoutBase
         public override LayoutOperationTarget OperationTargetFlags
         {
-            get => LayoutOperationTarget.Self_LocalArea;
+            get => LayoutOperationTarget.Self_LocalSize | LayoutOperationTarget.Self_Offset;
         }
 
         public override bool Validate()
         {
             if (Target == null || Target.Parent == null) return false;
+
+            //ひとまず、TargetのLayoutsのみ判定しています。
+            //Target#ParentのLayoutsも判定範囲に含めるかは未定です。
+            foreach(var otherLayout in Target.Layouts)
+            {
+                if (otherLayout == this) return true;
+
+                if (0 != (otherLayout.OperationTargetFlags & OperationTargetFlags))
+                    return false;
+            }
             return true;
         }
 
@@ -278,6 +288,7 @@ namespace Hinode.Layouts
                 prev.OnChangedParent.Remove(TargetOnChangedParent);
                 prev.OnChangedLocalSize.Remove(TargetOnChangedLocalSize);
                 prev.OnChangedOffset.Remove(TargetOnChangedOffset);
+                prev.OnChangedAnchorMinMax.Remove(TargetOnChangedAnchorMinMax);
                 prev.Parent?.OnChangedLocalSize.Remove(TargetParentOnChangedLocalSize);
             }
 
@@ -287,6 +298,7 @@ namespace Hinode.Layouts
                 current.OnChangedParent.Add(TargetOnChangedParent);
                 current.OnChangedLocalSize.Add(TargetOnChangedLocalSize);
                 current.OnChangedOffset.Add(TargetOnChangedOffset);
+                current.OnChangedAnchorMinMax.Add(TargetOnChangedAnchorMinMax);
                 current.Parent?.OnChangedLocalSize.Add(TargetParentOnChangedLocalSize);
             }
         }
@@ -321,6 +333,11 @@ namespace Hinode.Layouts
             DoChanged = true;
         }
 
+        void TargetOnChangedAnchorMinMax(ILayoutTarget self, Vector3 prevAnchorMin, Vector3 prevAnchorMax)
+        {
+            if (self != Target) return;
+            DoChanged = true;
+        }
         void TargetParentOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize)
         {
             if (Target.Parent != self) return;

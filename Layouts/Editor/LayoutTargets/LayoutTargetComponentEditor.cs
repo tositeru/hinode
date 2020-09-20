@@ -9,6 +9,15 @@ namespace Hinode.Layouts.Editors
     [CustomEditor(typeof(LayoutTargetComponent))]
     public class LayoutTargetComponentEditor : Editor
     {
+        [System.Flags]
+        enum OpMode : uint
+        {
+            Anchor = 0x1 << 1,
+            SizeAndOffset = 0x1 << 2,
+            Both = 0xffffffff,
+            Invisible = 0,
+        }
+
         enum AnchorPresetType
         {
             Low,
@@ -18,6 +27,42 @@ namespace Hinode.Layouts.Editors
             Free,
         }
 
+        OpMode CurrentOpMode { get; set; } = OpMode.Anchor;
+        Dictionary<string, OpMode> PropertyOpModeDict { get; } = new Dictionary<string, OpMode>()
+        {
+            { "_prevParentSize", OpMode.Invisible },
+            { "_localPos", OpMode.Both },
+            { "_localSize", OpMode.SizeAndOffset },
+            { "_anchorMin", OpMode.Anchor },
+            { "_anchorMax", OpMode.Anchor },
+            { "_offset", OpMode.SizeAndOffset },
+            { "_pivot", OpMode.Both },
+        };
+        OpModePopup opModePopUp = new OpModePopup();
+
+        class OpModePopup : Hinode.Editors.PopupEditorGUILayout
+        {
+            public OpMode SelectedOpMode
+            {
+                get
+                {
+                    switch (SelectedIndex)
+                    {
+                        case 0: return OpMode.Anchor;
+                        case 1: return OpMode.SizeAndOffset;
+                        default:
+                            throw new System.NotImplementedException();
+                    }
+                }
+            }
+
+            protected override string[] CreateDisplayOptionList()
+            {
+                return new string[]{ "Anchor", "Size And Offset"};
+            }
+        }
+
+        bool FollowRectTransform { get; set; } = true;
         bool _foldoutAnchorTypePreset=true;
         bool _foldoutAnchorOffset = true;
 
@@ -62,147 +107,166 @@ namespace Hinode.Layouts.Editors
             {
                 _anchorPresetTypes[i].Type = AnchorPresetInfo.ToAnchorePresetType(inst.LayoutTarget.AnchorMin[i], inst.LayoutTarget.AnchorMax[i]);
             }
+
+            LayoutManagerEditor.UpdateLayoutHierachy(inst);
         }
 
         public override void OnInspectorGUI()
         {
-            var it = serializedObject.GetIterator();
-            it.NextVisible(true);
-            while (it.NextVisible(false))
+            var inst = target as LayoutTargetComponent;
+            if(inst.transform is RectTransform)
             {
-                EditorGUILayout.PropertyField(it);
+                FollowRectTransform = EditorGUILayout.Toggle("Follow RectTransform?", FollowRectTransform);
+                if(FollowRectTransform)
+                {
+                    inst.AutoDetectUpdater();
+                    inst.CopyToLayoutTarget();
+                }
             }
 
-            _foldoutAnchorTypePreset = EditorGUILayout.Foldout(_foldoutAnchorTypePreset, "Anchor Min/Max Preset");
-            if (_foldoutAnchorTypePreset)
+            if(opModePopUp.Draw(new GUIContent("OpMode")))
             {
-                using (var indentScope = new EditorGUI.IndentLevelScope())
+                CurrentOpMode = opModePopUp.SelectedOpMode;
+            }
+
+            var propSP = serializedObject.FindProperty("_target");
+            var enterChildProps = true;
+            while (propSP.NextVisible(enterChildProps))
+            {
+                if(0 != (PropertyOpModeDict[propSP.name] & CurrentOpMode))
                 {
-                    foreach (var presetType in _anchorPresetTypes)
+                    EditorGUILayout.PropertyField(propSP);
+                }
+                enterChildProps = false;
+            }
+
+            if (0 != (CurrentOpMode & OpMode.Anchor))
+            {
+
+                _foldoutAnchorTypePreset = EditorGUILayout.Foldout(_foldoutAnchorTypePreset, "Anchor Min/Max Preset");
+                if (_foldoutAnchorTypePreset)
+                {
+                    using (var indentScope = new EditorGUI.IndentLevelScope())
                     {
-                        using (var scope = new EditorGUILayout.HorizontalScope())
+                        foreach (var presetType in _anchorPresetTypes)
                         {
-                            var targetSP = serializedObject.FindProperty("_target");
-                            var anchorMinSP = targetSP.FindPropertyRelative("_anchorMin");
-                            var anchorMaxSP = targetSP.FindPropertyRelative("_anchorMax");
-                            var localSizeSP = targetSP.FindPropertyRelative("_localSize");
-
-                            var newAnchorType = (AnchorPresetType)EditorGUILayout.EnumPopup(presetType.Name, presetType.Type);
-                            if (presetType.Type != newAnchorType)
+                            using (var scope = new EditorGUILayout.HorizontalScope())
                             {
-                                presetType.Type = newAnchorType;
+                                var targetSP = serializedObject.FindProperty("_target");
+                                var anchorMinSP = targetSP.FindPropertyRelative("_anchorMin");
+                                var anchorMaxSP = targetSP.FindPropertyRelative("_anchorMax");
+                                var localSizeSP = targetSP.FindPropertyRelative("_localSize");
 
-                                var elementMinSP = anchorMinSP.FindPropertyRelative(presetType.Name);
-                                var elementMaxSP = anchorMaxSP.FindPropertyRelative(presetType.Name);
-                                switch (presetType.Type)
+                                var newAnchorType = (AnchorPresetType)EditorGUILayout.EnumPopup(presetType.Name, presetType.Type);
+                                if (presetType.Type != newAnchorType)
                                 {
-                                    case AnchorPresetType.Low:
-                                        elementMinSP.floatValue = 0f;
-                                        elementMaxSP.floatValue = 0f;
-                                        break;
-                                    case AnchorPresetType.Middle:
-                                        elementMinSP.floatValue = 0.5f;
-                                        elementMaxSP.floatValue = 0.5f;
-                                        break;
-                                    case AnchorPresetType.High:
-                                        elementMinSP.floatValue = 1f;
-                                        elementMaxSP.floatValue = 1f;
-                                        break;
-                                    case AnchorPresetType.Expand:
-                                        elementMinSP.floatValue = 0f;
-                                        elementMaxSP.floatValue = 1f;
-                                        break;
-                                }
-                            }
+                                    presetType.Type = newAnchorType;
 
-                            var anchorAreaSize = GetLayoutSize(this.target as LayoutTargetComponent);
-                            var doExpand = MathUtils.AreNearlyEqual(anchorAreaSize[presetType.ElementIndex], localSizeSP.vector3Value[presetType.ElementIndex], LayoutDefines.NUMBER_PRECISION);
-                            var newDoExpand = EditorGUILayout.Toggle("doExpand?", doExpand);
-                            if (newDoExpand != doExpand && newDoExpand)
-                            {
-                                var layoutSize = GetLayoutSize(this.target as LayoutTargetComponent);
-                                var tmp = localSizeSP.vector3Value;
-                                tmp[presetType.ElementIndex] = layoutSize[presetType.ElementIndex];
-                                localSizeSP.vector3Value = tmp;
+                                    var elementMinSP = anchorMinSP.FindPropertyRelative(presetType.Name);
+                                    var elementMaxSP = anchorMaxSP.FindPropertyRelative(presetType.Name);
+                                    switch (presetType.Type)
+                                    {
+                                        case AnchorPresetType.Low:
+                                            elementMinSP.floatValue = 0f;
+                                            elementMaxSP.floatValue = 0f;
+                                            break;
+                                        case AnchorPresetType.Middle:
+                                            elementMinSP.floatValue = 0.5f;
+                                            elementMaxSP.floatValue = 0.5f;
+                                            break;
+                                        case AnchorPresetType.High:
+                                            elementMinSP.floatValue = 1f;
+                                            elementMaxSP.floatValue = 1f;
+                                            break;
+                                        case AnchorPresetType.Expand:
+                                            elementMinSP.floatValue = 0f;
+                                            elementMaxSP.floatValue = 1f;
+                                            break;
+                                    }
+                                }
+
+                                var anchorAreaSize = GetLayoutSize(this.target as LayoutTargetComponent);
+                                var doExpand = MathUtils.AreNearlyEqual(anchorAreaSize[presetType.ElementIndex], localSizeSP.vector3Value[presetType.ElementIndex], LayoutDefines.NUMBER_PRECISION);
+                                var newDoExpand = EditorGUILayout.Toggle("doExpand?", doExpand);
+                                if (newDoExpand != doExpand && newDoExpand)
+                                {
+                                    var layoutSize = GetLayoutSize(this.target as LayoutTargetComponent);
+                                    var tmp = localSizeSP.vector3Value;
+                                    tmp[presetType.ElementIndex] = layoutSize[presetType.ElementIndex];
+                                    localSizeSP.vector3Value = tmp;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            _foldoutAnchorOffset = EditorGUILayout.Foldout(_foldoutAnchorOffset, "Anchor Offset Min/Max");
-            if (_foldoutAnchorOffset)
-            {
-                using (var s = new EditorGUI.IndentLevelScope())
+                _foldoutAnchorOffset = EditorGUILayout.Foldout(_foldoutAnchorOffset, "Anchor Offset Min/Max");
+                if (_foldoutAnchorOffset)
                 {
-                    var targetSP = serializedObject.FindProperty("_target");
-                    var anchorMinSP = targetSP.FindPropertyRelative("_anchorMin");
-                    var anchorMaxSP = targetSP.FindPropertyRelative("_anchorMax");
-                    var localSizeSP = targetSP.FindPropertyRelative("_localSize");
-                    var offsetSP = targetSP.FindPropertyRelative("_offset");
-
-                    var inst = this.target as LayoutTargetComponent;
-
-                    var other = new LayoutTargetObject();
-                    other.SetParent(GetParentLayoutTarget(inst));
-                    other.Pivot = inst.LayoutTarget.Pivot;
-                    other.SetAnchor(inst.LayoutTarget.AnchorMin, inst.LayoutTarget.AnchorMax);
-                    other.UpdateLocalSize(inst.LayoutTarget.LocalSize, inst.LayoutTarget.Offset);
-
-                    var (offsetMin, offsetMax) = other.AnchorOffsetMinMax();
-                    var newOffsetMin = EditorGUILayout.Vector3Field("Offset Min", offsetMin);
-                    var newOffsetMax = EditorGUILayout.Vector3Field("Offset Max", offsetMax);
-
-                    if (!offsetMin.AreNearlyEqual(newOffsetMin)
-                        || !offsetMax.AreNearlyEqual(newOffsetMax))
+                    using (var s = new EditorGUI.IndentLevelScope())
                     {
-                        other.SetAnchorOffset(newOffsetMin, newOffsetMax);
+                        var targetSP = serializedObject.FindProperty("_target");
+                        var anchorMinSP = targetSP.FindPropertyRelative("_anchorMin");
+                        var anchorMaxSP = targetSP.FindPropertyRelative("_anchorMax");
+                        var localSizeSP = targetSP.FindPropertyRelative("_localSize");
+                        var offsetSP = targetSP.FindPropertyRelative("_offset");
 
-                        anchorMinSP.vector3Value = other.AnchorMin;
-                        anchorMaxSP.vector3Value = other.AnchorMax;
-                        localSizeSP.vector3Value = other.LocalSize;
-                        offsetSP.vector3Value = other.Offset;
+                        var other = new LayoutTargetObject();
+                        other.SetParent(GetParentLayoutTarget(inst));
+                        other.Pivot = inst.LayoutTarget.Pivot;
+                        other.SetAnchor(inst.LayoutTarget.AnchorMin, inst.LayoutTarget.AnchorMax);
+                        other.UpdateLocalSize(inst.LayoutTarget.LocalSize, inst.LayoutTarget.Offset);
 
-                        other.Dispose();
+                        var (offsetMin, offsetMax) = other.AnchorOffsetMinMax();
+                        var newOffsetMin = EditorGUILayout.Vector3Field("Offset Min", offsetMin);
+                        var newOffsetMax = EditorGUILayout.Vector3Field("Offset Max", offsetMax);
+
+                        if (!offsetMin.AreNearlyEqual(newOffsetMin)
+                            || !offsetMax.AreNearlyEqual(newOffsetMax))
+                        {
+                            other.SetAnchorOffset(newOffsetMin, newOffsetMax);
+
+                            anchorMinSP.vector3Value = other.AnchorMin;
+                            anchorMaxSP.vector3Value = other.AnchorMax;
+                            localSizeSP.vector3Value = other.LocalSize;
+                            offsetSP.vector3Value = other.Offset;
+
+                            other.Dispose();
+                        }
                     }
                 }
             }
 
             if(serializedObject.ApplyModifiedProperties())
             {
-                var inst = target as LayoutTargetComponent;
-
-                foreach(var t in inst.transform.GetHierarchyEnumerable()
-                    .Select(_t => _t.GetComponent<LayoutTargetComponent>())
-                    .Where(_t => _t != null))
-                {
-                    UpdateSelf(t);
-                }
+                LayoutManagerEditor.UpdateLayoutHierachy(inst);
             }
 
             if (GUILayout.Button("Copy From Transform"))
             {
-                var inst = target as LayoutTargetComponent;
                 inst.CopyToLayoutTarget();
             }
         }
 
-        static void UpdateSelf(LayoutTargetComponent inst)
+        public static void UpdateSelf(LayoutTargetComponent t)
         {
-            inst.AutoDetectUpdater();
+            t.LayoutTarget.IsAutoUpdate = false;
+            t.AutoDetectUpdater();
+            t.UpdateLayoutTargetHierachy();
+            t.LayoutTarget.FollowParent();
 
-            inst.LayoutTarget.ClearLayouts();
-            foreach (var layout in inst.GetComponents<ILayoutComponent>())
+            t.LayoutTarget.ClearLayouts();
+            foreach (var layout in t.GetComponents<ILayoutComponent>())
             {
-                inst.LayoutTarget.AddLayout(layout.LayoutInstance);
+                t.LayoutTarget.AddLayout(layout.LayoutInstance);
             }
 
-            foreach (var layout in inst.LayoutTarget.Layouts)
+            foreach (var layout in t.LayoutTarget.Layouts)
             {
                 layout.UpdateLayout();
             }
 
-            inst.CopyToTransform();
+            t.CopyToTransform();
         }
 
         static LayoutTargetObject GetParentLayoutTarget(LayoutTargetComponent layoutTargetComponent)

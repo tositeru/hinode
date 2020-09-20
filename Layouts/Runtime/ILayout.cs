@@ -15,11 +15,22 @@ namespace Hinode.Layouts
     public enum LayoutOperationTarget
     {
         Self_LocalPos = 0x1 << 0,
-        Self_LocalArea = 0x1 << 1,
-        Children_LocalPos = 0x1 << 2,
-        Children_LocalArea = 0x1 << 3,
-        Parent_LocalPos = 0x1 << 4,
-        Parent_LocalArea = 0x1 << 5,
+        Self_Anchor = 0x1 << 1,
+        Self_LocalSize = 0x1 << 2,
+        Self_Offset = 0x1 << 3,
+        Self_Pivot = 0x1 << 4,
+
+        Children_LocalPos = 0x1 << 5,
+        Children_Anchor = 0x1 << 6,
+        Children_LocalSize = 0x1 << 7,
+        Children_Offset = 0x1 << 8,
+        Children_Pivot = 0x1 << 9,
+
+        Parent_LocalPos = 0x1 << 10,
+        Parent_Anchor = 0x1 << 11,
+        Parent_LocalSize = 0x1 << 12,
+        Parent_Offset = 0x1 << 13,
+        Parent_Pivot = 0x1 << 14,
     }
 
     /// <summary>
@@ -69,17 +80,21 @@ namespace Hinode.Layouts
             get => _target;
             set
             {
+                if (_target == value) return;
+
                 var prev = _target;
-                if(_target != null)
-                {
-                    _target.OnDisposed.Remove(AutoRemoveTarget);
-                }
                 _target = value;
+                if(prev != null)
+                {
+                    prev.RemoveLayout(this);
+                    prev.OnDisposed.Remove(AutoRemoveTarget);
+                }
                 if(_target != null)
                 {
+                    _target.AddLayout(this);
                     _target.OnDisposed.Add(AutoRemoveTarget);
                 }
-                DoChanged = _target != prev;
+                DoChanged = true;
                 InnerOnChangedTarget(_target, prev);
             }
         }
