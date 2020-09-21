@@ -85,7 +85,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedParentInDisposePasses()
+        public void ClearOnChangedParent_InDisposePasses()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -104,7 +104,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedChildrenInDisposePasses()
+        public void ClearOnChangedChildren_InDisposePasses()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -124,7 +124,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalPos"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedLocalPosInDisposePasses()
+        public void ClearOnChangedLocalPos_InDisposePasses()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -143,7 +143,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedLocalSizeInDisposePasses()
+        public void ClearOnChangedLocalSize_InDisposePasses()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -156,6 +156,65 @@ namespace Hinode.Layouts.Tests
             }
             Assert.AreEqual(0, callCounter);
         }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Dispose()"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
+        /// </summary>
+        [Test]
+        public void ClearOnChangedOffset_InDisposePasses()
+        {
+            var layout = new LayoutTargetObject();
+            var callCounter = 0;
+            layout.OnChangedOffset.Add((_self, _) => { callCounter++; });
+
+            callCounter = 0;
+            {// <- test point
+                layout.Dispose();
+                layout.SetOffset(new Vector3(10, 20, 30));
+            }
+            Assert.AreEqual(0, callCounter);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Dispose()"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
+        /// </summary>
+        [Test]
+        public void ClearOnChangedPivot_InDisposePasses()
+        {
+            var layout = new LayoutTargetObject();
+            var callCounter = 0;
+            layout.OnChangedPivot.Add((_self, _) => { callCounter++; });
+
+            callCounter = 0;
+            {// <- test point
+                layout.Dispose();
+                layout.Pivot = new Vector3(10, 20, 30);
+            }
+            Assert.AreEqual(0, callCounter);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Dispose()"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedLayoutInfo"/>
+        /// </summary>
+        [Test]
+        public void ClearOnChangedLayoutInfo_InDisposePasses()
+        {
+            var layout = new LayoutTargetObject();
+            var callCounter = 0;
+            layout.OnChangedLayoutInfo.Add((_self, _) => { callCounter++; });
+
+            callCounter = 0;
+            {// <- test point
+                layout.Dispose();
+
+                layout.LayoutInfo.LayoutSize = Vector3.one * 234f;
+            }
+            Assert.AreEqual(0, callCounter);
+        }
+
         #endregion
 
         #region SetParent/Parent
@@ -178,7 +237,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParentNullPasses()
+        public void SetParent_NullPasses()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -193,11 +252,17 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParentSwapPasses()
+        public void SetParent_SwapPasses()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
+            removeParent.SetLocalSize(Vector3.one * 100);
             var addParent = new LayoutTargetObject();
+            addParent.SetLocalSize(Vector3.one * 200);
+
+            var offsetMin = Vector3.one * 10f;
+            var offsetMax = Vector3.one * 20f;
+            layout.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
             layout.SetParent(removeParent);
 
             layout.SetParent(addParent); // <- test point
@@ -205,6 +270,14 @@ namespace Hinode.Layouts.Tests
             Assert.AreSame(addParent, layout.Parent);
             Assert.IsFalse(removeParent.Children.Contains(layout));
             Assert.IsTrue(addParent.Children.Contains(layout));
+
+            {
+                var errorMessage = $"親が切り替わってもAnchorOffsetMin/Maxは変更されないようにしてください。";
+                var (_offsetMin, _offsetMax) = layout.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, LayoutDefines.NUMBER_PRECISION, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, LayoutDefines.NUMBER_PRECISION, errorMessage);
+                AssertionUtils.AreNearlyEqual(layout.Parent.LayoutSize() + offsetMin + offsetMax, layout.LocalSize, LayoutDefines.NUMBER_PRECISION, errorMessage);
+            }
         }
 
         /// <summary>
@@ -212,7 +285,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
         /// </summary>
         [Test]
-        public void OnChangedParentInSetParentPasses()
+        public void OnChangedParent_InSetParentPasses()
         {
             var layout = new LayoutTargetObject();
             int callCounter = 0;
@@ -672,7 +745,7 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
-        #region AnchorMin
+        #region AnchorMin/Max
         /// <summary>
 		/// <seealso cref="LayoutTargetObject.AnchorMin"/>
 		/// </summary>
@@ -680,25 +753,67 @@ namespace Hinode.Layouts.Tests
         public void AnchorMinPasses()
         {
             var self = new LayoutTargetObject();
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevMin, Vector3 prevMax) recievedValues = default;
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                callCounter++;
+                recievedValues = (_self, _prevMin, _prevMax);
+            });
+
+            var prevAnchorMin = self.AnchorMin;
+            var prevAnchorMax = self.AnchorMax;
             var anchorMin = new Vector3(0.5f, 0.5f, 0.5f);
             self.SetAnchor(anchorMin, Vector3.one);
 
             Assert.AreEqual(anchorMin, self.AnchorMin);
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedValues.self);
+            AssertionUtils.AreNearlyEqual(prevAnchorMin, recievedValues.prevMin, float.Epsilon);
+            AssertionUtils.AreNearlyEqual(prevAnchorMax, recievedValues.prevMax, float.Epsilon);
         }
-        #endregion
 
-        #region AnchorMax
         /// <summary>
         /// <seealso cref="LayoutTargetObject.AnchorMax"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
         /// </summary>
         [Test]
         public void AnchorMaxPasses()
         {
             var self = new LayoutTargetObject();
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevMin, Vector3 prevMax) recievedValues = default;
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                callCounter++;
+                recievedValues = (_self, _prevMin, _prevMax);
+            });
+
+            var prevAnchorMin = self.AnchorMin;
+            var prevAnchorMax = self.AnchorMax;
             var anchorMax = new Vector3(0.5f, 0.5f, 0.5f);
             self.SetAnchor(Vector3.zero, anchorMax);
 
             Assert.AreEqual(anchorMax, self.AnchorMax);
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(self, recievedValues.self);
+            AssertionUtils.AreNearlyEqual(prevAnchorMin, recievedValues.prevMin, float.Epsilon);
+            AssertionUtils.AreNearlyEqual(prevAnchorMax, recievedValues.prevMax, float.Epsilon);
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
+        /// </summary>
+        [Test]
+        public void OnChangedAnchorMinMax_WhenThrowException()
+        {
+            var self = new LayoutTargetObject();
+            self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
+                throw new System.Exception();
+            });
+
+            var anchorMin = new Vector3(0.5f, 0.5f, 0.5f);
+            self.SetAnchor(anchorMin, Vector3.one);
+
+            Assert.AreEqual(anchorMin, self.AnchorMin);
         }
         #endregion
 
@@ -768,6 +883,7 @@ namespace Hinode.Layouts.Tests
                 layoutTarget.Layouts,
                 ""
             );
+            Assert.IsTrue(layoutObjs.All(_l => _l.Target == layoutTarget));
         }
 
         /// <summary>
@@ -791,6 +907,7 @@ namespace Hinode.Layouts.Tests
             }
 
             layoutTarget.RemoveLayout(layoutObjs[2]); // test point
+            Assert.IsNull(layoutObjs[2].Target);
             AssertionUtils.AssertEnumerable(
                 new ILayout[]
                 {
@@ -1356,14 +1473,74 @@ namespace Hinode.Layouts.Tests
                 var offsetMax = Vector3.one * 20;
                 self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
 
-                {
-                    var (min, max) = self.AnchorOffsetMinMax();
-                    Debug.Log($"pass localSize={self.LocalSize} offset={min},{max}");
-                }
-
                 parent.SetLocalSize(Vector3.one * 20f); // <- test point
 
                 var errorMessage = $"AnchorMin/Max, AnchorOffsetMin/MaxはParentの領域に追従してSelfの領域が変更されても変更されないようにしてください。";
+                var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(parent.LocalSize + offsetMin + offsetMax, self.LocalSize, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.zero, self.AnchorMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(Vector3.one, self.AnchorMax, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.IsAutoUpdate"/>
+        /// </summary>
+        [Test]
+        public void IsAutoUpdatePasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(new Vector3(100, 100, 100));
+            var self = new LayoutTargetObject();
+            self.SetParent(parent);
+
+            Assert.IsTrue(self.IsAutoUpdate, "Default値はtureにしてください。");
+
+            {
+                var offsetMin = Vector3.one * 10;
+                var offsetMax = Vector3.one * 20;
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
+
+                var prevLocalSize = self.LocalSize;
+                var prevOffset = self.Offset;
+
+                self.IsAutoUpdate = false;
+                parent.SetLocalSize(Vector3.one * 20f); // <- test point
+
+                var errorMessage = $"LayoutTargetObject#IsAutoUpdateがfalseの時はParentの領域に追従しないようにしてください。";
+                var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
+                AssertionUtils.AreNearlyEqual(prevLocalSize, self.LocalSize, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(prevOffset, self.Offset, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMin, _offsetMin, EPSILON, errorMessage);
+                AssertionUtils.AreNearlyEqual(offsetMax, _offsetMax, EPSILON, errorMessage);
+            }
+        }
+        #endregion
+
+        #region FollowParent
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.FollowParent()"/>
+        /// </summary>
+        [Test]
+        public void FollowParentPasses()
+        {
+            var parent = new LayoutTargetObject();
+            parent.SetLocalSize(Vector3.one * 20f);
+
+            var self = new LayoutTargetObject();
+            self.IsAutoUpdate = false;
+            self.SetParent(parent);
+
+            {
+                var offsetMin = Vector3.one * 10;
+                var offsetMax = Vector3.one * 20;
+                self.UpdateAnchorParam(Vector3.zero, Vector3.one, offsetMin, offsetMax);
+
+                self.FollowParent(); // test point
+
+                var errorMessage = $"Test Fail...";
                 var (_offsetMin, _offsetMax) = self.AnchorOffsetMinMax();
                 AssertionUtils.AreNearlyEqual(parent.LocalSize + offsetMin + offsetMax, self.LocalSize, EPSILON, errorMessage);
                 AssertionUtils.AreNearlyEqual(Vector3.zero, self.AnchorMin, EPSILON, errorMessage);
@@ -1572,6 +1749,75 @@ namespace Hinode.Layouts.Tests
                     + $"-- offsetMax={layoutTarget.AnchorOffsetMinMax().offsetMax:F4},{newLine}";
                 AssertionUtils.AreNearlyEqual(correctLocalSize, layoutTarget.LocalSize, LayoutDefines.POS_NUMBER_PRECISION, errorMessage);
             }
+        }
+        #endregion
+
+        #region Pivot Property
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Pivot"/>
+        /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
+        /// </summary>
+        [Test]
+        public void PivotPropertyPasses()
+        {
+            var target = new LayoutTargetObject();
+            var correctLocalSize = Vector3.one * 100f;
+            target.UpdateLocalSize(correctLocalSize, Vector3.zero);
+
+            var callCounter = 0;
+            (ILayoutTarget self, Vector3 prevPivot) recievedValues = default;
+            target.OnChangedPivot.Add((_s, _p) => {
+                callCounter++;
+                recievedValues = (_s, _p);
+            });
+
+            var rnd = new System.Random();
+            for(var i=0; i<1000; ++i)
+            {
+                var prevPivot = target.Pivot;
+
+                // test point
+                var pivot = new Vector3(
+                    rnd.Range(0f, 1f),
+                    rnd.Range(0f, 1f),
+                    rnd.Range(0f, 1f)
+                );
+
+                callCounter = 0;
+                recievedValues = default;
+
+                var (offsetMin, offsetMax) = target.AnchorOffsetMinMax();
+                //test point
+                Assert.DoesNotThrow(() => target.Pivot = pivot);
+
+                var errorMessage = $"{System.Environment.NewLine}-- Fail test... pivot={pivot.ToString("F4")} prevPivot={prevPivot.ToString("F4")}";
+
+                Assert.AreEqual(1, callCounter, errorMessage);
+                Assert.AreSame(target, recievedValues.self, errorMessage);
+                AssertionUtils.AreNearlyEqual(prevPivot, recievedValues.prevPivot, EPSILON_POS, errorMessage);
+
+                AssertionUtils.AreNearlyEqual(pivot, target.Pivot, EPSILON_POS, errorMessage);
+
+                AssertionUtils.AreNearlyEqual(correctLocalSize, target.LocalSize, LayoutDefines.POS_NUMBER_PRECISION, errorMessage + $" localSize={target.LocalSize.ToString("F4")}{System.Environment.NewLine} Not Change LocalSize...");
+
+                var correctOffset = -offsetMin.Mul(Vector3.one - pivot) + offsetMax.Mul(pivot);
+                AssertionUtils.AreNearlyEqual(correctOffset, target.Offset, EPSILON_POS, errorMessage + $" offsetMin={offsetMin.ToString("F4")} offsetMax={offsetMax.ToString("F4")}{System.Environment.NewLine} Adjest Anchor OffsetMin/Max...");
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
+        /// </summary>
+        [Test]
+        public void OnChangedPivot_WhenThowExceptionPasses()
+        {
+            var target = new LayoutTargetObject();
+            target.OnChangedPivot.Add((_s, _p) => throw new System.Exception());
+
+            var pivot = Vector3.one;
+            Assert.DoesNotThrow(() => target.Pivot = pivot);
+
+            AssertionUtils.AreNearlyEqual(pivot, target.Pivot, EPSILON_POS);
         }
         #endregion
     }

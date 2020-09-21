@@ -20,8 +20,11 @@ namespace Hinode.Layouts.Tests
                 DoChanged = doChanged;
             }
 
+            public int CallUpdateLayoutCounter { get; set; }
+
             public override void UpdateLayout()
             {
+                CallUpdateLayoutCounter++;
             }
 
             public override bool Validate() => true;
@@ -358,7 +361,23 @@ namespace Hinode.Layouts.Tests
 
             Assert.IsTrue(target.DoChanged);
         }
+        #endregion
 
+        #region ForceUpdateLayout
+        /// <summary>
+        /// <seealso cref="LayoutBase.ForceUpdateLayout()"/>
+        /// </summary>
+        [Test]
+        public void ForceUpdateLayoutPasses()
+        {
+            var target = new LayoutClass();
+
+            Assert.IsFalse(target.DoChanged);
+            Assert.AreEqual(0, target.CallUpdateLayoutCounter);
+
+            target.ForceUpdateLayout();
+            Assert.AreEqual(1, target.CallUpdateLayoutCounter);
+        }
         #endregion
     }
 }

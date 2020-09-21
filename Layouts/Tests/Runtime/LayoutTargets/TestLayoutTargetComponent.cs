@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using Hinode.Tests;
 using System.Linq;
 using UnityEngine.UI;
+using System.Reflection;
 
 namespace Hinode.Layouts.Tests
 {
@@ -44,12 +45,45 @@ namespace Hinode.Layouts.Tests
             return obj.AddComponent<LayoutTargetComponent>();
         }
 
-        static LayoutTargetComponent CreateInstnaceWithRectTransform(string name = "__obj")
+        static LayoutTargetComponent CreateInstanceWithRectTransform(string name = "__obj")
         {
             var obj = new GameObject(name);
             obj.AddComponent<RectTransform>();
             return obj.AddComponent<LayoutTargetComponent>();
         }
+
+        /// <summary>
+        /// RとlayoutTargetのパラメータが一致しているかどうか判定する
+        /// </summary>
+        /// <param name="R"></param>
+        /// <param name="layoutTarget"></param>
+        static void AssertLayoutTargetOfRectTransform(RectTransform R, ILayoutTarget layoutTarget)
+        {
+            Assert.IsNotNull(layoutTarget);
+            AssertionUtils.AreNearlyEqual(R.anchorMin, (Vector2)layoutTarget.AnchorMin, LayoutDefines.NUMBER_PRECISION);
+            AssertionUtils.AreNearlyEqual(R.anchorMax, (Vector2)layoutTarget.AnchorMax, LayoutDefines.NUMBER_PRECISION);
+            AssertionUtils.AreNearlyEqual(R.rect.size, (Vector2)layoutTarget.LocalSize, LayoutDefines.NUMBER_PRECISION);
+            var (offsetMin, offsetMax) = layoutTarget.AnchorOffsetMinMax();
+            AssertionUtils.AreNearlyEqual(R.offsetMin * -1f, (Vector2)offsetMin, LayoutDefines.NUMBER_PRECISION);
+            AssertionUtils.AreNearlyEqual(R.offsetMax, (Vector2)offsetMax, LayoutDefines.NUMBER_PRECISION);
+            AssertionUtils.AreNearlyEqual(R.pivot, (Vector2)layoutTarget.Pivot, LayoutDefines.NUMBER_PRECISION);
+
+            var localPos = R.anchoredPosition3D - (Vector3)CalROffset(R) + layoutTarget.Offset;
+            AssertionUtils.AreNearlyEqual(localPos, layoutTarget.LocalPos, EPSILON_POS
+                , $"Don't Match LocalPos/Offset... layoutTarget localPos={layoutTarget.LocalPos}, offset={layoutTarget.Offset}");
+        }
+
+        #region DisallowMultipleComponent
+        /// <summary>
+        /// 
+        /// </summary>
+        [Test]
+        public void DisallowMultipleComponentPasses()
+        {
+            var disallowMultipleAttr = typeof(LayoutTargetComponent).GetCustomAttribute<DisallowMultipleComponent>();
+            Assert.IsNotNull(disallowMultipleAttr);
+        }
+        #endregion
 
         #region R Property
         /// <summary>
@@ -133,7 +167,7 @@ namespace Hinode.Layouts.Tests
         [UnityTest]
         public IEnumerator AutoDetectUpdaterWhenRectTransformPasses()
         {
-            var target = CreateInstnaceWithRectTransform();
+            var target = CreateInstanceWithRectTransform();
 
             target.AutoDetectUpdater();
             Assert.IsTrue(target.Updater is LayoutTargetComponent.RectTransformUpdater);
@@ -154,14 +188,16 @@ namespace Hinode.Layouts.Tests
 
             public CopyToLayoutTargetByRectTransformABTest()
             {
-                var parent = CreateInstnaceWithRectTransform("parent");
+                var parent = CreateInstanceWithRectTransform("parent");
+                parent.LayoutTarget.SetLocalSize(Vector3.one * 100f);
+
                 var canvas = parent.gameObject.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 var canvasScaler = parent.gameObject.AddComponent<CanvasScaler>();
                 canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 canvasScaler.referenceResolution = new Vector2(600, 600);
 
-                _target = CreateInstnaceWithRectTransform("target");
+                _target = CreateInstanceWithRectTransform("target");
                 _target.LayoutTarget.SetParent(parent.LayoutTarget);
 
                 _target.R.pivot = Vector2.one * 0.5f;
@@ -259,7 +295,7 @@ namespace Hinode.Layouts.Tests
                 _target.CopyToLayoutTarget();
 
                 {//AnchoredPos3D/Offset
-                    var localPos = _target.R.anchoredPosition3D - (Vector3)CalROffset(_target.R) + _target.LayoutTarget.Offset;
+                    var localPos = _target.R.anchoredPosition3D - _target.LayoutTarget.Offset;
                     AssertionUtils.AreNearlyEqual(localPos, _target.LayoutTarget.LocalPos, EPSILON_POS, $"Don't Match LocalPos/Offset... layoutTarget localPos={_target.LayoutTarget.LocalPos}, offset={_target.LayoutTarget.Offset}");
                 }
 
@@ -303,14 +339,14 @@ namespace Hinode.Layouts.Tests
 
             public CopyToRectTransformABTest()
             {
-                var parent = CreateInstnaceWithRectTransform("parent");
+                var parent = CreateInstanceWithRectTransform("parent");
                 var canvas = parent.gameObject.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 var canvasScaler = parent.gameObject.AddComponent<CanvasScaler>();
                 canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 canvasScaler.referenceResolution = new Vector2(600, 600);
 
-                _target = CreateInstnaceWithRectTransform("target");
+                _target = CreateInstanceWithRectTransform("target");
                 _target.LayoutTarget.SetParent(parent.LayoutTarget);
             }
 
@@ -445,13 +481,13 @@ namespace Hinode.Layouts.Tests
         [UnityTest]
         public IEnumerator UnityOnDestroyPasses()
         {
-            var component = CreateInstnaceWithRectTransform("target");
+            var component = CreateInstanceWithRectTransform("target");
 
-            var parent = CreateInstnaceWithRectTransform("parent");
+            var parent = CreateInstanceWithRectTransform("parent");
             var children = new LayoutTargetComponent[] {
-                CreateInstnaceWithRectTransform("child1"),
-                CreateInstnaceWithRectTransform("child2"),
-                CreateInstnaceWithRectTransform("child3"),
+                CreateInstanceWithRectTransform("child1"),
+                CreateInstanceWithRectTransform("child2"),
+                CreateInstanceWithRectTransform("child3"),
             };
 
             component.transform.SetParent(parent.transform);
@@ -468,17 +504,554 @@ namespace Hinode.Layouts.Tests
             var callCounter = 0;
             component.LayoutTarget.OnDisposed.Add((_) => callCounter++);
 
+            var componentLayoutTarget = component.LayoutTarget; //Destroy後にcomponent.LayoutTargetにアクセスするためにキャッシュ
             Object.Destroy(component); // <- test point
             yield return null;
 
             Assert.AreEqual(1, callCounter);
-            Assert.IsNull(component.LayoutTarget.Parent);
-            Assert.IsFalse(component.LayoutTarget.Children.Any());
+            Assert.IsNull(componentLayoutTarget.Parent);
+            Assert.IsFalse(componentLayoutTarget.Children.Any());
 
             //親子階層のチェック
             Assert.IsFalse(parent.LayoutTarget.Children.Any());
             Assert.IsTrue(children.All(_c => _c.LayoutTarget.Parent == null));
         }
         #endregion
+
+        #region UpdateLayoutTargetHierachy
+        /// <summary>
+        /// <seealso cref="LayoutTargetComponent.UpdateLayoutTargetHierachy()"/>
+        /// <seealso cref="LayoutTargetComponent.GetDummyLayoutTarget(GameObject)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator UpdateLayoutTargetHierachy_WhenParentPasses()
+        {
+            {
+                var component = CreateInstanceWithRectTransform("target");
+                var parent = new GameObject();
+                component.transform.SetParent(parent.transform);
+
+                component.UpdateLayoutTargetHierachy();
+
+                Assert.IsNull(component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success When Parent!");
+
+            {
+                var component = CreateInstanceWithRectTransform("target2");
+                var parent = new GameObject().AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+
+                component.UpdateLayoutTargetHierachy();
+
+                Assert.AreSame(parent.LayoutTarget, component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success When Parent attached LayoutTargetComponent!");
+
+            {
+                var component = CreateInstanceWithRectTransform("target3");
+                var parent = new GameObject().AddComponent<RectTransform>();
+                component.transform.SetParent(parent);
+
+                component.UpdateLayoutTargetHierachy();
+
+                Assert.IsNotNull(component.LayoutTarget.Parent);
+                Assert.IsNotNull(component.GetDummyLayoutTarget(parent.transform));
+                Assert.AreSame(component.LayoutTarget.Parent, component.GetDummyLayoutTarget(parent.transform));
+                AssertLayoutTargetOfRectTransform(parent, component.LayoutTarget.Parent);
+            }
+            Debug.Log($"Success When Parent having RectTransform!");
+
+            {
+                var component = CreateInstanceWithRectTransform("target4");
+                var parent = new GameObject().AddComponent<RectTransform>()
+                    .gameObject.AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+
+                component.UpdateLayoutTargetHierachy();
+
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+                Assert.AreSame(parent.LayoutTarget, component.LayoutTarget.Parent);
+            }
+            Debug.Log($"Success When Parent having RectTransform and attached LayoutTargetComponent!");
+
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetComponent.UpdateLayoutTargetHierachy()"/>
+        /// <seealso cref="LayoutTargetComponent.GetDummyLayoutTarget(GameObject)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest, Description("Transform#parentが変更された時の挙動テスト")]
+        public IEnumerator UpdateLayoutTargetHierachy_WhenChangeParentPasses()
+        {
+            {
+                var tag = $"Null -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag);
+
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.LayoutTarget.Parent);
+
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! Null -> Transform!");
+
+            {
+                var tag = $"Null -> LayoutTargetComponent";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.LayoutTarget.Parent);
+
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.AreSame(parent.LayoutTarget, component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! Null -> LayoutTargetComponent!");
+
+            {
+                var tag = $"Null -> RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>();
+
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.LayoutTarget.Parent);
+
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNotNull(component.GetDummyLayoutTarget(parent.transform));
+                Assert.AreSame(component.LayoutTarget.Parent, component.GetDummyLayoutTarget(parent.transform));
+                AssertLayoutTargetOfRectTransform(parent, component.LayoutTarget.Parent);
+            }
+            Debug.Log($"Success to Change Parent! Null -> RectTransform!");
+
+            {
+                var tag = $"Null -> LayoutTargetComponent with RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>()
+                    .gameObject.AddComponent<LayoutTargetComponent>();
+
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.LayoutTarget.Parent);
+
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.AreSame(parent.LayoutTarget, component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! Null -> LayoutTargetComponent with RectTransform!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Null";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                component.transform.SetParent(null);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! LayoutTargetComponent -> Null!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var parentTransform = parent.transform;
+                Object.Destroy(parent);
+                yield return null; // wait to destroy firstParent
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parentTransform));
+            }
+            Debug.Log($"Success to Change Parent! LayoutTargetComponent -> Transform!");
+
+            {
+                var tag = $"LayoutTargetComponent -> RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var R = parent.gameObject.AddComponent<RectTransform>();
+                Object.Destroy(parent);
+                yield return null; // wait to destroy parent's LayoutTargetComponent
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNotNull(component.GetDummyLayoutTarget(R));
+                Assert.AreSame(component.LayoutTarget.Parent, component.GetDummyLayoutTarget(R));
+                AssertLayoutTargetOfRectTransform(R, component.LayoutTarget.Parent);
+            }
+            Debug.Log($"Success to Change Parent! LayoutTargetComponent -> RectTransform!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Other LayoutTargetComponent";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var otherParent = new GameObject("parent " + tag).AddComponent<LayoutTargetComponent>();
+                component.transform.SetParent(otherParent.transform);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.AreSame(otherParent.LayoutTarget, component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+                Assert.IsNull(component.GetDummyLayoutTarget(otherParent.transform));
+            }
+            Debug.Log($"Success to Change Parent! LayoutTargetComponent -> Other LayoutTargetComponent!");
+
+            {
+                var tag = $"RectTransform -> Null";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                component.transform.SetParent(null);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.LayoutTarget.Parent);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! RectTransform -> Null!");
+
+#if false // ~ Unity 2019.4.9) RectTransformのみの削除はできない仕様みたいなので、テストから省いています。
+            {
+                var tag = $"RectTransform -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var parentTransform = parent.transform;
+                Object.Destroy(parent);
+                yield return null;
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.LayoutTarget);
+                Assert.IsNull(component.GetDummyLayoutTarget(parentTransform));
+            }
+            Debug.Log($"Success to Change Parent! RectTransform -> Transform!");
+
+            {
+                var tag = $"RectTransform -> LayoutTargetComponent";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var parentLayoutTarget = parent.gameObject.AddComponent<LayoutTargetComponent>();
+                Object.Destroy(parent);
+                yield return null;
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.AreSame(parentLayoutTarget.LayoutTarget, component.LayoutTarget);
+                Assert.IsNull(component.GetDummyLayoutTarget(parentLayoutTarget.transform));
+            }
+            Debug.Log($"Success to Change Parent! RectTransform -> LayoutTargetComponent!");
+
+            {
+                var tag = $"RectTransform -> LayoutTargetComponent with RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var parent = new GameObject("parent " + tag).AddComponent<RectTransform>();
+                component.transform.SetParent(parent.transform);
+                component.UpdateLayoutTargetHierachy();
+
+                var parentLayoutTarget = parent.gameObject.AddComponent<LayoutTargetComponent>();
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.AreSame(parentLayoutTarget.LayoutTarget, component.LayoutTarget);
+                Assert.IsNull(component.GetDummyLayoutTarget(parent.transform));
+            }
+            Debug.Log($"Success to Change Parent! RectTransform -> LayoutTargetComponent with RectTransform!");
+#endif
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetComponent.UpdateLayoutTargetHierachy()"/>
+        /// <seealso cref="LayoutTargetComponent.GetDummyLayoutTarget(GameObject)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator UpdateLayoutTargetHierachy_WhenChildrenPasses()
+        {
+            {
+                var component = CreateInstanceWithRectTransform("target");
+                var childTransform = new GameObject("child Transform");
+                childTransform.transform.SetParent(component.transform);
+                var childLayoutTarget = new GameObject("child Transform").AddComponent<LayoutTargetComponent>();
+                childLayoutTarget.transform.SetParent(component.transform);
+                var childRectTransform = new GameObject("child RectTransform").AddComponent<RectTransform>();
+                childRectTransform.transform.SetParent(component.transform);
+                var childRectTransformLayoutTarget = new GameObject("child RectTransform").AddComponent<RectTransform>()
+                    .gameObject.AddComponent<LayoutTargetComponent>();
+                childRectTransformLayoutTarget.transform.SetParent(component.transform);
+
+                component.UpdateLayoutTargetHierachy();
+
+                Assert.IsNull(component.GetDummyLayoutTarget(childTransform.transform));
+                Assert.IsNull(component.GetDummyLayoutTarget(childLayoutTarget.transform));
+                Assert.IsNotNull(component.GetDummyLayoutTarget(childRectTransform.transform));
+                Assert.IsNull(component.GetDummyLayoutTarget(childRectTransformLayoutTarget.transform));
+                AssertionUtils.AssertEnumerableByUnordered(
+                    new ILayoutTarget[] {
+                        childLayoutTarget.LayoutTarget,
+                        component.GetDummyLayoutTarget(childRectTransform.transform),
+                        childRectTransformLayoutTarget.LayoutTarget,
+                    }
+                    , component.LayoutTarget.Children
+                    , ""
+                );
+            }
+            Debug.Log($"Success When Children");
+            yield return null;
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetComponent.UpdateLayoutTargetHierachy()"/>
+        /// <seealso cref="LayoutTargetComponent.GetDummyLayoutTarget(GameObject)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest, Description("Transform#childrenが変更された時の挙動テスト")]
+        public IEnumerator UpdateLayoutTargetHierachy_WhenChangeChildrenPasses()
+        {
+            {
+                var tag = $"Null -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                component.UpdateLayoutTargetHierachy();
+
+                var child = new GameObject("child Transform " + tag);
+                child.transform.SetParent(component.transform);
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.AreEqual(0, component.LayoutTarget.ChildCount);
+            }
+            Debug.Log($"Success to Change Child! Null -> Transform!");
+
+            {
+                var tag = $"Null -> LayoutTargetComponent";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                component.UpdateLayoutTargetHierachy();
+
+                var child = new GameObject("child Transform " + tag).AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == child.LayoutTarget));
+            }
+            Debug.Log($"Success to Change Child! Null -> LayoutTargetComponent!");
+
+            {
+                var tag = $"Null -> RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child= new GameObject("child" + tag).AddComponent<RectTransform>();
+                child.transform.SetParent(component.transform);
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                var dummyLayout = component.GetDummyLayoutTarget(child.transform);
+                Assert.IsNotNull(dummyLayout);
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == dummyLayout));
+            }
+            Debug.Log($"Success to Change Child! Null -> RectTransform!");
+
+            {
+                var tag = $"Null -> LayoutTargetComponent with RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<RectTransform>()
+                    .gameObject.AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == child.LayoutTarget));
+            }
+            Debug.Log($"Success to Change Child! Null -> LayoutTargetComponent with RectTransform!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Null";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == child.LayoutTarget));
+
+                var childLayoutTarget = child.LayoutTarget;
+                var childTransform = child.transform;
+                Object.Destroy(child);
+                yield return null;
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(childTransform));
+                Assert.IsFalse(component.LayoutTarget.Children.Any(_c => _c == childLayoutTarget));
+            }
+            Debug.Log($"Success to Change Child! LayoutTargetComponent -> Null!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Null(Change Parent)";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == child.LayoutTarget));
+
+                child.transform.SetParent(null);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.IsFalse(component.LayoutTarget.Children.Any(_c => _c == child.LayoutTarget));
+            }
+            Debug.Log($"Success to Change Child! LayoutTargetComponent -> Null(Change Parent)!");
+
+            {
+                var tag = $"LayoutTargetComponent -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child" + tag).AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                var childGameObject = child.gameObject;
+                Object.Destroy(child);
+                yield return null; // wait to destroy firstParent
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(childGameObject.transform));
+                Assert.AreEqual(0, component.LayoutTarget.ChildCount);
+            }
+            Debug.Log($"Success to Change Child! LayoutTargetComponent -> Transform!");
+
+            {
+                var tag = $"LayoutTargetComponent -> RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child" + tag).AddComponent<LayoutTargetComponent>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+
+                var childR = child.gameObject.AddComponent<RectTransform>();
+                Object.Destroy(child);
+                yield return null; // wait to Destroy child's LayoutTargetComponent
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                var dummyChildLayoutObj = component.GetDummyLayoutTarget(childR);
+                Assert.IsNotNull(dummyChildLayoutObj);
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == dummyChildLayoutObj));
+                AssertLayoutTargetOfRectTransform(childR, dummyChildLayoutObj);
+            }
+            Debug.Log($"Success to Change Child! LayoutTargetComponent -> RectTransform!");
+
+#if false // ~ Unity 2019.4.9) RectTransformのみの削除はできない仕様みたいなので、テストから省いています。
+            {
+                var tag = $"RectTransform -> Null";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<RectTransform>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNotNull(component.GetDummyLayoutTarget(child.transform));
+
+                child.transform.SetParent(null);
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(child.transform));
+                Assert.AreEqual(0, component.LayoutTarget.ChildCount);
+            }
+            Debug.Log($"Success to Change Child! RectTransform -> Null!");
+
+            {
+                var tag = $"RectTransform -> Transform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<RectTransform>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNotNull(component.GetDummyLayoutTarget(child.transform));
+
+                var childGameObject = child.gameObject;
+                Object.Destroy(child);
+                yield return null;
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(childGameObject.transform));
+                Assert.AreEqual(0, component.LayoutTarget.ChildCount);
+            }
+            Debug.Log($"Success to Change Child! RectTransform -> Transform!");
+
+            {
+                var tag = $"RectTransform -> LayoutTargetComponent";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<RectTransform>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNotNull(component.GetDummyLayoutTarget(child.transform));
+
+                var childLayoutTarget = child.gameObject.AddComponent<LayoutTargetComponent>();
+                Object.Destroy(child);
+                yield return null;
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                var dummyLayoutObj = component.GetDummyLayoutTarget(childLayoutTarget.transform);
+                Assert.IsNotNull(dummyLayoutObj);
+                Assert.IsTrue(component.LayoutTarget.Children.Any(_c => _c == dummyLayoutObj));
+            }
+            Debug.Log($"Success to Change Child! RectTransform -> LayoutTargetComponent!");
+#endif
+            {
+                var tag = $"RectTransform -> LayoutTargetComponent with RectTransform";
+                var component = CreateInstanceWithRectTransform("target " + tag);
+                var child = new GameObject("child " + tag).AddComponent<RectTransform>();
+                child.transform.SetParent(component.transform);
+                component.UpdateLayoutTargetHierachy();
+                Assert.IsNotNull(component.GetDummyLayoutTarget(child.transform));
+
+                var childLayoutTarget = child.gameObject.AddComponent<LayoutTargetComponent>();
+                component.UpdateLayoutTargetHierachy(); // test point
+
+                Assert.IsNull(component.GetDummyLayoutTarget(childLayoutTarget.transform));
+                AssertionUtils.AssertEnumerable(
+                    new ILayoutTarget[] {
+                        childLayoutTarget.LayoutTarget
+                    }
+                    , component.LayoutTarget.Children
+                    , ""
+                );
+            }
+            Debug.Log($"Success to Change Child! RectTransform -> LayoutTargetComponent with RectTransform!");
+            yield return null;
+        }
+#endregion
     }
 }

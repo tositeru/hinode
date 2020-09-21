@@ -42,8 +42,8 @@ namespace Hinode.Tests
                 catch (System.Exception e)
                 {
                     isSuccess = false;
-                    var paramText = GetParamTexts().Select(_t => $"{_t.name}={_t.paramText}").Aggregate("", (_s, _c) => _s + _c + ",");
-                    Debug.LogWarning($"Detect Fail Test Case... {System.Environment.NewLine}{e}{System.Environment.NewLine}params => {paramText}");
+                    var paramText = GetParamTexts().Select(_t => $"{_t.name};{_t.paramText}").Aggregate("", (_s, _c) => _s + _c + System.Environment.NewLine);
+                    Debug.LogWarning($"Detect Fail Test Case... {System.Environment.NewLine}{e}{System.Environment.NewLine}-- AB Test params{System.Environment.NewLine}{paramText}");
                     failCounter++;
                     if (failCounter > 10) break;
                 }
@@ -71,8 +71,13 @@ namespace Hinode.Tests
             public T Value { get; set; }
 
             public UseParam(string name)
+                : this(name, default)
+            {}
+
+            public UseParam(string name, T value)
             {
                 ParamName = name;
+                Value = value;
             }
 
             public (string name, string paramText) ToText()

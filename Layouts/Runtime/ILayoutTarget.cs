@@ -22,6 +22,8 @@ namespace Hinode.Layouts
     public delegate void ILayoutTargetOnChangedLocalPos(ILayoutTarget self, Vector3 prevLocalPos);
     public delegate void ILayoutTargetOnChangedLocalSize(ILayoutTarget self, Vector3 prevLocalSize);
 	public delegate void ILayoutTargetOnChangedOffset(ILayoutTarget self, Vector3 prevOffset);
+	public delegate void ILayoutTargetOnChangedAnchorMinMax(ILayoutTarget self, Vector3 prevAnchorMin, Vector3 prevAnchorMax);
+	public delegate void ILayoutTargetOnChangedPivot(ILayoutTarget self, Vector3 prevPivot);
 	public delegate void ILayoutTargetOnChangedLayoutInfo(ILayoutTarget self, LayoutInfo.ValueKind kind);
 
 	/// <summary>
@@ -52,7 +54,7 @@ namespace Hinode.Layouts
 	/// - AnchorArea: 親領域と関連付けされるAnchorの領域。 ILayoutTargetExtensions#AnchorAreaSizeで取得できます。
 	/// - LocalArea: AnchorAreaにOffsetを追加した領域。こちらが自身の領域となります。
 	/// - O: 中心. Parentが設定されている場合はその中央になります。
-	/// - o: 中心からのOffset		ILayoutTarget#Offset
+	/// - o: 中心からのOffset		ILayoutTarget#Offset + ILayoutTargetExtensions#PivotOffset
 	/// - a: anchorMin			ILayoutTarget#AnchorMin
 	/// - A: anchorMax			ILayoutTarget#AnchorMax
 	/// - OI: 中心からのOffset - 0.5*LocalSize ILayoutTargetExtensions#LocalAreaMinMaxPos()で取得できます。
@@ -102,8 +104,20 @@ namespace Hinode.Layouts
         NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get; }
 		NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get; }
+		NotInvokableDelegate<ILayoutTargetOnChangedAnchorMinMax> OnChangedAnchorMinMax { get; }
 
+		/// <summary>
+        /// 他のILayoutTargetの更新に合わせて、自身も更新するかどうかのフラグ
+        /// デフォルト値はtrueにしてください。
+        /// 
+        /// 以下の処理に対して影響を与えます。
+        /// - Parentのサイズが変更された時にそれに合わせて自身のサイズを変更する
+        /// </summary>
+		bool IsAutoUpdate { get; set; }
+
+		Vector3 PrevParentSize { get; }
 		ILayoutTarget Parent { get; }
         IEnumerable<ILayoutTarget> Children { get; }
         int ChildCount { get; }
@@ -124,7 +138,15 @@ namespace Hinode.Layouts
         Vector3 LocalSize { get; }
         Vector3 AnchorMin { get; }
         Vector3 AnchorMax { get; }
-        Vector3 Offset { get; }
+
+		/// <summary>
+		/// 実際のOffset値にPivotOffsetを加えた値を返すようにしてください。
+		/// </summary>
+		Vector3 Offset { get; }
+		/// <summary>
+        /// 値が変更される場合は現在の位置状況が変更されないようにするため、UpdateAnchorParam()を呼び出すようにしてください。
+        /// </summary>
+		Vector3 Pivot { get; set; }
 
 		void AddLayout(ILayout layout);
 		void RemoveLayout(ILayout layout);
@@ -170,11 +192,37 @@ namespace Hinode.Layouts
 		/// <param name="localSize"></param>
 		/// <param name="offset">アンカー領域の中央からのオフセット。AnchorOffsetMin/Maxに影響を与えます</param>
         void UpdateLocalSize(Vector3 localSize, Vector3 offset);
-    }
+
+		/// <summary>
+        /// AnchorOffsetMin/Maxを維持したまま親のLayout領域を元にサイズを再計算する
+        /// </summary>
+		void FollowParent();
+	}
 
 
-    public static partial class ILayoutTargetExtensions
+	public static partial class ILayoutTargetExtensions
     {
+		/// <summary>
+        /// Pivotによるオフセットを計算します。
+        /// ILayoutTarget#Offsetの影響はないものになります。
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+		public static Vector3 PivotOffset(this ILayoutTarget self)
+        {
+			return -self.LocalSize.Mul(self.Pivot - Vector3.one * 0.5f);
+		}
+
+		/// <summary>
+		/// レイアウト計算用のサイズを返します。
+		/// </summary>
+		/// <param name="self"></param>
+		/// <returns></returns>
+		public static Vector3 LayoutSize(this ILayoutTarget self)
+        {
+			return self.LayoutInfo.GetLayoutSize(self);
+        }
+
         /// <summary>
 		/// ParentがNullの場合は0サイズを返します。
 		/// </summary>
@@ -192,10 +240,7 @@ namespace Hinode.Layouts
 		/// <returns></returns>
         public static Vector3 AnchorAreaSize(this ILayoutTarget self)
         {
-			var parentLayoutSize = self.Parent != null
-				? self.Parent.LayoutInfo.GetLayoutSize(self.Parent)
-				: Vector3.zero;
-			return parentLayoutSize.Mul(self.AnchorMax - self.AnchorMin);
+			return self.PrevParentSize.Mul(self.AnchorMax - self.AnchorMin);
         }
 
         /// <summary>
@@ -302,6 +347,18 @@ namespace Hinode.Layouts
             return self.AnchorMin.AreNearlyEqual(self.AnchorMax, LayoutDefines.NUMBER_PRECISION)
                 ? LayoutTargetAnchorMode.Point
                 : LayoutTargetAnchorMode.Area;
+        }
+
+		/// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+		public static void ClearLayouts(this ILayoutTarget self)
+        {
+			while(0 < self.Layouts.Count)
+            {
+				self.RemoveLayout(self.Layouts[self.Layouts.Count-1]);
+            }
         }
     }
 

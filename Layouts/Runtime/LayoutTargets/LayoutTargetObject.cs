@@ -11,6 +11,7 @@ namespace Hinode.Layouts
 	/// 
 	/// <seealso cref="ILayoutTarget"/>
 	/// </summary>
+    [System.Serializable]
     public class LayoutTargetObject : ILayoutTarget
     {
         SmartDelegate<ILayoutTargetOnDisposed> _onDisposed = new SmartDelegate<ILayoutTargetOnDisposed>();
@@ -18,18 +19,25 @@ namespace Hinode.Layouts
         SmartDelegate<ILayoutTargetOnChangedChildren> _onChangedChildren = new SmartDelegate<ILayoutTargetOnChangedChildren>();
         SmartDelegate<ILayoutTargetOnChangedLocalPos> _onChangedLocalPos = new SmartDelegate<ILayoutTargetOnChangedLocalPos>();
         SmartDelegate<ILayoutTargetOnChangedLocalSize> _onChangedLocalSize = new SmartDelegate<ILayoutTargetOnChangedLocalSize>();
+
+        SmartDelegate<ILayoutTargetOnChangedAnchorMinMax> _onChangedAnchorMinMax = new SmartDelegate<ILayoutTargetOnChangedAnchorMinMax>();
         SmartDelegate<ILayoutTargetOnChangedOffset> _onChangedOffset = new SmartDelegate<ILayoutTargetOnChangedOffset>();
+        SmartDelegate<ILayoutTargetOnChangedPivot> _onChangedPivot = new SmartDelegate<ILayoutTargetOnChangedPivot>();
         SmartDelegate<ILayoutTargetOnChangedLayoutInfo> _onChangedLayoutInfo = new SmartDelegate<ILayoutTargetOnChangedLayoutInfo>();
 
         LayoutTargetObject _parent;
         HashSetHelper<LayoutTargetObject> _children = new HashSetHelper<LayoutTargetObject>();
         ListHelper<ILayout> _layouts = new ListHelper<ILayout>();
-        Vector3 _localPos;
 
-        Vector3 _localSize;
-        Vector3 _anchorMin;
-        Vector3 _anchorMax;
-        Vector3 _offset;
+        [SerializeField] Vector3 _prevParentSize = Vector3.zero;
+
+        [SerializeField] Vector3 _localPos;
+
+        [SerializeField] Vector3 _localSize;
+        [SerializeField] Vector3 _anchorMin;
+        [SerializeField] Vector3 _anchorMax;
+        [SerializeField] Vector3 _offset;
+        [SerializeField] Vector3 _pivot = Vector3.one * 0.5f;
 
         public LayoutTargetObject()
         {
@@ -113,6 +121,8 @@ namespace Hinode.Layouts
                 _parent.OnChangedLocalSize.Add(ParentOnChangedLocalSize);
             }
 
+            FollowParent();
+
             _onChangedParent.SafeDynamicInvoke(this, _parent, prevParent, () => $"LayoutTargetObject#SetParent", LayoutDefines.LOG_SELECTOR);
             return this;
         }
@@ -125,21 +135,7 @@ namespace Hinode.Layouts
         {
             if (parent != Parent) return;
 
-            //変更前のOffsetMin/Maxを計算しています。
-            var parentLayoutSize = prevLocalSize;
-            if (parent.LayoutInfo.LayoutSize.x >= 0) parentLayoutSize.x = Min(parent.LayoutInfo.LayoutSize.x, parentLayoutSize.x);
-            if (parent.LayoutInfo.LayoutSize.y >= 0) parentLayoutSize.y = Min(parent.LayoutInfo.LayoutSize.y, parentLayoutSize.y);
-            if (parent.LayoutInfo.LayoutSize.z >= 0) parentLayoutSize.z = Min(parent.LayoutInfo.LayoutSize.z, parentLayoutSize.z);
-
-            var prevAnchorAreaSize = parentLayoutSize.Mul(AnchorMax - AnchorMin);
-            var max = prevAnchorAreaSize*0.5f;
-            var min = -max;
-
-            var halfSize = LocalSize * 0.5f;
-            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
-            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
-
-            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+            if(IsAutoUpdate) FollowParent();
         }
 
         public void SetLayoutInfo(LayoutInfo layoutInfo)
@@ -156,8 +152,13 @@ namespace Hinode.Layouts
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalPos> OnChangedLocalPos { get => _onChangedLocalPos; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLocalSize> OnChangedLocalSize { get => _onChangedLocalSize; }
         public NotInvokableDelegate<ILayoutTargetOnChangedOffset> OnChangedOffset { get => _onChangedOffset; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedAnchorMinMax> OnChangedAnchorMinMax { get => _onChangedAnchorMinMax; }
+        public NotInvokableDelegate<ILayoutTargetOnChangedPivot> OnChangedPivot { get => _onChangedPivot; }
         public NotInvokableDelegate<ILayoutTargetOnChangedLayoutInfo> OnChangedLayoutInfo { get => _onChangedLayoutInfo; }
 
+        public bool IsAutoUpdate { get; set; } = true;
+
+        public Vector3 PrevParentSize { get => _prevParentSize; }
         public ILayoutTarget Parent { get => _parent; }
         public IEnumerable<ILayoutTarget> Children { get => _children; }
         public int ChildCount { get => _children.Count; }
@@ -194,6 +195,25 @@ namespace Hinode.Layouts
             get => _offset;
         }
 
+        /// <summary>
+        /// Pivotの変更された場合は現在の位置を変更しないようにするため、UpdateAnchorParam()が呼びだされます。
+        /// </summary>
+        public Vector3 Pivot
+        {
+            get => _pivot;
+            set
+            {
+                if (_pivot.AreNearlyEqual(value, LayoutDefines.NUMBER_PRECISION))
+                    return;
+                var (offsetMin, offsetMax) = this.AnchorOffsetMinMax();
+
+                var prev = _pivot;
+                _pivot = value;
+                UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+                _onChangedPivot.SafeDynamicInvoke(this, prev, () => $"LayoutTargetObject#Pivot", LayoutDefines.LOG_SELECTOR);
+            }
+        }
+
         public virtual void Dispose()
         {
             while(0 < _children.Count)
@@ -210,23 +230,37 @@ namespace Hinode.Layouts
             _onChangedChildren.Clear();
             _onChangedLocalPos.Clear();
             _onChangedLocalSize.Clear();
+            _onChangedOffset.Clear();
+            _onChangedPivot.Clear();
+            _onChangedLayoutInfo.Clear();
         }
 
         public void AddLayout(ILayout layout)
         {
-            if (_layouts.Contains(layout)) return;
-
-            var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority >=_l.OperationPriority);
-            if(insertIndex != -1)
-                _layouts.InsertTo(insertIndex, layout);
-            else
-                _layouts.Add(layout);
+            if (!_layouts.Contains(layout))
+            {
+                var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority < _l.OperationPriority);
+                if(insertIndex != -1)
+                    _layouts.InsertTo(insertIndex, layout);
+                else
+                    _layouts.Add(layout);
+            }
+            if(layout.Target != this)
+            {
+                layout.Target = this;
+            }
         }
 
         public void RemoveLayout(ILayout layout)
         {
-            if (!_layouts.Contains(layout)) return;
-            _layouts.Remove(layout);
+            if (_layouts.Contains(layout))
+            {
+                _layouts.Remove(layout);
+            }
+            if(layout.Target == this)
+            {
+                layout.Target = null;
+            }
         }
 
 
@@ -237,22 +271,25 @@ namespace Hinode.Layouts
             var prevOffset = Offset;
 
             var parentLayoutSize = Parent != null
-                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+                ? Parent.LayoutSize()
                 : Vector3.zero;
             var anchorAreaSize = parentLayoutSize.Mul(anchorMax - anchorMin);
             _localSize = LimitLocalSizeByLayoutInfo(anchorAreaSize + offsetMin + offsetMax);
 
             NormalizeLocalSize(ref _localSize, ref offsetMin, ref offsetMax, anchorAreaSize);
 
+            var prevAnchorMin = _anchorMin;
+            var prevAnchorMax = _anchorMax;
             _anchorMin = anchorMin;
             _anchorMax = anchorMax;
 
-            var minPos = _localSize * -0.5f - offsetMin;
-            var maxPos = _localSize * 0.5f + offsetMax;
-            _offset = (maxPos + minPos) * 0.5f;
+            _offset = -offsetMin.Mul(Vector3.one - Pivot) + offsetMax.Mul(Pivot);
+
+            _prevParentSize = parentLayoutSize;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
+            OnUpdateAnchorMinMaxWithExceptionCheck(prevAnchorMin, prevAnchorMax);
         }
 
         public void UpdateLocalSize(Vector3 localSize, Vector3 offset)
@@ -262,13 +299,28 @@ namespace Hinode.Layouts
             localSize = Vector3.Max(localSize, Vector3.zero);
 
             _localSize = LimitLocalSizeByLayoutInfo(localSize);
+
             _offset = offset;
 
-            var parentLayoutSize = Parent != null
-                ? Parent.LayoutInfo.GetLayoutSize(Parent)
+            _prevParentSize = Parent != null
+                ? Parent.LayoutSize()
                 : Vector3.zero;
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
+        }
+
+        public void FollowParent()
+        {
+            //以前のOffsetMin/Maxを計算しています。
+            var prevAnchorAreaSize = _prevParentSize.Mul(AnchorMax - AnchorMin);
+            var max = prevAnchorAreaSize * 0.5f;
+            var min = -max;
+
+            var halfSize = LocalSize * 0.5f;
+            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
+            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
+
+            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
         }
 
         Vector3 LimitLocalSizeByLayoutInfo(Vector3 localSize)
@@ -283,6 +335,11 @@ namespace Hinode.Layouts
             if (max.y >= 0) localSize.y = Min(max.y, localSize.y);
             if (max.z >= 0) localSize.z = Min(max.z, localSize.z);
             return localSize;
+        }
+
+        static Vector3 CalPivotOffset(Vector3 localSize, Vector3 pivot)
+        {
+            return -localSize.Mul((pivot - Vector3.one * 0.5f));
         }
 
         static void NormalizeAnchorPos(ref Vector3 min, ref Vector3 max)
@@ -327,6 +384,18 @@ namespace Hinode.Layouts
 
             _onChangedOffset.SafeDynamicInvoke(this, prevOffset, () => $"LayoutTargetObject#Update Offset", LayoutDefines.LOG_SELECTOR);
         }
+
+        void OnUpdateAnchorMinMaxWithExceptionCheck(Vector3 prevAnchorMin, Vector3 prevAnchorMax)
+        {
+            if (prevAnchorMin.AreNearlyEqual(_anchorMin)
+                && prevAnchorMax.AreNearlyEqual(_anchorMax))
+            {
+                return;
+            }
+
+            _onChangedAnchorMinMax.SafeDynamicInvoke(this, prevAnchorMin, prevAnchorMax, () => $"LayoutTargetObject#Update AnchorMin/Max", LayoutDefines.LOG_SELECTOR);
+        }
+
         #endregion
     }
 }

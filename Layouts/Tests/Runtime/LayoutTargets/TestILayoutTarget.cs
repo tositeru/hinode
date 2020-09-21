@@ -112,6 +112,21 @@ namespace Hinode.Layouts.Tests
             test.RunTest(settings);
         }
 
+        #region PivotOffset
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.PivotOffset(ILayoutTarget)"/>
+        /// </summary>
+        [Test]
+        public void PivotOffsetPasses()
+        {
+            var target = new LayoutTargetObject();
+            target.UpdateLocalSize(Vector3.one * 100f, Vector3.zero);
+
+            target.Pivot = Vector3.one;
+            AssertionUtils.AreNearlyEqual(target.LocalSize*-0.5f, target.PivotOffset(), LayoutDefines.NUMBER_PRECISION);
+        }
+        #endregion
+
         #region ParentLocalSize
         /// <summary>
         /// <seealso cref="ILayoutTargetExtensions.ParentLocalSize(ILayoutTarget)"/>
@@ -600,13 +615,12 @@ namespace Hinode.Layouts.Tests
         {
             System.Action<LayoutTargetObject, LayoutTargetObject, Vector3> validateFunc = (_self, _parent, _offset) =>
             {
+                _self.SetParent(_parent);
+
                 var anchorMin = _self.AnchorMin;
                 var anchorMax = _self.AnchorMax;
                 var localSize = _self.LocalSize;
 
-                var anchorLocalSize = _parent.LocalSize.Mul(_self.AnchorMax - _self.AnchorMin);
-
-                _self.SetParent(_parent);
                 _self.SetOffset(_offset);
 
                 AssertionUtils.AreNearlyEqual(_offset, _self.Offset, EPSILON);
@@ -615,7 +629,7 @@ namespace Hinode.Layouts.Tests
                 AssertionUtils.AreNearlyEqual(anchorMin, _self.AnchorMin, EPSILON);
                 AssertionUtils.AreNearlyEqual(anchorMax, _self.AnchorMax, EPSILON);
                 AssertionUtils.AreNearlyEqual(localSize, _self.LocalSize, EPSILON);
-                Debug.Log($"Success not to Change Values(anchorMin/Max LocalSize)!!");
+                Debug.Log($"Success not to Change Values(anchorMin/Max LocalSize={localSize})!!");
             };
 
             {
@@ -638,7 +652,7 @@ namespace Hinode.Layouts.Tests
                 var parent = new LayoutTargetObject();
                 parent.SetLocalSize(new Vector3(100, 100, 100));
 
-                var offset = Vector3.one * 10f;
+                var offset = Vector3.one * 30f;
                 validateFunc(self, parent, offset);
             }
             Debug.Log($"Success to Anchor Area Mode!");
@@ -720,5 +734,96 @@ namespace Hinode.Layouts.Tests
             }
         }
 
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.LayoutSize(ILayoutTarget)"/>
+        /// </summary>
+        [Test]
+        public void LayoutSizePasses()
+        {
+            var target = new LayoutTargetObject();
+
+            var sizeRange = 1000f;
+            var rnd = new System.Random();
+            for(var i=0; i<1000; ++i)
+            {
+                switch (rnd.Next() % 2)
+                {
+                    case 0:
+                        var localSize = new Vector3(
+                            rnd.Range(0f, sizeRange),
+                            rnd.Range(0f, sizeRange),
+                            rnd.Range(0f, sizeRange)
+                        );
+                        target.SetLocalSize(localSize);
+                        break;
+                    case 1:
+                        target.LayoutInfo.LayoutSize = new Vector3(
+                            rnd.Range(0f, sizeRange),
+                            rnd.Range(0f, sizeRange),
+                            rnd.Range(0f, sizeRange)
+                        );
+                        break;
+                    case 2:
+                        target.LayoutInfo.SetMinMaxSize(
+                            new Vector3(
+                                rnd.Range(-10f, sizeRange),
+                                rnd.Range(-10f, sizeRange),
+                                rnd.Range(-10f, sizeRange)
+                            ),
+                            new Vector3(
+                                rnd.Range(-10f, sizeRange),
+                                rnd.Range(-10f, sizeRange),
+                                rnd.Range(-10f, sizeRange)
+                            )
+                        );
+                        break;
+                }
+                var errorMessage = "Fail test...";
+                AssertionUtils.AreNearlyEqual(target.LayoutInfo.GetLayoutSize(target), target.LayoutSize(), LayoutDefines.NUMBER_PRECISION, errorMessage);
+            }
+        }
+
+        #region ClearLayouts
+        class LayoutClass : LayoutBase
+        {
+            public LayoutClass(int priority)
+            {
+                OperationPriority = priority;
+            }
+
+            public override LayoutOperationTarget OperationTargetFlags { get => 0; }
+
+            public override void UpdateLayout() { }
+            public override bool Validate() => true;
+
+            public override string ToString()
+            {
+                return $"LayoutClass priority={OperationPriority}";
+            }
+        }
+
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.ClearLayouts(ILayoutTarget)"/>
+        /// </summary>
+        [Test]
+        public void ClearLayoutsPasses()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100),
+                new LayoutClass(0),
+                new LayoutClass(-100),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            layoutTarget.ClearLayouts();
+            Assert.AreEqual(0, layoutTarget.Layouts.Count);
+        }
+        #endregion
     }
 }

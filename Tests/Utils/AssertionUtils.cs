@@ -15,15 +15,15 @@ namespace Hinode.Tests
             if (gots == null && corrects == null) return;
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots !=null}");
 
-            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
+            Assert.AreEqual(corrects.Count(), gots.Count(), $"{message}: Don't Equal count...");
 
+            if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
             var index = 0;
             foreach (var (t, correct) in gots.Zip(corrects, (_t, _c) => (t: _t, c: _c)))
             {
                 Assert.IsTrue(comparer(correct, t), $"{message}: don't be same... index=>{index}, correct={correct}, got={t}");
                 index++;
             }
-            Assert.AreEqual(corrects.Count(), index, $"{message}: Don't Equal count...");
         }
 
         public static void AssertEnumerableByUnordered<T>(IEnumerable<T> corrects, IEnumerable<T> gots, string message, System.Func<T, T, bool> comparer =null)
@@ -45,14 +45,14 @@ namespace Hinode.Tests
 
         public static void AreNearlyEqual(float correct, float got, float epsilon=float.Epsilon, string message="")
         {
-            Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+            Assert.IsTrue(Utils.AreFloatsEqual(correct, got, epsilon), $"Not Nearly Equal... correct={correct:F8}, got={got:F8}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector2 correct, Vector2 got, float epsilon=float.Epsilon, string message="")
         {
             Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector3 correct, Vector3 got, float epsilon=float.Epsilon, string message="")
@@ -60,7 +60,7 @@ namespace Hinode.Tests
             Assert.IsTrue(Utils.AreFloatsEqual(correct.x, got.x, epsilon)
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
                 && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreNearlyEqual(Vector4 correct, Vector4 got, float epsilon=float.Epsilon, string message="")
@@ -69,7 +69,7 @@ namespace Hinode.Tests
                 && Utils.AreFloatsEqual(correct.y, got.y, epsilon)
                 && Utils.AreFloatsEqual(correct.z, got.z, epsilon)
                 && Utils.AreFloatsEqual(correct.w, got.w, epsilon)
-                , $"Not Nearly Equal... correct={correct}, got={got}, epslion={epsilon}. {message}");
+                , $"Not Nearly Equal... correct={correct.ToString("F8")}, got={got.ToString("F8")}, epslion={epsilon:F8}. {message}");
         }
 
         public static void AreEqual<TKey, TValue>(Dictionary<TKey, TValue> correct, Dictionary<TKey, TValue> got, string message)
