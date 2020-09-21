@@ -36,6 +36,8 @@ namespace Hinode.Layouts
         [SerializeField] Vector3 _localSize;
         [SerializeField] Vector3 _anchorMin;
         [SerializeField] Vector3 _anchorMax;
+        [SerializeField] Vector3 _anchorOffsetMin;
+        [SerializeField] Vector3 _anchorOffsetMax;
         [SerializeField] Vector3 _offset;
         [SerializeField] Vector3 _pivot = Vector3.one * 0.5f;
 
@@ -285,6 +287,9 @@ namespace Hinode.Layouts
 
             _offset = -offsetMin.Mul(Vector3.one - Pivot) + offsetMax.Mul(Pivot);
 
+            _anchorOffsetMin = offsetMin;
+            _anchorOffsetMax = offsetMax;
+
             _prevParentSize = parentLayoutSize;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
@@ -305,22 +310,16 @@ namespace Hinode.Layouts
             _prevParentSize = Parent != null
                 ? Parent.LayoutSize()
                 : Vector3.zero;
+            var (offsetMin, offsetMax) = this.AnchorOffsetMinMax();
+            _anchorOffsetMin = offsetMin;
+            _anchorOffsetMax = offsetMax;
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
         public void FollowParent()
         {
-            //以前のOffsetMin/Maxを計算しています。
-            var prevAnchorAreaSize = _prevParentSize.Mul(AnchorMax - AnchorMin);
-            var max = prevAnchorAreaSize * 0.5f;
-            var min = -max;
-
-            var halfSize = LocalSize * 0.5f;
-            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
-            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
-
-            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+            UpdateAnchorParam(AnchorMin, AnchorMax, _anchorOffsetMin, _anchorOffsetMax);
         }
 
         Vector3 LimitLocalSizeByLayoutInfo(Vector3 localSize)

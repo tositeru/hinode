@@ -35,6 +35,8 @@ namespace Hinode.Layouts.Editors
             { "_localSize", OpMode.SizeAndOffset },
             { "_anchorMin", OpMode.Anchor },
             { "_anchorMax", OpMode.Anchor },
+            { "_anchorOffsetMin", OpMode.Anchor },
+            { "_anchorOffsetMax", OpMode.Anchor },
             { "_offset", OpMode.SizeAndOffset },
             { "_pivot", OpMode.Both },
         };
@@ -194,6 +196,17 @@ namespace Hinode.Layouts.Editors
                                     var tmp = localSizeSP.vector3Value;
                                     tmp[presetType.ElementIndex] = layoutSize[presetType.ElementIndex];
                                     localSizeSP.vector3Value = tmp;
+
+                                    var offsetMinSP = targetSP.FindPropertyRelative("_anchorOffsetMin");
+                                    var offsetMin = offsetMinSP.vector3Value;
+                                    var offsetMaxSP = targetSP.FindPropertyRelative("_anchorOffsetMax");
+                                    var offsetMax = offsetMaxSP.vector3Value;
+
+                                    offsetMin[presetType.ElementIndex] = 0;
+                                    offsetMax[presetType.ElementIndex] = 0;
+
+                                    offsetMinSP.vector3Value = offsetMin;
+                                    offsetMaxSP.vector3Value = offsetMax;
                                 }
                             }
                         }
@@ -201,7 +214,7 @@ namespace Hinode.Layouts.Editors
                 }
 
                 _foldoutAnchorOffset = EditorGUILayout.Foldout(_foldoutAnchorOffset, "Anchor Offset Min/Max");
-                if (_foldoutAnchorOffset)
+                if (_foldoutAnchorOffset && false)
                 {
                     using (var s = new EditorGUI.IndentLevelScope())
                     {
