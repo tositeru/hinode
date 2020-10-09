@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -42,9 +42,7 @@ namespace Hinode
         { }
 
         public void Add(params T[] predicates)
-        {
-            _predicate = System.Delegate.Combine(_predicate, System.Delegate.Combine(predicates)) as T;
-        }
+            => Add(predicates.AsEnumerable());
         public void Add(IEnumerable<T> predicates)
         {
             System.Delegate newList = _predicate;
@@ -93,6 +91,8 @@ namespace Hinode
     public class SmartDelegate<T> : NotInvokableDelegate<T>
         where T : System.Delegate
     {
+        List<object> _returnValuesCache = new List<object>();
+
         public T Instance { get => _predicate; }
 
         public SmartDelegate() { }
@@ -105,136 +105,162 @@ namespace Hinode
             : this(others.Select(_o => _o._predicate))
         { }
 
-        public object SafeDynamicInvoke(System.Func<string> getLogFunc, params string[] logSelector)
-        {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = invocation.DynamicInvoke();
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
-        }
+        //Text Template note:
+        //public IEnumerable<object> SafeDynamicInvoke$TemplateArgs$($Args$System.Func<string> getLogFunc, params string[] logSelector)
+        //{
+        //  var list = Instance?.GetInvocationList() ?? null;
+        //  if (list == null) return null;
+        //  _returnValuesCache.Clear();
+        //  foreach (var invocation in list)
+        //  {
+        //      try
+        //      {
+        //          var returnValue = invocation?.DynamicInvoke($PassArgs$);
+        //          _returnValuesCache.Add(returnValue);
+        //      }
+        //      catch (System.Exception e)
+        //      {
+        //          Logger.LogWarning(Logger.Priority.High
+        //              , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+        //              , logSelector);
+        //      }
+        //  }
+        //  return _returnValuesCache;
+        //}
 
-        public object SafeDynamicInvoke<T1>(T1 arg1, System.Func<string> getLogFunc, params string[] logSelector)
+        ////@@ Packages/com.tositeru.hinode/Editor/Assets/TextTemplates/SmartDelegate_SafeDynamicInvoke.asset
+public IEnumerable<object> SafeDynamicInvoke(System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
         {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = Instance?.DynamicInvoke(arg1);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
+            var returnValue = invocation.DynamicInvoke();
+            _returnValuesCache.Add(returnValue);
         }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
 
-        public object SafeDynamicInvoke<T1, T2>(T1 arg1, T2 arg2, System.Func<string> getLogFunc, params string[] logSelector)
+public IEnumerable<object> SafeDynamicInvoke<T1>(T1 arg1, System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
         {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = Instance?.DynamicInvoke(arg1, arg2);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
+            var returnValue = invocation.DynamicInvoke(arg1);
+            _returnValuesCache.Add(returnValue);
         }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
 
-        public object SafeDynamicInvoke<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3, System.Func<string> getLogFunc, params string[] logSelector)
+public IEnumerable<object> SafeDynamicInvoke<T1, T2>(T1 arg1, T2 arg2, System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
         {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = Instance?.DynamicInvoke(arg1, arg2, arg3);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
+            var returnValue = invocation.DynamicInvoke(arg1, arg2);
+            _returnValuesCache.Add(returnValue);
         }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
 
-        public object SafeDynamicInvoke<T1, T2, T3, T4>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, System.Func<string> getLogFunc, params string[] logSelector)
+public IEnumerable<object> SafeDynamicInvoke<T1, T2, T3>(T1 arg1, T2 arg2, T3 arg3, System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
         {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = Instance?.DynamicInvoke(arg1, arg2, arg3, arg4);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
+            var returnValue = invocation.DynamicInvoke(arg1, arg2, arg3);
+            _returnValuesCache.Add(returnValue);
         }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
 
-        public object SafeDynamicInvoke<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, System.Func<string> getLogFunc, params string[] logSelector)
+public IEnumerable<object> SafeDynamicInvoke<T1, T2, T3, T4>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
         {
-            object lastReturnValue = null;
-            var list = Instance?.GetInvocationList() ?? null;
-            if (list == null) return null;
-            foreach (var invocation in list)
-            {
-                try
-                {
-                    lastReturnValue = Instance?.DynamicInvoke(arg1, arg2, arg3, arg4, arg5);
-                }
-                catch (System.Exception e)
-                {
-                    Logger.LogWarning(
-                        Logger.Priority.High
-                        , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
-                        , logSelector);
-                }
-            }
-            return lastReturnValue;
+            var returnValue = invocation.DynamicInvoke(arg1, arg2, arg3, arg4);
+            _returnValuesCache.Add(returnValue);
         }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
+
+public IEnumerable<object> SafeDynamicInvoke<T1, T2, T3, T4, T5>(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, System.Func<string> getLogFunc, params string[] logSelector)
+{
+    var list = Instance?.GetInvocationList() ?? null;
+    if (list == null) return null;
+    _returnValuesCache.Clear();
+    foreach (var invocation in list)
+    {
+        try
+        {
+            var returnValue = invocation.DynamicInvoke(arg1, arg2, arg3, arg4, arg5);
+            _returnValuesCache.Add(returnValue);
+        }
+        catch (System.Exception e)
+        {
+            Logger.LogWarning(Logger.Priority.High
+                , () => $"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}"
+            , logSelector);
+        }
+    }
+    return _returnValuesCache;
+}
+
+////-- Finish Packages/com.tositeru.hinode/Editor/Assets/TextTemplates/SmartDelegate_SafeDynamicInvoke.asset
     }
 }
