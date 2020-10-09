@@ -290,6 +290,7 @@ Hinodeでは以下のCollectionのヘルパークラスを提供しています�
 - HashSetHelper
 - ListHelper
 - DictionaryHelper
+- TreeNodeHelper
 
 これらのHelperクラスはクラスを実装するに当たってCollection操作関係の処理を肩代わりすることを目的に作成されています。
 
@@ -308,6 +309,29 @@ helper.OnAdded.Add((addedValue) => ...);
 helper.OnRemoved.Add((removedValue) => ...);
 helper.OnCleared.Add(() => ...);
 ```
+
+#### TreeNodeHelper
+
+TreeNodeHelperは他のCollection Helperとは異なり、IReadOnlyTreeNodeから派生していません。
+
+その代わりにこのクラスを継承してTreeデータ構造を利用することができます。
+継承する際は以下の点に注意してください。
+
+- TreeNodeHelper<T>#Valueに自身の参照を設定すること。
+
+コード例は以下のようになります。
+
+```
+class Test : TreeNodeHelper<Test>
+{
+    public Test()
+    {
+        base.Value = this; // <- Self reference must set to TreeNodeHelper<T>#Value!!!
+    }
+    // ....
+}
+```
+
 ### Math
 
 Hinodeでは以下の数学ライブラリを用意しています。

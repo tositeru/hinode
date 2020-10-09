@@ -1829,14 +1829,14 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             helper.Add(10, targetValue, 30);
 
             var counter = 0;
-            var recievedValue = 0;
-            var recievedIndex = -1;
-            helper.OnMoved.Add((v, newIndex) => {
+            (int value, int from, int to) recievedValues = default;
+            helper.OnMoved.Add((v, from, to) => {
                 counter++;
-                recievedValue = v;
-                recievedIndex = newIndex;
+                recievedValues = (v, from, to);
             });
-            helper.MoveTo(1, 2);
+            int fromIndex = 1;
+            int toIndex = 2;
+            helper.MoveTo(fromIndex, toIndex);
 
             AssertionUtils.AssertEnumerable(
                 new int[] { 10, default(int), targetValue },
@@ -1844,8 +1844,9 @@ namespace Hinode.Tests.CSharp.CollectionHelper
                 ""
             );
             Assert.AreEqual(1, counter);
-            Assert.AreEqual(2, recievedIndex);
-            Assert.AreEqual(targetValue, recievedValue);
+            Assert.AreEqual(targetValue, recievedValues.value);
+            Assert.AreEqual(fromIndex, recievedValues.from);
+            Assert.AreEqual(toIndex, recievedValues.to);
         }
 
         /// <summary>
@@ -1859,7 +1860,7 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             var targetValue = 20;
             helper.Add(10, targetValue, 30);
 
-            helper.OnMoved.Add((v, newIndex) => {
+            helper.OnMoved.Add((_, __, ___) => {
                 throw new System.Exception();
             });
 
@@ -2017,14 +2018,18 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             var testData = new int[] { 10, 20, 30 };
             helper.Add(testData);
 
-            var recievedList = new List<(int value, int newIndex)>();
-            helper.OnMoved.Add((v, newIndex) => recievedList.Add((v, newIndex)));
+            var recievedList = new List<(int value, int from, int to)>();
+            helper.OnMoved.Add((v, _from, _to) => recievedList.Add((v, _from, _to)));
 
-            helper.Swap(2, 1);
+            var from = 2;
+            var to = 1;
+            var fromValue = testData[from];
+            var toValue = testData[to];
+            helper.Swap(from, to);
             AssertionUtils.AssertEnumerableByUnordered(
-                new (int value, int newIndex)[] {
-                    (testData[2], 1),
-                    (testData[1], 2),
+                new (int value, int _from, int _to)[] {
+                    (fromValue, from, to),
+                    (toValue, to, from),
                 },
                 recievedList,
                 ""
@@ -2042,7 +2047,7 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             var testData = new int[] { 10, 20, 30 };
             helper.Add(testData);
 
-            helper.OnMoved.Add((v, newIndex) => throw new System.ArgumentOutOfRangeException());
+            helper.OnMoved.Add((_, __, ___) => throw new System.ArgumentOutOfRangeException());
 
             Assert.DoesNotThrow(() => helper.Swap(2, 1));
             AssertionUtils.AssertEnumerable(
@@ -2131,16 +2136,16 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             var testData = new int[] { 100, 20, 30 };
             helper.Add(testData);
 
-            var recievedList = new List<(int value, int newIndex)>();
-            helper.OnMoved.Add((v, newIndex) => recievedList.Add((v, newIndex)));
+            var recievedList = new List<(int value, int from, int to)>();
+            helper.OnMoved.Add((v, from, to) => recievedList.Add((v, from, to)));
 
             helper.Sort();
 
             AssertionUtils.AssertEnumerableByUnordered(
-                new (int value, int newIndex)[] {
-                    (100, 2),
-                    (20, 0),
-                    (30, 1),
+                new (int value, int from, int to)[] {
+                    (100, -1, 2),
+                    (20, -1, 0),
+                    (30, -1, 1),
                 },
                 recievedList,
                 ""
@@ -2158,7 +2163,7 @@ namespace Hinode.Tests.CSharp.CollectionHelper
             var testData = new int[] { 100, 20, 30 };
             helper.Add(testData);
 
-            helper.OnMoved.Add((v, newIndex) => throw new System.Exception());
+            helper.OnMoved.Add((_, __, ___) => throw new System.Exception());
 
             Assert.DoesNotThrow(() => helper.Sort());
 
@@ -2456,16 +2461,16 @@ namespace Hinode.Tests.CSharp.CollectionHelper
         {
             var helper = new ListHelper<int>();
             helper.Add(10, 20, 30);
-            var recievedList = new List<(int value, int index)>();
-            helper.OnMoved.Add((v, index) => { recievedList.Add((v, index)); });
+            var recievedList = new List<(int value, int from, int to)>();
+            helper.OnMoved.Add((v, from, to) => { recievedList.Add((v, from, to)); });
 
             helper.InsertTo(0, 100, 200);
 
             AssertionUtils.AssertEnumerable(
-                new (int value, int index)[] {
-                    (30, 4),
-                    (20, 3),
-                    (10, 2),
+                new (int value, int from, int to)[] {
+                    (30, 2, 4),
+                    (20, 1, 3),
+                    (10, 0, 2),
                 },
                 recievedList,
                 ""
@@ -2482,7 +2487,7 @@ namespace Hinode.Tests.CSharp.CollectionHelper
         {
             var helper = new ListHelper<int>();
             helper.Add(10, 20, 30);
-            helper.OnMoved.Add((v, index) => { throw new System.Exception(); });
+            helper.OnMoved.Add((_, __, ___) => { throw new System.Exception(); });
 
             helper.InsertTo(0, 100, 200);
 

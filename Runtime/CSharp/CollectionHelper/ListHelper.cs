@@ -8,7 +8,7 @@ namespace Hinode
     public static class ListHelperCallback<T>
     {
         public delegate void OnAdded(T item, int index);
-        public delegate void OnMoved(T item, int index);
+        public delegate void OnMoved(T item, int fromIndex, int toIndex);
         public delegate void OnRemoved(T item, int index);
         public delegate void OnCleared();
         public delegate void OnChangedCount(IReadOnlyListHelper<T> self, int count);
@@ -53,6 +53,9 @@ namespace Hinode
         public int Count { get => _field.Count; }
 
         public NotInvokableDelegate<ListHelperCallback<T>.OnAdded> OnAdded { get => _onAdded; }
+        /// <summary>
+        /// Sortの際はfromIndexには-1が渡されますので注意してください。
+        /// </summary>
         public NotInvokableDelegate<ListHelperCallback<T>.OnMoved> OnMoved { get => _onMoved; }
         public NotInvokableDelegate<ListHelperCallback<T>.OnRemoved> OnRemoved { get => _onRemoved; }
         public NotInvokableDelegate<ListHelperCallback<T>.OnCleared> OnCleared { get => _onCleared; }
@@ -256,12 +259,13 @@ namespace Hinode
             if (!IsValidIndex(fromIndex)) throw new System.ArgumentOutOfRangeException($"Invalid fromIndex({fromIndex})...");
             if (!IsValidIndex(toIndex)) throw new System.ArgumentOutOfRangeException($"Invalid toIndex({toIndex})...");
 
-            _onRemoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
+            var remove = _field[toIndex];
 
             _field[toIndex] = _field[fromIndex];
-            _field[fromIndex] = default(T);
+            _field[fromIndex] = default;
 
-            _onMoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
+            _onRemoved.SafeDynamicInvoke(remove, toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
+            _onMoved.SafeDynamicInvoke(_field[toIndex], fromIndex, toIndex, () => $"ListHelper#MoveTo(from={fromIndex}, to={toIndex})");
 
             return this;
         }
@@ -277,12 +281,17 @@ namespace Hinode
             _field[toIndex] = _field[fromIndex];
             _field[fromIndex] = swap;
 
-            _onMoved.SafeDynamicInvoke(_field[fromIndex], fromIndex, () => $"ListHelper#MoveTo in from(from={fromIndex}, to={toIndex})");
-            _onMoved.SafeDynamicInvoke(_field[toIndex], toIndex, () => $"ListHelper#MoveTo in to(from={fromIndex}, to={toIndex})");
+            _onMoved.SafeDynamicInvoke(_field[toIndex], fromIndex, toIndex, () => $"ListHelper#Swap by from(from={fromIndex}, to={toIndex})");
+            _onMoved.SafeDynamicInvoke(_field[fromIndex], toIndex, fromIndex, () => $"ListHelper#Swap by to(from={fromIndex}, to={toIndex})");
 
             return this;
         }
 
+        /// <summary>
+        /// OnMovedコールバックが呼び出されますが、その際にfromIndexには-1が渡されますので注意してください。
+        /// </summary>
+        /// <param name="comparer"></param>
+        /// <returns></returns>
         public ListHelper<T> Sort(IComparer<T> comparer = null)
         {
             if (comparer == null) comparer = Comparer<T>.Default;
@@ -291,7 +300,7 @@ namespace Hinode
 
             for(var i=0; i<Count; ++i)
             {
-                _onMoved.SafeDynamicInvoke(_field[i], i, () => $"ListHelper#Sort(index={i})");
+                _onMoved.SafeDynamicInvoke(_field[i], -1, i, () => $"ListHelper#Sort(index={i})");
             }
             return this;
         }
