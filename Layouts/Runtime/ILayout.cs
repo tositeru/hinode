@@ -8,6 +8,11 @@ namespace Hinode.Layouts
     public delegate void ILayoutOnChanged(ILayout self, bool doChanged);
     public delegate void ILayoutOnChangedOperationPriority(ILayout self, int prevPriority);
 
+    public enum LayoutKind
+    {
+        Normal,
+        Delay,
+    }
     /// <summary>
     /// Layoutの処理対象となるものを表すenum
     /// </summary>
@@ -46,6 +51,7 @@ namespace Hinode.Layouts
         int OperationPriority { get; set; }
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
+        LayoutKind Kind { get; }
 
         LayoutOperationTarget OperationTargetFlags { get; }
 
@@ -136,6 +142,8 @@ namespace Hinode.Layouts
             }
         }
 
+        public virtual LayoutKind Kind { get => LayoutKind.Normal; }
+
         public bool DoChanged
         {
             get => _doChanged;
@@ -169,4 +177,34 @@ namespace Hinode.Layouts
         #endregion
     }
 
+    /// <summary>
+    /// ILayoutのデフォルトIComparer
+    /// ILayout#OperationPriorityが大きい方が先頭になるようにしています。
+    /// </summary>
+    public class ILayoutDefaultComparer : IComparer<ILayout>
+    {
+        public readonly static ILayoutDefaultComparer Default = new ILayoutDefaultComparer();
+
+        public int Compare(ILayout x, ILayout y)
+        {
+            int compare;
+            if (x.Kind == y.Kind)
+            {
+                compare = x.OperationPriority.CompareTo(y.OperationPriority);
+            }
+            else if (x.Kind == LayoutKind.Normal && y.Kind == LayoutKind.Delay)
+            {
+                compare = 1;
+            }
+            else if (x.Kind == LayoutKind.Delay && y.Kind == LayoutKind.Normal)
+            {
+                compare = -1;
+            }
+            else
+            {
+                compare = x.OperationPriority.CompareTo(y.OperationPriority);
+            }
+            return compare * -1;
+        }
+    }
 }

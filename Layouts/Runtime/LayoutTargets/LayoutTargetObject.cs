@@ -239,6 +239,7 @@ namespace Hinode.Layouts
 
         public void AddLayout(ILayout layout)
         {
+            //Callbackの設定はコンストラクタの_layoutsのコールバックの方で行っています。
             if (!_layouts.Contains(layout))
             {
                 var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority < _l.OperationPriority);
@@ -255,6 +256,7 @@ namespace Hinode.Layouts
 
         public void RemoveLayout(ILayout layout)
         {
+            //Callbackの設定はコンストラクタの_layoutsのコールバックの方で行っています。
             if (_layouts.Contains(layout))
             {
                 _layouts.Remove(layout);
@@ -264,7 +266,6 @@ namespace Hinode.Layouts
                 layout.Target = null;
             }
         }
-
 
         public void UpdateAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
         {

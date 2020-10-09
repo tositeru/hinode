@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
+using System.Linq;
 
 namespace Hinode.Layouts
 {
@@ -29,6 +31,7 @@ namespace Hinode.Layouts
 	/// <summary>
 	/// RectまたはCubeを表すLayout対象となるオブジェクトのインターフェイス
 	///
+    /// TODO Anchor周りの処理を`AnchorLayout : ILayout`として分離するか検討する？(LocalSize/Offsetのみをパラメータとして残す)
 	/// ###　実装上の注意点
 	/// 
 	/// - System.IDisposable#Dispose()では以下のILayoutTargetに関係するパラメータをクリアーするようにしてください。
@@ -360,18 +363,104 @@ namespace Hinode.Layouts
 				self.RemoveLayout(self.Layouts[self.Layouts.Count-1]);
             }
         }
-    }
 
-	/// <summary>
-    /// ILayoutのデフォルトIComparer
-    /// </summary>
-    public class ILayoutDefaultComparer : IComparer<ILayout>
-    {
-		public readonly static ILayoutDefaultComparer Default = new ILayoutDefaultComparer();
-
-		public int Compare(ILayout x, ILayout y)
+		/// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+		public static IEnumerable<ILayoutTarget> GetParentEnumerable(this ILayoutTarget self)
         {
-			return x.OperationPriority.CompareTo(y.OperationPriority);
+			return new ParentEnumerable(self);
         }
+
+        class ParentEnumerable : IEnumerable<ILayoutTarget>, IEnumerable
+        {
+            ILayoutTarget _target;
+            public ParentEnumerable(ILayoutTarget target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<ILayoutTarget> GetEnumerator()
+            {
+				var p = _target.Parent;
+				while (p != null)
+				{
+					yield return p;
+					p = p.Parent;
+				}
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
+		public static IEnumerable<ILayoutTarget> GetHierarchyEnumerable(this ILayoutTarget self)
+        {
+			return new HierachyEnumerable(self);
+        }
+
+        class HierachyEnumerable : IEnumerable<ILayoutTarget>, IEnumerable
+        {
+            ILayoutTarget _target;
+			public HierachyEnumerable(ILayoutTarget target)
+			{
+				Assert.IsNotNull(target);
+				_target = target;
+			}
+
+			public IEnumerator<ILayoutTarget> GetEnumerator()
+			{
+				var it = _target;
+				while (it != null)
+				{
+					yield return it;
+					it = GetNext(it);
+				}
+			}
+
+			IEnumerator IEnumerable.GetEnumerator()
+			{
+				return GetEnumerator();
+			}
+
+			ILayoutTarget GetNext(ILayoutTarget now, int nextChildIndex = 0)
+			{
+				var siblingIndex = GetSiblingIndex(now);
+				if (nextChildIndex >= now.ChildCount)
+				{
+					return now == _target
+						? null
+						: GetNext(now.Parent, siblingIndex + 1);
+				}
+				if (now.ChildCount > 0)
+				{
+					return now.Children.ElementAt(nextChildIndex);
+				}
+				if (now == _target)
+				{
+					return null;
+				}
+				if (GetSiblingIndex(now) < now.Parent.ChildCount - 1)
+				{
+					return now.Parent.Children.ElementAt(siblingIndex + 1);
+				}
+				return GetNext(now.Parent, siblingIndex + 1);
+			}
+
+			int GetSiblingIndex(ILayoutTarget target)
+            {
+				if (target.Parent == null) return -1;
+				int index = 0;
+				foreach(var c in target.Parent.Children)
+                {
+					if (c == target) break;
+					index++;
+                }
+				return index;
+            }
+        }
+
+
     }
 }
