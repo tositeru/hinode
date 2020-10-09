@@ -35,6 +35,7 @@ UnityのPackage Managerを使用しGit URLからインストールできます�
     - [SubComponent](/Docs/UnityUtiliryClaesses.md#SubComponent)
 - [Editor拡張](./Docs/Editor.md)
     - [テキストテンプレートエンジン](./Docs/Editor/TextTemplateEngine.md)
+    - [Screen Shot](./Docs/Editor.md#ScreenShot)
 - [仮想Input機能](./Docs/VirtualInput.md)
     - [ReplayableInput](./Docs/VirtualInput.md#ReplayableInput)
     - [InputRecorder](./Docs/VirtualInput.md#InputRecorder)
