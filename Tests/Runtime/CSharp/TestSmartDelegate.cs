@@ -67,6 +67,45 @@ namespace Hinode.Tests.CSharp
             Assert.AreEqual(1, d.RegistedDelegateCount);
         }
 
+        [Test]
+        public void Add_Dumplication_Passes()
+        {
+            var predicate = new SmartDelegate<BasicUsagePassesDelegate>();
+            Assert.IsFalse(predicate.IsValid);
+            Assert.IsNull(predicate.Instance);
+
+            //test point
+            BasicUsagePassesDelegate incrementFunc = () => { ; };
+            predicate.Add(incrementFunc);
+            predicate.Add(incrementFunc);
+
+            Assert.IsTrue(predicate.IsValid);
+            Assert.IsNotNull(predicate.Instance);
+            Assert.AreEqual(1, predicate.RegistedDelegateCount);
+        }
+
+        [Test]
+        public void Contains_Passes()
+        {
+            var predicate = new SmartDelegate<BasicUsagePassesDelegate>();
+            Assert.IsFalse(predicate.IsValid);
+            Assert.IsNull(predicate.Instance);
+
+            //test point
+            BasicUsagePassesDelegate incrementFunc = () => {; };
+            Assert.IsFalse(predicate.Contains(incrementFunc));
+
+            predicate.Add(incrementFunc);
+            Assert.IsTrue(predicate.Contains(incrementFunc));
+
+            var copy = incrementFunc;
+            Assert.IsTrue(predicate.Contains(copy));
+
+            predicate.Remove(incrementFunc);
+            Assert.IsFalse(predicate.Contains(incrementFunc));
+
+        }
+
         #region SafeDynamicInvoke
         delegate void SafeDynamicInvokeDelegate();
         delegate void SafeDynamicInvokeDelegateArg1(int a);

@@ -41,12 +41,19 @@ namespace Hinode
             : this(others.Select(_o => _o._predicate))
         { }
 
+        public bool Contains(T pred)
+        {
+            if (!IsValid) return false;
+
+            return _predicate.GetInvocationList().Any(_p => _p.Equals(pred));
+        }
+
         public void Add(params T[] predicates)
             => Add(predicates.AsEnumerable());
         public void Add(IEnumerable<T> predicates)
         {
             System.Delegate newList = _predicate;
-            foreach (var p in predicates)
+            foreach (var p in predicates.Where(_p => !Contains(_p)))
             {
                 newList = System.Delegate.Combine(newList, p);
             }
