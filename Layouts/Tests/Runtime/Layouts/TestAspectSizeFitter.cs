@@ -892,6 +892,23 @@ namespace Hinode.Layouts.Tests
         #endregion
 
         #region Validate
+        class ChildControllLayout : LayoutBase
+        {
+            public override LayoutOperationTarget OperationTargetFlags
+            {
+                get => LayoutOperationTarget.Children_LocalSize | LayoutOperationTarget.Children_Offset;
+            }
+
+            public override void UpdateLayout()
+            {
+                throw new System.NotImplementedException();
+            }
+
+            public override bool Validate()
+            {
+                throw new System.NotImplementedException();
+            }
+        }
         /// <summary>
         /// <seealso cref="AspectSizeFitter.Validate()"/>
         /// </summary>
@@ -933,19 +950,35 @@ namespace Hinode.Layouts.Tests
                 aspectSizeFitter.OperationPriority = 0;
 
                 var otherAspectSizeFitter = new AspectSizeFitter();
-                otherAspectSizeFitter.OperationPriority = -100;
+                otherAspectSizeFitter.OperationPriority = 100;
 
                 var target = new LayoutTargetObject();
                 target.SetParent(new LayoutTargetObject());
 
                 otherAspectSizeFitter.Target = target;
                 aspectSizeFitter.Target = target;
-                Debug.Log($"test -- index = {target.Layouts.IndexOf(aspectSizeFitter)}, layout count={target.Layouts.Count}");
                 Assert.IsNotNull(aspectSizeFitter.Target);
                 Assert.IsNotNull(aspectSizeFitter.Target.Parent);
                 Assert.IsFalse(aspectSizeFitter.Validate());
             }
             Debug.Log($"Success to Validate(Conflict Other Layout's OperationTargetFlags)!");
+
+            {
+                var aspectSizeFitter = new AspectSizeFitter();
+                aspectSizeFitter.OperationPriority = 0;
+
+                var parent = new LayoutTargetObject();
+                var target = new LayoutTargetObject();
+                target.SetParent(parent);
+                parent.AddLayout(new ChildControllLayout());
+
+                aspectSizeFitter.Target = target;
+
+                Assert.IsNotNull(aspectSizeFitter.Target);
+                Assert.IsNotNull(aspectSizeFitter.Target.Parent);
+                Assert.IsFalse(aspectSizeFitter.Validate());
+            }
+            Debug.Log($"Success to Validate(Conflict Parent Layout's OperationTargetFlags(Children_XXX))!");
         }
         #endregion
     }

@@ -316,6 +316,7 @@ namespace Hinode.Tests.CSharp.Extensions
                     typeof(ClassHierarchyChild2Class),
                     typeof(ClassHierarchyChildClass),
                     typeof(ClassHierarchyBaseClass),
+                    typeof(System.Object),
                 }
                 , typeof(ClassHierarchyChild2Class).GetClassHierarchyEnumerable()
                 , ""

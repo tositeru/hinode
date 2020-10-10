@@ -139,8 +139,17 @@ namespace Hinode.Layouts
         {
             if (Target == null || Target.Parent == null) return false;
 
-            //ひとまず、TargetのLayoutsのみ判定しています。
-            //Target#ParentのLayoutsも判定範囲に含めるかは未定です。
+            //Parentの判定
+            var selfFlags = (int)OperationTargetFlags;
+            foreach (var l in Target.Parent.Layouts)
+            {
+                int parentFlags = (int)l.OperationTargetFlags;
+                parentFlags >>= 5;
+                if (0 != (parentFlags & selfFlags))
+                    return false;
+            }
+
+            //自身の判定
             foreach(var otherLayout in Target.Layouts)
             {
                 if (otherLayout == this) return true;
