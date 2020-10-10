@@ -844,7 +844,11 @@ namespace Hinode.Layouts.Tests
 
             LayoutKind _kind = LayoutKind.Normal;
             public override LayoutKind Kind { get => _kind; }
-            public void SetKind(LayoutKind kind) => _kind = kind;
+            public LayoutClass SetKind(LayoutKind kind) { _kind = kind; return this; }
+
+            bool _doAllowDumplicate = true;
+            public override bool DoAllowDuplicate { get => _doAllowDumplicate; }
+            public LayoutClass SetDoAllowDumplicate(bool doAllow) { _doAllowDumplicate = doAllow; return this; }
 
             public override LayoutOperationTarget OperationTargetFlags { get => 0; }
 
@@ -889,6 +893,37 @@ namespace Hinode.Layouts.Tests
                 ""
             );
             Assert.IsTrue(layoutObjs.All(_l => _l.Target == layoutTarget));
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test, Description("同じ型のILayoutは一つだけしか登録できないようにしてください。")]
+        public void Layouts_Add_SameTypeLayout_Passes()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100).SetDoAllowDumplicate(false),
+                new LayoutClass(200).SetDoAllowDumplicate(false),
+                new LayoutClass(-100).SetDoAllowDumplicate(false),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
         }
 
         /// <summary>

@@ -101,6 +101,9 @@ namespace Hinode.Layouts
 	/// </summary>
 	public interface ILayoutTarget : System.IDisposable
     {
+		/// <summary>
+        /// Dispose内で呼び出す時は他のクリアー処理より先にコールバックを呼び出すようにしてください。
+        /// </summary>
         NotInvokableDelegate<ILayoutTargetOnDisposed> OnDisposed { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedParent> OnChangedParent { get; }
         NotInvokableDelegate<ILayoutTargetOnChangedChildren> OnChangedChildren { get; }

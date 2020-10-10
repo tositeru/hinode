@@ -218,14 +218,14 @@ namespace Hinode.Layouts
 
         public virtual void Dispose()
         {
-            while(0 < _children.Count)
+            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutTargetObject#Dispose", LayoutDefines.LOG_SELECTOR);
+
+            while (0 < _children.Count)
             {
                 _children.Items.First().SetParent(null);
             }
             //_children.Clear();
             SetParent(null);
-
-            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutTargetObject#Dispose", LayoutDefines.LOG_SELECTOR);
 
             _onDisposed.Clear();
             _onChangedParent.Clear();
@@ -240,17 +240,24 @@ namespace Hinode.Layouts
         public void AddLayout(ILayout layout)
         {
             //Callbackの設定はコンストラクタの_layoutsのコールバックの方で行っています。
-            if (!_layouts.Contains(layout))
+
+            bool doAdd = !_layouts.Contains(layout);
+
+            //同じ型のLayoutは一つしか登録できないようにしています。
+            doAdd &= layout.DoAllowDuplicate
+                || !_layouts.Any(_l => _l.GetType().Equals(layout.GetType()));
+
+            if (doAdd)
             {
                 var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority < _l.OperationPriority);
                 if(insertIndex != -1)
                     _layouts.InsertTo(insertIndex, layout);
                 else
                     _layouts.Add(layout);
-            }
-            if(layout.Target != this)
-            {
-                layout.Target = this;
+                if(layout.Target != this)
+                {
+                    layout.Target = this;
+                }
             }
         }
 

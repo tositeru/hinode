@@ -24,8 +24,8 @@ namespace Hinode.Layouts.Tests
     /// ## LayoutManager#Exit
     /// - 登録されているILayoutTargetを渡した時
     /// - 登録を解除された後、Groupに他のILayoutTargetがまだ残っている時(Normal)
-    /// - 登録を解除された後Groupが削除される場合に、親Groupが指定されている時
-    /// - 登録を解除された後Groupが削除される場合に、子Groupが指定されている時
+    /// - 登録を解除された時に一緒にGroupが削除される場合に、親Groupが指定されている時
+    /// - 登録を解除された時に一緒にGroupが削除される場合に、親Groupが指定されている時
     /// - 登録されていないILayoutTargetを渡した時
     /// 
     /// ## LayoutManager#Group
@@ -64,6 +64,15 @@ namespace Hinode.Layouts.Tests
 
         class LayoutCallbackCounter : LayoutBase
         {
+            public LayoutCallbackCounter()
+                : this (LayoutKind.Normal)
+            { }
+
+            public LayoutCallbackCounter(LayoutKind kind)
+            {
+                _kind = kind;
+            }
+
             public void ResetCounter()
             {
                 CallUpdateLayoutCounter = 0;
@@ -72,7 +81,23 @@ namespace Hinode.Layouts.Tests
 
             public void SetDoChanged(bool doChanged) => DoChanged = doChanged;
 
+            LayoutKind _kind = LayoutKind.Normal;
+            public LayoutCallbackCounter SetKind(LayoutKind kind)
+            {
+                _kind = kind;
+                return this;
+            }
+
+            bool _doAllowDumplicate = true;
+            public LayoutCallbackCounter SetDoAllowDumplicate(bool doAllow)
+            {
+                _doAllowDumplicate = doAllow;
+                return this;
+            }
+
             #region override LayoutBase
+            public override LayoutKind Kind { get => _kind; }
+            public override bool DoAllowDuplicate { get => _doAllowDumplicate; }
             public override LayoutOperationTarget OperationTargetFlags { get => 0; }
 
             public override bool Validate() => true;
@@ -252,15 +277,13 @@ namespace Hinode.Layouts.Tests
         public void Entry_WhenCreateNewGroupWithPriority_Passes()
         {
             var manager = new LayoutManager();
-            var other = new LayoutTargetObject();
-            manager.Entry(other);
 
             var targets = new (LayoutTargetObject t, int priority)[]
             {
-                (new LayoutTargetObject(), 1),
+                (new LayoutTargetObject(), -1),
                 (new LayoutTargetObject(), 0),
-                (new LayoutTargetObject(), -1),
-                (new LayoutTargetObject(), -1),
+                (new LayoutTargetObject(), 1),
+                (new LayoutTargetObject(), 1),
             };
 
             //test point.
@@ -316,7 +339,39 @@ namespace Hinode.Layouts.Tests
         [Test, Order(ENTRY_TEST_ORDER), Description("後処理型のILayoutを持つILayoutTargetを渡した時のGroup#CaluculationOrderの並び順")]
         public void Entry_WhenLayoutTargetHasPostProcessLayouts_Passes()
         {
-            throw new System.NotImplementedException();
+            var manager = new LayoutManager();
+            var target = new LayoutTargetObject();
+            var layouts = new ILayout[]
+            {
+                new LayoutCallbackCounter(LayoutKind.Normal),
+                new LayoutCallbackCounter(LayoutKind.Delay),
+                new LayoutCallbackCounter(LayoutKind.Normal),
+                new LayoutCallbackCounter(LayoutKind.Delay),
+            };
+            target.AddLayout(layouts[0]);
+            target.AddLayout(layouts[1]);
+
+            var target2 = new LayoutTargetObject();
+            target2.AddLayout(layouts[2]);
+            target2.AddLayout(layouts[3]);
+
+            target2.SetParent(target);
+            var group = manager.Entry(target);
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[] {
+                    //Normal
+                    target.Layouts.OfType<ParentFollowLayout>().First(),
+                    layouts[0], // in target
+                    target2.Layouts.OfType<ParentFollowLayout>().First(),
+                    layouts[2], // in target2
+                    //Delay
+                    layouts[1], // in target
+                    layouts[3], // in target2
+                }
+                , group.CaluculationOrder
+                , ""
+            );
         }
 
         /// <summary>
@@ -412,12 +467,6 @@ namespace Hinode.Layouts.Tests
                 { ON_DISPOSED, target.OnDisposed.RegistedDelegateCount},
                 { ON_CHANGED_PARENT, target.OnChangedParent.RegistedDelegateCount },
             };
-            var layoutRegistedDelegateCountDict = new Dictionary<string, int>()
-            {
-                { ON_DISPOSED, layout.OnDisposed.RegistedDelegateCount},
-                { ON_CHANGED, layout.OnChanged.RegistedDelegateCount },
-                { ON_CHANGED_OP_PRIORITY, layout.OnChangedOperationPriority.RegistedDelegateCount },
-            };
 
             manager.Exit(target);// <- test point
 
@@ -428,19 +477,6 @@ namespace Hinode.Layouts.Tests
                 Assert.AreEqual(targetRegistedDelegateCountDict[ON_CHANGED_PARENT] - 1, target.OnChangedParent.RegistedDelegateCount);
             }
             Debug.Log($"Success to Set ILayoutTarget!");
-
-            {//Check ILayout in ILayoutTarget side
-                Assert.AreEqual(layoutRegistedDelegateCountDict[ON_DISPOSED] - 1, layout.OnDisposed.RegistedDelegateCount);
-                Assert.AreEqual(layoutRegistedDelegateCountDict[ON_CHANGED] - 1, layout.OnChanged.RegistedDelegateCount);
-                Assert.AreEqual(layoutRegistedDelegateCountDict[ON_CHANGED_OP_PRIORITY] - 1, layout.OnChangedOperationPriority.RegistedDelegateCount);
-
-                //以下のコードはlayoutに自動的に追加されるCallback以外は追加されていないのを想定しています。
-                var parentFollowLayout = target.Layouts.Select(_l => _l as ParentFollowLayout).FirstOrDefault();
-                Assert.AreEqual(parentFollowLayout.OnDisposed.RegistedDelegateCount, layout.OnDisposed.RegistedDelegateCount);
-                Assert.AreEqual(parentFollowLayout.OnChanged.RegistedDelegateCount, layout.OnChanged.RegistedDelegateCount);
-                Assert.AreEqual(parentFollowLayout.OnChangedOperationPriority.RegistedDelegateCount, layout.OnChangedOperationPriority.RegistedDelegateCount);
-            }
-            Debug.Log($"Success to Set ILayout!");
 
             {//Check LayoutManager side
                 Assert.AreEqual(0, manager.Groups.Count(), $"");
@@ -478,7 +514,7 @@ namespace Hinode.Layouts.Tests
         /// <summary>
         /// <seealso cref="LayoutManager.Exit(ILayoutTarget)"/>
         /// </summary>
-        [Test, Order(EXIT_TEST_ORDER), Description("登録を解除された後Groupが削除される場合に、親Groupが指定されている時")]
+        [Test, Order(EXIT_TEST_ORDER), Description("登録を解除された時に一緒にGroupが削除される場合に、親Groupが指定されている時")]
         public void Exit_AndDeleteGroupSpecifiedParentGroup_Passes()
         {
             var manager = new LayoutManager();
@@ -488,9 +524,9 @@ namespace Hinode.Layouts.Tests
             child.SetParent(target);
 
             var parentGroup = manager.Entry(other);
-            var group = manager.Entry(target, parentGroup);
+            var group = manager.Entry(target, parentGroup); //Groupの親子関係も一緒にテストする
 
-            var cachePriority = group.Priority;
+            var cachePriority = parentGroup.Priority; // 削除されるGroupと関係するGroupのpriorityは変更されないようにする
             manager.Exit(target);// <- test point. remove child together!
 
             {//Check LayoutManager side
@@ -498,7 +534,7 @@ namespace Hinode.Layouts.Tests
                     other
                 });
 
-                AssertLayoutManagerGroup(parentGroup, other, 0, null, null, new ILayoutTarget[] {
+                AssertLayoutManagerGroup(parentGroup, other, cachePriority, null, null, new ILayoutTarget[] {
                     other
                 });
             }
@@ -508,7 +544,7 @@ namespace Hinode.Layouts.Tests
         /// <summary>
         /// <seealso cref="LayoutManager.Exit(ILayoutTarget)"/>
         /// </summary>
-        [Test, Order(EXIT_TEST_ORDER), Description("登録を解除された後Groupが削除される場合に、子Groupが指定されている時")]
+        [Test, Order(EXIT_TEST_ORDER), Description("登録を解除された時に一緒にGroupが削除される場合に、子Groupが指定されている時")]
         public void Exit_AndDeleteGroupSpecifiedChildGroup_Passes()
         {
             var manager = new LayoutManager();
@@ -518,9 +554,9 @@ namespace Hinode.Layouts.Tests
             child.SetParent(target);
 
             var group = manager.Entry(target);
-            var childGroup = manager.Entry(other, group);
+            var otherGroup = manager.Entry(other, group); //Groupの親子関係も一緒にテストする
 
-            var cachePriority = childGroup.Priority;
+            var cachePriority = otherGroup.Priority; // 削除されるGroupと関係するGroupのpriorityは変更されないようにする
             manager.Exit(target);// <- test point. remove child together!
 
             {//Check LayoutManager side
@@ -528,7 +564,7 @@ namespace Hinode.Layouts.Tests
                     other
                 });
 
-                AssertLayoutManagerGroup(childGroup, other, 0, null, null, new ILayoutTarget[] {
+                AssertLayoutManagerGroup(otherGroup, other, cachePriority, null, null, new ILayoutTarget[] {
                     other
                 });
             }
@@ -569,10 +605,11 @@ namespace Hinode.Layouts.Tests
             var otherGroup = manager.Entry(other, otherPriority);
             var targetGroup = manager.Entry(target);
 
+            //事前チェック
             AssertionUtils.AssertEnumerable(
                 new LayoutManager.Group[] {
-                    otherGroup,
                     targetGroup,
+                    otherGroup,
                 }
                 , manager.Groups
                 , ""
@@ -580,10 +617,11 @@ namespace Hinode.Layouts.Tests
 
             // test point
             targetGroup.Priority = otherGroup.Priority - 1;
+
             AssertionUtils.AssertEnumerable(
                 new LayoutManager.Group[] {
-                    targetGroup,
                     otherGroup,
+                    targetGroup,
                 }
                 , manager.Groups
                 , ""
@@ -750,8 +788,8 @@ namespace Hinode.Layouts.Tests
 
         #region ILayoutTarget
 
-        [Test, Order(LAYOUT_TARGET_ORDER), Description("Disposeされた時")]
-        public void LayoutTarget_Dispose_Passes()
+        [Test, Order(LAYOUT_TARGET_ORDER), Description("Disposeされた時(Group#Rootの時)")]
+        public void LayoutTarget_Dispose_AtRoot_Passes()
         {
             var manager = new LayoutManager();
             var target = new LayoutTargetObject();
@@ -767,7 +805,7 @@ namespace Hinode.Layouts.Tests
         }
 
         [Test, Order(LAYOUT_TARGET_ORDER), Description("Disposeされた時 -- 子LayoutObjectの場合")]
-        public void LayoutTarget_Dispose_Child_Passes()
+        public void LayoutTarget_Dispose_AtChild_Passes()
         {
             var manager = new LayoutManager();
             var target = new LayoutTargetObject();
@@ -879,10 +917,10 @@ namespace Hinode.Layouts.Tests
                     parent, other
                 });
 
-                AssertLayoutManagerGroup(group, parent, 0, null, null, new ILayoutTarget[] {
+                AssertLayoutManagerGroup(group, parent, group.Priority, null, null, new ILayoutTarget[] {
                     parent,
                 });
-                AssertLayoutManagerGroup(group, parent, 0, null, null, new ILayoutTarget[] {
+                AssertLayoutManagerGroup(otherGroup, other, otherGroup.Priority, null, null, new ILayoutTarget[] {
                     other, target
                 });
             }

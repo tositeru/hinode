@@ -52,7 +52,7 @@ namespace Hinode.Layouts
         ILayoutTarget Target { get; set; }
         bool DoChanged { get; }
         LayoutKind Kind { get; }
-
+        bool DoAllowDuplicate { get; }
         LayoutOperationTarget OperationTargetFlags { get; }
 
         bool Validate();
@@ -143,6 +143,7 @@ namespace Hinode.Layouts
         }
 
         public virtual LayoutKind Kind { get => LayoutKind.Normal; }
+        public virtual bool DoAllowDuplicate { get => false; }
 
         public bool DoChanged
         {

@@ -12,7 +12,6 @@ namespace Hinode.Layouts
     public class LayoutManager
     {
         ListHelper<Group> _groups = new ListHelper<Group>();
-        public HashSetHelper<ILayoutTarget> LayoutTargets { get; } = new HashSetHelper<ILayoutTarget>();
 
         public IReadOnlyListHelper<Group> Groups { get => _groups; }
 
@@ -24,18 +23,6 @@ namespace Hinode.Layouts
             _groups.OnRemoved.Add((_, __) => {
                 _groups.Sort(Group.Comparer.Default);
             });
-
-            LayoutTargets.OnAdded.Add((item) => {
-                item.OnDisposed.Add(ILayoutOnDisposed);
-            });
-            LayoutTargets.OnRemoved.Add((item) => {
-                item.OnDisposed.Remove(ILayoutOnDisposed);
-            });
-        }
-
-        void ILayoutOnDisposed(ILayoutTarget layout)
-        {
-            LayoutTargets.Remove(layout);
         }
 
         public Group Entry(ILayoutTarget target, int priority=0)
@@ -58,7 +45,10 @@ namespace Hinode.Layouts
                 group.Add(target);
             }
 
-            target.OnChangedParent.Add(ILayoutTargetOnChangedParent);
+            foreach(var t in target.GetHierarchyEnumerable())
+            {
+                t.OnChangedParent.Add(ILayoutTargetOnChangedParent);
+            }
             return group;
         }
 
@@ -75,29 +65,33 @@ namespace Hinode.Layouts
             if (group == null) return this;
 
             group.Remove(target);
-            target.OnChangedParent.Remove(ILayoutTargetOnChangedParent);
+            if(!group.Targets.Any())
+            {
+                group.Dispose();
+            }
+
+            foreach(var t in target.GetHierarchyEnumerable())
+            {
+                t.OnChangedParent.Remove(ILayoutTargetOnChangedParent);
+            }
             return this;
         }
 
         public void CaluculateLayouts()
         {
-            foreach (var l in LayoutTargets)
-            {
-                foreach(var layout in l.Layouts.Where(_l => _l.DoChanged))
-                {
-                    layout.UpdateLayout();
-                }
-            }
+            throw new System.NotImplementedException();
         }
 
         #region Group Callbacks
         void GroupOnDisposed(Group group)
         {
+            Debug.Log($"test -- pass GroupOnDisposed contains={_groups.Contains(group)} {_groups.Count}");
             foreach (var t in group.Targets)
             {
                 t.OnChangedParent.Remove(ILayoutTargetOnChangedParent);
             }
             _groups.Remove(group);
+            Debug.Log($"test -- pass2 GroupOnDisposed contains={_groups.Contains(group)} {_groups.Count}");
         }
 
         void GroupOnChangedPriority(Group group, int prevPriority)
@@ -112,11 +106,24 @@ namespace Hinode.Layouts
             var group = Groups.FirstOrDefault(_g => _g.Targets.Contains(layoutTarget));
             if (group == null) return;
 
-            var containParent = group.Targets.Any(_t => _t == parent);
-            var containPrevParent = group.Targets.Any(_t => _t == prevParent);
-            if (!containParent && !containPrevParent) return;
+            var newParentGroup = Groups.FirstOrDefault(_g => _g.Targets.Contains(parent));
+            var containParentInGroup = newParentGroup == group;
+            var containPrevParentInGroup = group.Targets.Any(_t => _t == prevParent);
+            if (!containParentInGroup && !containPrevParentInGroup) return;
 
+            if(containPrevParentInGroup && !containParentInGroup)
+            {//違うGroupに移動した時
+                group.Remove(layoutTarget);
 
+                if(newParentGroup != null)
+                {//既存のGroupに移動したらそちらに登録する
+                    newParentGroup.Add(layoutTarget);
+                }
+                else
+                {//他のGroupに移動していなかったら新しくGroupを追加する
+                    Entry(layoutTarget, group.Priority);
+                }
+            }
         }
         #endregion
 
@@ -187,11 +194,7 @@ namespace Hinode.Layouts
             public IEnumerable<Group> ChildGroups { get => _childGroups; }
             public IEnumerable<ILayout> CaluculationOrder
             {
-                get
-                {
-                    //TODO 遅延計算レイアウトの対応
-                    return _targets.SelectMany(_t => _t.Layouts);
-                }
+                get => new CaluculationOrderEnumerable(this);
             }
 
             public Group(ILayoutTarget root)
@@ -216,7 +219,12 @@ namespace Hinode.Layouts
 
             internal bool Add(ILayoutTarget target)
             {
-                return InnerAdd(target, false);
+                bool isOK = true;
+                foreach(var t in target.GetHierarchyEnumerable())
+                {
+                    isOK &= InnerAdd(t, false);
+                }
+                return isOK;
             }
 
             private bool InnerAdd(ILayoutTarget target, bool isRoot)
@@ -252,15 +260,23 @@ namespace Hinode.Layouts
                 }
                 else
                 {
-                    _targets.Remove(target);
+                    foreach(var t in target.GetHierarchyEnumerable())
+                    {
+                        _targets.Remove(t);
+                    }
                 }
 
-                target.OnDisposed.Remove(ILayoutTargetOnDisposed);
+                foreach(var t in target.GetHierarchyEnumerable())
+                {
+                    t.OnDisposed.Remove(ILayoutTargetOnDisposed);
+                }
             }
 
             #region ILayoutTarget Callbacks
             void ILayoutTargetOnDisposed(ILayoutTarget layoutTarget)
             {
+                Debug.Log("test -- pass ILayoutTargetOnDisposed");
+
                 Remove(layoutTarget);
 
                 if(Root == null)
@@ -273,17 +289,18 @@ namespace Hinode.Layouts
             #region System.IDisposable
             public void Dispose()
             {
+                _onDisposed.SafeDynamicInvoke(this, () => "Fail in Dispose...", LayoutDefines.LOG_SELECTOR);
+
                 ParentGroup = null;
-                foreach (var child in ChildGroups)
+                while(ChildGroups.Any())
                 {
-                    child.ParentGroup = null;
+                    ChildGroups.First().ParentGroup = null;
                 }
 
                 foreach (var t in Targets)
                 {
                     t.OnDisposed.Remove(ILayoutTargetOnDisposed);
                 }
-                _onDisposed.SafeDynamicInvoke(this, () => "Fail in Dispose...", LayoutDefines.LOG_SELECTOR);
             }
             #endregion
 
@@ -296,6 +313,32 @@ namespace Hinode.Layouts
                     return -1 * x.Priority.CompareTo(y.Priority);
                 }
             }
+
+            class CaluculationOrderEnumerable : IEnumerable<ILayout>, IEnumerable
+            {
+                Group _target;
+                public CaluculationOrderEnumerable(Group target)
+                {
+                    _target = target;
+                }
+
+                public IEnumerator<ILayout> GetEnumerator()
+                {
+                    foreach(var l in _target.Targets
+                        .SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Normal)))
+                    {
+                        yield return l;
+                    }
+                    foreach (var l in _target.Targets
+                        .SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Delay)))
+                    {
+                        yield return l;
+                    }
+                }
+
+                IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+            }
+
         }
     }
 }
