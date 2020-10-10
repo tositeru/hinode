@@ -34,7 +34,8 @@ namespace Hinode.Layouts.Tests
     /// ## Caluculate Layouts
     /// - 全てのGroupを計算する
     /// - 単一のGroupのみを計算する
-    /// - 更新フラグが立っているもののみを計算する
+    /// - ILayout#DoChanged() == true のみを計算する
+    /// - ILayout#Validate() == true のみを計算する
     /// - Groupsの要素の計算順序のテスト
     ///
     /// ## others
@@ -77,9 +78,19 @@ namespace Hinode.Layouts.Tests
             {
                 CallUpdateLayoutCounter = 0;
             }
-            public int CallUpdateLayoutCounter { get; private set; }
+            public int CallUpdateLayoutCounter { get; private set; } = 0;
 
-            public void SetDoChanged(bool doChanged) => DoChanged = doChanged;
+            public LayoutCallbackCounter SetDoChanged(bool doChanged)
+            {
+                DoChanged = doChanged;
+                return this;
+            }
+            bool _doValidate = true;
+            public LayoutCallbackCounter SetValidate(bool valid)
+            {
+                _doValidate = valid;
+                return this;
+            }
 
             LayoutKind _kind = LayoutKind.Normal;
             public LayoutCallbackCounter SetKind(LayoutKind kind)
@@ -100,7 +111,7 @@ namespace Hinode.Layouts.Tests
             public override bool DoAllowDuplicate { get => _doAllowDumplicate; }
             public override LayoutOperationTarget OperationTargetFlags { get => 0; }
 
-            public override bool Validate() => true;
+            public override bool Validate() => _doValidate;
 
             public override void UpdateLayout()
             {
@@ -145,9 +156,14 @@ namespace Hinode.Layouts.Tests
             {
                 //TODO 遅延計算Layout対応はまだ
                 AssertionUtils.AssertEnumerable(
-                    targets.SelectMany(_t => _t.Layouts)
-                    , group.CaluculationOrder
-                    , $"Don't match Group#CaluculationOrder... Must sort caluculation order..."
+                    targets.SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Normal))
+                    , group.CaluculationOrder(LayoutKind.Normal)
+                    , $"Don't match Group#CaluculationOrder... Must sort caluculation normal order..."
+                );
+                AssertionUtils.AssertEnumerable(
+                    targets.SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Delay))
+                    , group.CaluculationOrder(LayoutKind.Delay)
+                    , $"Don't match Group#CaluculationOrder... Must sort caluculation delay order..."
                 );
             }
         }
@@ -365,12 +381,18 @@ namespace Hinode.Layouts.Tests
                     layouts[0], // in target
                     target2.Layouts.OfType<ParentFollowLayout>().First(),
                     layouts[2], // in target2
+                }
+                , group.CaluculationOrder(LayoutKind.Normal)
+                , "Fail Normal Caluculation Order..."
+            );
+            AssertionUtils.AssertEnumerable(
+                new ILayout[] {
                     //Delay
                     layouts[1], // in target
                     layouts[3], // in target2
                 }
-                , group.CaluculationOrder
-                , ""
+                , group.CaluculationOrder(LayoutKind.Delay)
+                , "Fail Delay Caluculation Order..."
             );
         }
 
@@ -686,7 +708,8 @@ namespace Hinode.Layouts.Tests
 
             // test point
             var group = manager.Groups.First();
-            group.CaluculateLayouts();
+            group.CaluculateLayouts(LayoutKind.Normal);
+            group.CaluculateLayouts(LayoutKind.Delay);
 
             foreach (var t in group.Targets)
             {
@@ -701,7 +724,7 @@ namespace Hinode.Layouts.Tests
         /// <summary>
         /// <seealso cref="LayoutManager.Group.CaluculateLayouts()"/>
         /// </summary>
-        [Test, Order(CALUCULATE_LAYOUTS_TEST_ORDER - 1), Description("更新フラグが立っているもののみを計算する")]
+        [Test, Order(CALUCULATE_LAYOUTS_TEST_ORDER - 1), Description("ILayout#DoChanged == true のみを計算する")]
         public void CaluculateLayouts_OnlyDoChangedFlagIsTrue_Passes()
         {
             var manager = new LayoutManager();
@@ -717,8 +740,8 @@ namespace Hinode.Layouts.Tests
                 t.AddLayout(new LayoutCallbackCounter());
 
                 var disableLayout = new LayoutCallbackCounter();
-                disableLayout.SetDoChanged(false);
                 t.AddLayout(disableLayout);
+                disableLayout.SetDoChanged(false); // This code must be here because force true in LayoutTargetObject#AddLayout()!!
 
                 manager.Entry(t);
             }
@@ -727,37 +750,18 @@ namespace Hinode.Layouts.Tests
             manager.CaluculateLayouts();
 
             foreach (var callbackCounter in manager.Groups
-                .SelectMany(_g => _g.Targets.SelectMany(_t => _t.Layouts.Where(_l => _l is LayoutCallbackCounter)))
-                .OfType<LayoutCallbackCounter>())
-            {
+                .SelectMany(_g => _g.Targets.SelectMany(_t => _t.Layouts.OfType<LayoutCallbackCounter>()))
+            ) {
                 var correctCount = callbackCounter.DoChanged ? 1 : 0;
                 Assert.AreEqual(correctCount, callbackCounter.CallUpdateLayoutCounter);
-
-                callbackCounter.ResetCounter();
             }
-        }
-
-        //
-        class LayoutCallbackCounterEx : LayoutCallbackCounter
-        {
-            public static int CallUpdateLayoutSum { get; set; }
-
-            public int CallUpdateLayoutCounter { get; set; }
-            #region override LayoutBase
-
-            public override void UpdateLayout()
-            {
-                base.UpdateLayout();
-                CallUpdateLayoutCounter++;
-            }
-            #endregion
         }
 
         /// <summary>
-        /// <seealso cref="LayoutManager.CaluculateLayouts()"/>
+        /// <seealso cref="LayoutManager.Group.CaluculateLayouts()"/>
         /// </summary>
-        [Test, Order(CALUCULATE_LAYOUTS_TEST_ORDER), Description("Groupsの要素の計算順序のテスト")]
-        public void CaluculateLayouts_CaluculateByPriorityOrder_Passes_Passes()
+        [Test, Order(CALUCULATE_LAYOUTS_TEST_ORDER - 1), Description("ILayout#Validate() == true のみを計算する")]
+        public void CaluculateLayouts_OnlyValidateIsTrue_Passes()
         {
             var manager = new LayoutManager();
 
@@ -770,18 +774,78 @@ namespace Hinode.Layouts.Tests
             foreach (var t in targets)
             {
                 t.AddLayout(new LayoutCallbackCounter());
+
+                var invalidLayout = new LayoutCallbackCounter();
+                t.AddLayout(invalidLayout);
+                invalidLayout.SetValidate(false);
+
                 manager.Entry(t);
             }
 
             // test point
-            LayoutCallbackCounterEx.CallUpdateLayoutSum = 0;
             manager.CaluculateLayouts();
 
+            foreach (var callbackCounter in manager.Groups
+                .SelectMany(_g => _g.Targets.SelectMany(_t => _t.Layouts.OfType<LayoutCallbackCounter>()))
+            )
+            {
+                var correctCount = callbackCounter.Validate() ? 1 : 0;
+                Assert.AreEqual(correctCount, callbackCounter.CallUpdateLayoutCounter);
+            }
+        }
 
-            //一つ前のGroup#Priorityの方が値が小さくなるようにすること
+        class GroupCaluculationOrderLayout : LayoutCallbackCounter
+        {
+            public static int TotalCaluculationCounter = 0;
+
+            public int Counter { get; set; } = -1;
+            public override void UpdateLayout()
+            {
+                base.UpdateLayout();
+                Counter = TotalCaluculationCounter;
+                TotalCaluculationCounter++;
+            }
+        }
+        /// <summary>
+        /// <seealso cref="LayoutManager.CaluculateLayouts()"/>
+        /// </summary>
+        [Test, Order(CALUCULATE_LAYOUTS_TEST_ORDER), Description("Groupsの要素の計算順序のテスト")]
+        public void CaluculateLayouts_GroupCaluculateByPriorityOrder_Passes()
+        {
+            var manager = new LayoutManager();
+
+            var targets = new LayoutTargetObject[]
+            {
+                new LayoutTargetObject(),
+                new LayoutTargetObject(),
+            };
+
+            foreach (var t in targets)
+            {
+                t.AddLayout(new GroupCaluculationOrderLayout());
+                manager.Entry(t);
+            }
+
+            // test point
+            GroupCaluculationOrderLayout.TotalCaluculationCounter = 0;
+            manager.CaluculateLayouts();
+
+            //一つ前のGroup#Priorityの方が値が大きくなるようにすること
+            // && GroupCaluculationOrderLayout#Counterが小さくなるようにすること
             var result = manager.Groups
-                .Select(_g => (priority: _g.Priority, valid: true))
-                .Aggregate((_p, _c) => (_c.priority, _p.valid && (_p.priority <= _c.priority)));
+                .SelectMany(_g => _g.Targets
+                    .SelectMany(_t => _t.Layouts.OfType<GroupCaluculationOrderLayout>())
+                    .Select(_l => (group: _g, layout: _l))
+                )
+                .Select(_t => (valid: true, groupPriority: _t.group.Priority, totalCounter: _t.layout.Counter))
+                .Aggregate((_p, _c) => (
+                      valid: _p.valid
+                      && (_p.groupPriority >= _c.groupPriority)
+                      && (_p.totalCounter < _c.totalCounter)
+                    , _c.groupPriority
+                    , _c.totalCounter)
+                );
+
             Assert.IsTrue(result.valid);
         }
         #endregion
@@ -948,7 +1012,8 @@ namespace Hinode.Layouts.Tests
                 AssertionUtils.AssertEnumerableByUnordered(
                     defaultLayout
                         .Concat(new ILayout[] { addedLayout })
-                    , group.CaluculationOrder
+                    , group.CaluculationOrder(LayoutKind.Normal)
+                        .Concat(group.CaluculationOrder(LayoutKind.Delay))
                     , ""
                 );
                 AssertLayoutManagerGroup(group, target, group.Priority, null, null, new ILayoutTarget[] { target });
@@ -959,7 +1024,8 @@ namespace Hinode.Layouts.Tests
 
                 AssertionUtils.AssertEnumerableByUnordered(
                     defaultLayout
-                    , group.CaluculationOrder
+                    , group.CaluculationOrder(LayoutKind.Normal)
+                        .Concat(group.CaluculationOrder(LayoutKind.Delay))
                     , ""
                 );
                 AssertLayoutManagerGroup(group, target, group.Priority, null, null, new ILayoutTarget[] { target });
@@ -987,7 +1053,8 @@ namespace Hinode.Layouts.Tests
 
                 AssertionUtils.AssertEnumerableByUnordered(
                     defaultLayout
-                    , group.CaluculationOrder
+                    , group.CaluculationOrder(LayoutKind.Normal)
+                        .Concat(group.CaluculationOrder(LayoutKind.Delay))
                     , "ParentFollowLayoutが追加された時は元々あったものだけにしてください。"
                 );
                 AssertLayoutManagerGroup(group, target, group.Priority, null, null, new ILayoutTarget[] { target });
@@ -998,7 +1065,8 @@ namespace Hinode.Layouts.Tests
 
                 AssertionUtils.AssertEnumerableByUnordered(
                     defaultLayout
-                    , group.CaluculationOrder
+                    , group.CaluculationOrder(LayoutKind.Normal)
+                        .Concat(group.CaluculationOrder(LayoutKind.Delay))
                     , "ParentFollowLayoutが削除された時は元に戻すか再生成してください。"
                 );
                 AssertLayoutManagerGroup(group, target, group.Priority, null, null, new ILayoutTarget[] { target });

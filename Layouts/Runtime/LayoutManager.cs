@@ -77,9 +77,21 @@ namespace Hinode.Layouts
             return this;
         }
 
+        static readonly LayoutKind[] CALUCULATION_ORDER = new LayoutKind[]
+        {
+            LayoutKind.Normal,
+            LayoutKind.Delay,
+        };
+
         public void CaluculateLayouts()
         {
-            throw new System.NotImplementedException();
+            foreach(var kind in CALUCULATION_ORDER)
+            {
+                foreach (var g in Groups)
+                {
+                    g.CaluculateLayouts(kind);
+                }
+            }
         }
 
         #region Group Callbacks
@@ -192,10 +204,8 @@ namespace Hinode.Layouts
             }
 
             public IEnumerable<Group> ChildGroups { get => _childGroups; }
-            public IEnumerable<ILayout> CaluculationOrder
-            {
-                get => new CaluculationOrderEnumerable(this);
-            }
+            public IEnumerable<ILayout> CaluculationOrder(LayoutKind layoutKind)
+                => new CaluculationOrderEnumerable(this, layoutKind);
 
             public Group(ILayoutTarget root)
             {
@@ -207,9 +217,13 @@ namespace Hinode.Layouts
                 }
             }
 
-            public void CaluculateLayouts()
+            public void CaluculateLayouts(LayoutKind layoutKind)
             {
-                throw new System.NotImplementedException();
+                foreach(var l in CaluculationOrder(layoutKind)
+                    .Where(_l => _l.Validate() && _l.DoChanged))
+                {
+                    l.UpdateLayout();
+                }
             }
 
             public bool ContainsInRootHierachy(ILayoutTarget target)
@@ -317,20 +331,17 @@ namespace Hinode.Layouts
             class CaluculationOrderEnumerable : IEnumerable<ILayout>, IEnumerable
             {
                 Group _target;
-                public CaluculationOrderEnumerable(Group target)
+                LayoutKind _kind;
+                public CaluculationOrderEnumerable(Group target, LayoutKind layoutKind)
                 {
                     _target = target;
+                    _kind = layoutKind;
                 }
 
                 public IEnumerator<ILayout> GetEnumerator()
                 {
                     foreach(var l in _target.Targets
-                        .SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Normal)))
-                    {
-                        yield return l;
-                    }
-                    foreach (var l in _target.Targets
-                        .SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == LayoutKind.Delay)))
+                        .SelectMany(_t => _t.Layouts.Where(_l => _l.Kind == _kind)))
                     {
                         yield return l;
                     }
