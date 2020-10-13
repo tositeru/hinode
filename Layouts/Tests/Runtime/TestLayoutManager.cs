@@ -63,7 +63,7 @@ namespace Hinode.Layouts.Tests
         const int LAYOUT_TARGET_ORDER = 200;
         const int ORDER_CHANGED_LAYOUT_IN_LAYOUT_TARGETS = 200;
 
-        class LayoutCallbackCounter : LayoutBase
+        public class LayoutCallbackCounter : LayoutBase
         {
             public LayoutCallbackCounter()
                 : this (LayoutKind.Normal)
@@ -121,7 +121,7 @@ namespace Hinode.Layouts.Tests
         }
 
         #region Utility Methods
-        void AssertRootsInLayoutManagerGroup(LayoutManager manager, ILayoutTarget[] roots)
+        public static void AssertRootsInLayoutManagerGroup(LayoutManager manager, ILayoutTarget[] roots)
         {
             AssertionUtils.AssertEnumerable(
                 roots
@@ -130,7 +130,7 @@ namespace Hinode.Layouts.Tests
             );
         }
 
-        void AssertLayoutManagerGroup(
+        public static void AssertLayoutManagerGroup(
               LayoutManager.Group group
             , ILayoutTarget root
             , int priority

@@ -516,6 +516,28 @@ namespace Hinode.Layouts.Tests
             Assert.IsFalse(parent.LayoutTarget.Children.Any());
             Assert.IsTrue(children.All(_c => _c.LayoutTarget.Parent == null));
         }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetComponent.OnDestroyed"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator UnityOndestroy_OnDestroyedCallback_Passes()
+        {
+            var component = CreateInstanceWithRectTransform("target");
+
+            var callCounter = 0;
+            ILayoutTarget recievedValues = default;
+            component.OnDestroyed.Add((_self) => { callCounter++; recievedValues = _self.LayoutTarget; });
+            component.OnDestroyed.Add((_) => throw new System.Exception());
+
+            var componentLayoutTarget = component.LayoutTarget; //Destroy後にcomponent.LayoutTargetにアクセスするためにキャッシュ
+            Object.Destroy(component); // <- test point
+            yield return null;
+
+            Assert.AreEqual(1, callCounter);
+            Assert.AreSame(componentLayoutTarget, recievedValues);
+        }
         #endregion
 
         #region UpdateLayoutTargetHierachy

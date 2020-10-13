@@ -97,13 +97,11 @@ namespace Hinode.Layouts
         #region Group Callbacks
         void GroupOnDisposed(Group group)
         {
-            Debug.Log($"test -- pass GroupOnDisposed contains={_groups.Contains(group)} {_groups.Count}");
             foreach (var t in group.Targets)
             {
                 t.OnChangedParent.Remove(ILayoutTargetOnChangedParent);
             }
             _groups.Remove(group);
-            Debug.Log($"test -- pass2 GroupOnDisposed contains={_groups.Contains(group)} {_groups.Count}");
         }
 
         void GroupOnChangedPriority(Group group, int prevPriority)
@@ -289,8 +287,6 @@ namespace Hinode.Layouts
             #region ILayoutTarget Callbacks
             void ILayoutTargetOnDisposed(ILayoutTarget layoutTarget)
             {
-                Debug.Log("test -- pass ILayoutTargetOnDisposed");
-
                 Remove(layoutTarget);
 
                 if(Root == null)
