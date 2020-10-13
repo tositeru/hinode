@@ -1,5 +1,14 @@
 ﻿## Unityの便利クラス
 
+### Attributes
+
+HinodeではEditor拡張に対応した以下のAttributeを提供しています。
+
+- ScenePathAttribute: BuildingSettingsに登録されているSceneへのパスを表すAttribute。string型のフィールドに指定してください。
+- TextureFilepathAttribute: テクスチャへのファイルパスを指定するAttribute。string型のフィールドに指定してください。
+- RangeIntAttribute: int型のフィールドのEditor拡張をSliderにするAttribute。
+- RangeNumberAttribute: float/double型のフィールドのEditor拡張をSliderにするAttribute。
+
 ### ChildObject
 
 子GameObjectのComponentにアクセスするための便利クラスになります。
@@ -56,6 +65,7 @@ label.Remove(word);
 Assert.IsFalse(label.Contains(word));
 Assert.AreEqual(0, label.Count);
 ```
+
 ### SubComponent
 
 HinodeではMonoBehaviourのヘルパークラスとして、ISubComponentインターフェイスを提供しています。
