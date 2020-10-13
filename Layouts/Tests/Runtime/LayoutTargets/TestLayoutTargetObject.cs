@@ -22,7 +22,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.Dispose()"/>
 		/// </summary>
         [Test]
-        public void DisposePasses()
+        public void Dispose_Passes()
         {
             var self = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -51,7 +51,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnDisposed(ILayoutTarget self)"/>
         /// </summary>
         [Test]
-        public void OnDisposedPasses()
+        public void Dispose_OnDisposed_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -68,7 +68,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnDisposed(ILayoutTarget self)"/>
         /// </summary>
         [Test]
-        public void OnDisposedWhenAfterDisposePasses()
+        public void Dispose_OnDisposedWhenAfterDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -85,7 +85,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedParent_InDisposePasses()
+        public void Dispose_ClearOnChangedParent_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -104,7 +104,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedChildren_InDisposePasses()
+        public void Dispose_ClearOnChangedChildren_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -124,7 +124,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalPos"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedLocalPos_InDisposePasses()
+        public void Dispose_ClearOnChangedLocalPos_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -143,7 +143,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void ClearOnChangedLocalSize_InDisposePasses()
+        public void Dispose_ClearOnChangedLocalSize_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -162,7 +162,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test]
-        public void ClearOnChangedOffset_InDisposePasses()
+        public void Dispose_ClearOnChangedOffset_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -181,7 +181,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
         /// </summary>
         [Test]
-        public void ClearOnChangedPivot_InDisposePasses()
+        public void Dispose_ClearOnChangedPivot_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -200,7 +200,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedLayoutInfo"/>
         /// </summary>
         [Test]
-        public void ClearOnChangedLayoutInfo_InDisposePasses()
+        public void Dispose_ClearOnChangedLayoutInfo_InDispose_Passes()
         {
             var layout = new LayoutTargetObject();
             var callCounter = 0;
@@ -222,7 +222,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParentPasses()
+        public void SetParent_Passes()
         {
             var layout = new LayoutTargetObject();
             Assert.IsNull(layout.Parent);
@@ -237,7 +237,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParent_NullPasses()
+        public void SetParent_Null_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -252,7 +252,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.SetParent(ILayoutTarget parent)"/>
         /// </summary>
         [Test]
-        public void SetParent_SwapPasses()
+        public void SetParent_Swap_Passes()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
@@ -285,7 +285,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
         /// </summary>
         [Test]
-        public void OnChangedParent_InSetParentPasses()
+        public void SetParent_OnChangedParent_Passes()
         {
             var layout = new LayoutTargetObject();
             int callCounter = 0;
@@ -309,7 +309,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedParent"/>
         /// </summary>
         [Test]
-        public void OnChangedParentInSetParentWhenThrowExceptionPasses()
+        public void SetParent_OnChangedParent_WhenThrowException_Passes()
         {
             var layout = new LayoutTargetObject();
             layout.OnChangedParent.Add((_self, _parent, _prevParent) => {
@@ -328,7 +328,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedParent"/>
 		/// </summary>
         [Test]
-        public void OnChangedParentInSetParentNullPasses()
+        public void SetParent_OnChangedParent_Null_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -354,7 +354,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedParent"/>
         /// </summary>
         [Test]
-        public void OnChangedParentInSetParentSwapPasses()
+        public void SetParent_OnChangedParent_Swap_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -381,7 +381,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
 		/// </summary>
         [Test]
-        public void OnChangedChildInSetParentPasses()
+        public void SetParent_OnChangedChild_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -405,7 +405,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
         /// </summary>
         [Test]
-        public void OnChangedChildInSetParentWhenThrowExceptionPasses()
+        public void SetParent_OnChangedChild_WhenThrowException_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -424,7 +424,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
         /// </summary>
         [Test]
-        public void OnChangedChildInSetParentNullPasses()
+        public void SetParent_OnChangedChild_Null_Passes()
         {
             var layout = new LayoutTargetObject();
             var parent = new LayoutTargetObject();
@@ -450,7 +450,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
 		/// </summary>
         [Test]
-        public void OnChangedChildInSetParentWhenSwapParentPasses()
+        public void SetParent_OnChangedChild_WhenSwapParent_Passes()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
@@ -492,7 +492,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
 		/// </summary>
         [Test]
-        public void OnChangedChildInSetParentSwapWhenThrowExceptionPrevParentPasses()
+        public void SetParent_OnChangedChild_SwapWhenThrowExceptionPrevParent_Passes()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
@@ -533,7 +533,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedChildren"/>
         /// </summary>
         [Test]
-        public void OnChangedChildInSetParentSwapWhenThrowExceptionNewParentPasses()
+        public void SetParent_OnChangedChild_SwapWhenThrowExceptionNewParent_Passes()
         {
             var layout = new LayoutTargetObject();
             var removeParent = new LayoutTargetObject();
@@ -574,7 +574,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.Children"/>
         /// </summary>
         [Test]
-        public void ChildrenPasses()
+        public void Children_Passes()
         {
             var parent = new LayoutTargetObject();
 
@@ -601,7 +601,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.Children"/>
         /// </summary>
         [Test]
-        public void ChildrenPasses2()
+        public void Children_Passes2()
         {
             var parent = new LayoutTargetObject();
 
@@ -639,7 +639,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.LocalPos"/>
 		/// </summary>
         [Test]
-        public void LocalPosPasses()
+        public void LocalPos_Passes()
         {
             var self = new LayoutTargetObject();
 
@@ -654,7 +654,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalPos"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalPosPasses()
+        public void LocalPos_OnChangedLocalPos_Passes()
         {
             var self = new LayoutTargetObject();
 
@@ -676,7 +676,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalPos"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalPosWhenThrowExceptionPasses()
+        public void LocalPos_OnChanged_WhenThrowException_Passes()
         {
             var self = new LayoutTargetObject();
             self.OnChangedLocalPos.Add((_, __) => throw new System.Exception());
@@ -693,7 +693,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.LocalSize"/>
 		/// </summary>
         [Test]
-        public void LocalSizePasses()
+        public void LocalSize_Passes()
         {
             var self = new LayoutTargetObject();
             var localSize = new Vector3(10, 20, 30);
@@ -707,7 +707,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
         /// </summary>
         [Test]
-        public void OnChangedLocalSizePasses()
+        public void LocalSize_OnChangedLocalSize_Passes()
         {
             var self = new LayoutTargetObject();
 
@@ -731,7 +731,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
         /// </summary>
         [Test]
-        public void OnChangedLocalSizeWhenThrowExceptionPasses()
+        public void LocalSize_OnChangedLocalSize_WhenThrowException_Passes()
         {
             var self = new LayoutTargetObject();
             self.OnChangedLocalSize.Add((_, __) => {
@@ -750,7 +750,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.AnchorMin"/>
 		/// </summary>
         [Test]
-        public void AnchorMinPasses()
+        public void AnchorMin_Passes()
         {
             var self = new LayoutTargetObject();
             var callCounter = 0;
@@ -777,7 +777,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
         /// </summary>
         [Test]
-        public void AnchorMaxPasses()
+        public void AnchorMax_Passes()
         {
             var self = new LayoutTargetObject();
             var callCounter = 0;
@@ -803,7 +803,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedAnchorMinMax"/>
         /// </summary>
         [Test]
-        public void OnChangedAnchorMinMax_WhenThrowException()
+        public void AnchorMinMax_OnChangedAnchorMinMax_WhenThrowException()
         {
             var self = new LayoutTargetObject();
             self.OnChangedAnchorMinMax.Add((_self, _prevMin, _prevMax) => {
@@ -822,7 +822,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.Offset"/>
         /// </summary>
         [Test]
-        public void OffsetPasses()
+        public void Offset_Passes()
         {
             var self = new LayoutTargetObject();
             var anchorOffsetMax = new Vector3(0.5f, 0.5f, 0.5f);
@@ -836,10 +836,19 @@ namespace Hinode.Layouts.Tests
         #region Layouts
         class LayoutClass : LayoutBase
         {
-            public LayoutClass(int priority)
+            public LayoutClass(int priority, LayoutKind kind = LayoutKind.Normal)
             {
                 OperationPriority = priority;
+                _kind = kind;
             }
+
+            LayoutKind _kind = LayoutKind.Normal;
+            public override LayoutKind Kind { get => _kind; }
+            public LayoutClass SetKind(LayoutKind kind) { _kind = kind; return this; }
+
+            bool _doAllowDumplicate = true;
+            public override bool DoAllowDuplicate { get => _doAllowDumplicate; }
+            public LayoutClass SetDoAllowDumplicate(bool doAllow) { _doAllowDumplicate = doAllow; return this; }
 
             public override LayoutOperationTarget OperationTargetFlags { get => 0; }
 
@@ -848,7 +857,7 @@ namespace Hinode.Layouts.Tests
 
             public override string ToString()
             {
-                return $"LayoutClass priority={OperationPriority}";
+                return $"LayoutClass kind={Kind} priority={OperationPriority}";
             }
         }
 
@@ -857,7 +866,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
         /// </summary>
         [Test]
-        public void AddLayoutPasses()
+        public void Layouts_Add_Passes()
         {
             var layoutObjs = new LayoutClass[]
             {
@@ -876,9 +885,9 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AssertEnumerable(
                 new ILayout[]
                 {
-                    layoutObjs[2],
-                    layoutObjs[0],
                     layoutObjs[1],
+                    layoutObjs[0],
+                    layoutObjs[2],
                 },
                 layoutTarget.Layouts,
                 ""
@@ -888,10 +897,41 @@ namespace Hinode.Layouts.Tests
 
         /// <summary>
         /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// </summary>
+        [Test, Description("同じ型のILayoutは一つだけしか登録できないようにしてください。")]
+        public void Layouts_Add_SameTypeLayout_Passes()
+        {
+            var layoutObjs = new LayoutClass[]
+            {
+                new LayoutClass(100).SetDoAllowDumplicate(false),
+                new LayoutClass(200).SetDoAllowDumplicate(false),
+                new LayoutClass(-100).SetDoAllowDumplicate(false),
+            };
+
+            var layoutTarget = new LayoutTargetObject();
+
+            foreach (var obj in layoutObjs)
+            {
+                layoutTarget.AddLayout(obj);
+            }
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutObjs[0],
+                },
+                layoutTarget.Layouts,
+                ""
+            );
+        }
+
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
         /// <seealso cref="LayoutTargetObject.RemoveLayout(ILayout)"/>
         /// </summary>
         [Test]
-        public void RemoveLayoutPasses()
+        public void Layouts_Remove_Passes()
         {
             var layoutObjs = new LayoutClass[]
             {
@@ -911,8 +951,8 @@ namespace Hinode.Layouts.Tests
             AssertionUtils.AssertEnumerable(
                 new ILayout[]
                 {
-                    layoutObjs[1],
                     layoutObjs[0],
+                    layoutObjs[1],
                 },
                 layoutTarget.Layouts,
                 ""
@@ -924,7 +964,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
         /// </summary>
         [Test]
-        public void ILayoutOnChangedOperationPriorityPasses()
+        public void Layouts_ILayoutOnChangedOperationPriority_Passes()
         {
             var layoutObjs = new LayoutClass[]
             {
@@ -940,14 +980,15 @@ namespace Hinode.Layouts.Tests
                 layoutTarget.AddLayout(obj);
             }
 
+            //test point
             layoutObjs[0].OperationPriority = layoutObjs[1].OperationPriority + 1;
 
             AssertionUtils.AssertEnumerable(
                 new ILayout[]
                 {
-                    layoutObjs[2],
-                    layoutObjs[1],
                     layoutObjs[0],
+                    layoutObjs[1],
+                    layoutObjs[2],
                 },
                 layoutTarget.Layouts,
                 ""
@@ -959,7 +1000,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
         /// </summary>
         [Test]
-        public void AddRemoveLayout_SetCallbacksPasses()
+        public void Layouts_AddRemoveLayout_SetCallbacks_Passes()
         {
             var layoutObjs = new LayoutClass(0);
             Assert.AreEqual(0, layoutObjs.OnDisposed.RegistedDelegateCount);
@@ -980,14 +1021,57 @@ namespace Hinode.Layouts.Tests
             }
         }
 
+        /// <summary>
+        /// <seealso cref="LayoutTargetObject.Layouts"/>
+        /// <seealso cref="LayoutTargetObject.AddLayout(ILayout)"/>
+        /// <seealso cref="LayoutTargetObject.RemoveLayout(ILayout)"/>
+        /// </summary>
+        [Test, Description("ILayoutTarget#Layoutsの並び順のテスト")]
+        public void Layouts_LayoutOrder_Passes()
+        {
+            var target = new LayoutTargetObject();
+            var layoutList = new LayoutClass[]
+            {
+                new LayoutClass(0, LayoutKind.Normal),
+                new LayoutClass(10, LayoutKind.Normal),
+                new LayoutClass(20, LayoutKind.Normal),
+                new LayoutClass(-10, LayoutKind.Normal),
+                new LayoutClass(0, LayoutKind.Delay),
+                new LayoutClass(10, LayoutKind.Delay),
+                new LayoutClass(20, LayoutKind.Delay),
+                new LayoutClass(-10, LayoutKind.Delay),
+            };
+
+            foreach(var l in layoutList)
+            {
+                target.AddLayout(l);
+            }
+
+            AssertionUtils.AssertEnumerable(
+                new ILayout[]
+                {
+                    layoutList[2],//Normal
+                    layoutList[1],
+                    layoutList[0],
+                    layoutList[3],
+                    layoutList[6],//Delay
+                    layoutList[5],
+                    layoutList[4],
+                    layoutList[7],
+                }
+                , target.Layouts
+                , ""
+            );
+        }
+
         #endregion
 
-        #region UpdateLocalSizeWithAnchorParam
+        #region UpdateAnchorParam
         /// <summary>
         /// <seealso cref="LayoutTargetObject.UpdateAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
         /// </summary>
         [Test]
-        public void UpdateLocalSizeWithAnchorParamPasses()
+        public void UpdateAnchorParam_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1031,7 +1115,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.UpdateAnchorParam(Vector3, Vector3, Vector3, Vector3)"/>
         /// </summary>
         [Test, Description("計算の結果LocalSizeの要素が0以下になる時のテスト。LocalSizeが0になるようにしてください。")]
-        public void UpdateLocalSizeWithAnchorParamWhenInvalidLocalSizePasses()
+        public void UpdateAnchorParam_WhenInvalidLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(10, 10, 10));
@@ -1058,7 +1142,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithAnchorParamPasses()
+        public void UpdateAnchorParam_OnChangedLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1089,7 +1173,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
         /// </summary>
         [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithAnchorParamWhenNotChangeLocalSizePasses()
+        public void UpdateAnchorParam_OnChangedLocalSize_WhenNotChangeLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1121,7 +1205,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithAnchorParamWhenThrowExcptionPasses()
+        public void UpdateAnchorParam_OnChangedLocalSize_WhenThrowExcption_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1152,7 +1236,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test, Description("LocalSizeが変更されないケースでOnChangedOffsetコールバックが呼び出されないかどうかのテスト")]
-        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenNotChangeOffsetPasses()
+        public void UpdateAnchorParam_OnChangedOffset_WhenNotChangeOffset_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1185,7 +1269,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test]
-        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamPasses()
+        public void UpdateAnchorParam_OnChangedOffset_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1216,7 +1300,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test]
-        public void OnChangedOffsetInUpdateLocalSizeWithAnchorParamWhenThrowExcptionPasses()
+        public void UpdateAnchorParam_OnChangedOffset_WhenThrowExcption_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1243,12 +1327,12 @@ namespace Hinode.Layouts.Tests
         }
         #endregion
 
-        #region UpdateLocalSizeWithSizeAndAnchorParam
+        #region UpdateLocalSize
         /// <summary>
         /// <seealso cref="LayoutTargetObject.UpdateLocalSize(Vector3, Vector3)"/>
         /// </summary>
         [Test]
-        public void UpdateLocalSizeWithSizeAndAnchorParamPasses()
+        public void UpdateLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1268,7 +1352,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.UpdateLocalSize(Vector3, Vector3)"/>
         /// </summary>
         [Test, Description("LocalSizeの各要素が0より下回る時のテスト。その要素が0になるようにしてください。")]
-        public void UpdateLocalSizeWithSizeAndAnchorParamWhenInvalidLocalSizePasses()
+        public void UpdateLocalSize_WhenInvalidLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1289,7 +1373,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithSizeAndAnchorParamPasses()
+        public void UpdateLocalSize_OnChangedLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1318,7 +1402,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
 		/// </summary>
         [Test]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithSizeAndAnchorParamWhenThrowExcptionPasses()
+        public void UpdateLocalSize_OnChangedLocalSize_WhenThrowExcption_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1342,7 +1426,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedLocalSize"/>
         /// </summary>
         [Test, Description("LocalSizeが変更されないケースでOnChangedLocalSizeコールバックが呼び出されないかどうかのテスト")]
-        public void OnChangedLocalSizeInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        public void UpdateLocalSize_OnChangedLocalSize_WhenNotChangeLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1371,7 +1455,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test]
-        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamPasses()
+        public void UpdateLocalSize_OnChangedOffset_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1400,7 +1484,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedOffset"/>
         /// </summary>
         [Test]
-        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenThrowExcptionPasses()
+        public void UpdateLocalSize_OnChangedOffset_WhenThrowExcption_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1427,7 +1511,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedLocalOffset"/>
         /// </summary>
         [Test, Description("LocalOffsetが変更されないケースでOnChangedLocalOffsetコールバックが呼び出されないかどうかのテスト")]
-        public void OnChangedOffsetInUpdateLocalSizeWithSizeAndAnchorParamWhenNotChangeLocalSizePasses()
+        public void UpdateLocalSize_OnChangedOffset_WhenNotChangeLocalSize_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 0));
@@ -1461,7 +1545,7 @@ namespace Hinode.Layouts.Tests
 		/// <seealso cref="LayoutTargetObject.AnchorOffsetMax"/>
 		/// </summary>
         [Test]
-        public void AnchorFollowedParentAreaPasses()
+        public void AnchorFollowedParentArea_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 100));
@@ -1489,7 +1573,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.IsAutoUpdate"/>
         /// </summary>
         [Test]
-        public void IsAutoUpdatePasses()
+        public void IsAutoUpdate_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(new Vector3(100, 100, 100));
@@ -1524,7 +1608,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.FollowParent()"/>
         /// </summary>
         [Test]
-        public void FollowParentPasses()
+        public void FollowParent_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(Vector3.one * 20f);
@@ -1556,7 +1640,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.LayoutInfo"/>
         /// </summary>
         [Test]
-        public void LayoutInfoPropertyPasses()
+        public void LayoutInfo_Property_Passes()
         {
             var target = new LayoutTargetObject();
             var other = new LayoutInfo();
@@ -1606,7 +1690,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutInfo.MaxSize"/>
         /// </summary>
         [Test, Description("LayoutInfo#MinSize/MaxSizeが指定されている時はILayoutTarget#LocalSizeに制限がかかるようにするテスト")]
-        public void LayoutInfoMinMaxSizePasses()
+        public void LayoutInfo_MinMaxSize_Passes()
         {
             var layoutTarget = new LayoutTargetObject();
             layoutTarget.SetLocalSize(Vector3.one * 100f);
@@ -1669,7 +1753,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutInfo.MaxSize"/>
         /// </summary>
         [Test, Description("親のLayoutInfo#MinSize/MaxSizeが指定されている時のAnchorArea周りの挙動テスト")]
-        public void LayoutInfoLayoutSize_InParentPasses()
+        public void LayoutInfo_LayoutSize_InParent_Passes()
         {
             var parent = new LayoutTargetObject();
             parent.SetLocalSize(Vector3.one * 100f);
@@ -1758,7 +1842,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
         /// </summary>
         [Test]
-        public void PivotPropertyPasses()
+        public void Pivot_Passes()
         {
             var target = new LayoutTargetObject();
             var correctLocalSize = Vector3.one * 100f;
@@ -1809,7 +1893,7 @@ namespace Hinode.Layouts.Tests
         /// <seealso cref="LayoutTargetObject.OnChangedPivot"/>
         /// </summary>
         [Test]
-        public void OnChangedPivot_WhenThowExceptionPasses()
+        public void Pivot_OnChangedPivot_WhenThowException_Passes()
         {
             var target = new LayoutTargetObject();
             target.OnChangedPivot.Add((_s, _p) => throw new System.Exception());

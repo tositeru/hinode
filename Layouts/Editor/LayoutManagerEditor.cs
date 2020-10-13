@@ -14,7 +14,8 @@ namespace Hinode.Layouts.Editors
     {
         public static void UpdateAllLayouts()
         {
-
+            //EditorApplication.delayCall;
+            //EditorApplication.update;
         }
 
         /// <summary>

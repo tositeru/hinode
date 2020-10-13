@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4a6c09edcc541a887e86dce9c80413, type: 3}
+  m_Name: SmartDelegate_SafeDynamicInvoke
+  m_EditorClassIdentifier: 
+  _replacementKeywords: {fileID: 0}
+  _isOnlyEmbbed: 0
+  _doShareKaywords: 0
+  _isSingleKeywordPairMode: 1
+  _templateText: "public IEnumerable<object> SafeDynamicInvoke$TemplateArgs$($Args$System.Func<string>
+    getLogFunc, params string[] logSelector)\n{\n    var list = Instance?.GetInvocationList()
+    ?? null;\n    if (list == null) return null;\n    _returnValuesCache.Clear();\n   
+    foreach (var invocation in list)\n    {\n        try\n        {\n           
+    var returnValue = invocation.DynamicInvoke($PassArgs$);\n            _returnValuesCache.Add(returnValue);\n       
+    }\n        catch (System.Exception e)\n        {\n            Logger.LogWarning(Logger.Priority.High\n               
+    , () => $\"Exception!! {getLogFunc()}.{System.Environment.NewLine}{e}\"\n           
+    , logSelector);\n        }\n    }\n    return _returnValuesCache;\n}\n"
+  _keywords:
+  - key: TemplateArgs
+    values: []
+  - key: Args
+    values: []
+  - key: PassArgs
+    values: []
+  _ignorePairs: []
+  _embbedTemplates: []
+  _singleKeywordPairList:
+  - _pairKeywords:
+    - 
+    - 
+    - 
+  - _pairKeywords:
+    - <T1>
+    - 'T1 arg1, '
+    - arg1
+  - _pairKeywords:
+    - <T1, T2>
+    - 'T1 arg1, T2 arg2, '
+    - arg1, arg2
+  - _pairKeywords:
+    - <T1, T2, T3>
+    - 'T1 arg1, T2 arg2, T3 arg3, '
+    - arg1, arg2, arg3
+  - _pairKeywords:
+    - <T1, T2, T3, T4>
+    - 'T1 arg1, T2 arg2, T3 arg3, T4 arg4, '
+    - arg1, arg2, arg3, arg4
+  - _pairKeywords:
+    - <T1, T2, T3, T4, T5>
+    - 'T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, '
+    - arg1, arg2, arg3, arg4, arg5
+  _newline: 0

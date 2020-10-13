@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using System.Linq;
 
 namespace Hinode.Tests.CSharp
 {
@@ -64,6 +65,45 @@ namespace Hinode.Tests.CSharp
 
             d.Remove(Apple);
             Assert.AreEqual(1, d.RegistedDelegateCount);
+        }
+
+        [Test]
+        public void Add_Dumplication_Passes()
+        {
+            var predicate = new SmartDelegate<BasicUsagePassesDelegate>();
+            Assert.IsFalse(predicate.IsValid);
+            Assert.IsNull(predicate.Instance);
+
+            //test point
+            BasicUsagePassesDelegate incrementFunc = () => { ; };
+            predicate.Add(incrementFunc);
+            predicate.Add(incrementFunc);
+
+            Assert.IsTrue(predicate.IsValid);
+            Assert.IsNotNull(predicate.Instance);
+            Assert.AreEqual(1, predicate.RegistedDelegateCount);
+        }
+
+        [Test]
+        public void Contains_Passes()
+        {
+            var predicate = new SmartDelegate<BasicUsagePassesDelegate>();
+            Assert.IsFalse(predicate.IsValid);
+            Assert.IsNull(predicate.Instance);
+
+            //test point
+            BasicUsagePassesDelegate incrementFunc = () => {; };
+            Assert.IsFalse(predicate.Contains(incrementFunc));
+
+            predicate.Add(incrementFunc);
+            Assert.IsTrue(predicate.Contains(incrementFunc));
+
+            var copy = incrementFunc;
+            Assert.IsTrue(predicate.Contains(copy));
+
+            predicate.Remove(incrementFunc);
+            Assert.IsFalse(predicate.Contains(incrementFunc));
+
         }
 
         #region SafeDynamicInvoke
@@ -301,6 +341,40 @@ namespace Hinode.Tests.CSharp
                 );
                 Debug.Log($"Success to Empty Delegate");
             }
+        }
+
+        delegate void CallCallbackDelegate();
+        [Test]
+        public void SafeDynamicInvoke_CallCallback_Passes()
+        {
+            var d = new SmartDelegate<CallCallbackDelegate>();
+            var callCounter = 0;
+            d.Add(() => callCounter++);
+            d.Add(() => throw new System.Exception());
+
+            var returnValues = d.SafeDynamicInvoke(() => "");
+            Assert.AreEqual(1, callCounter);
+        }
+
+        delegate int ReturnValueDelegate();
+        [Test]
+        public void SafeDynamicInvoke_ReturnValues_Passes()
+        {
+            var d = new SmartDelegate<ReturnValueDelegate>();
+            d.Add(() => 10);
+            d.Add(() => 20);
+            d.Add(() => 30);
+
+            var returnValues = d.SafeDynamicInvoke(() => "");
+            var t = returnValues.Select(_n => _n.ToString()).Aggregate("", (_s, _c) => _s + _c + ", ");
+            Debug.Log($"test -- {t}");
+            AssertionUtils.AssertEnumerable(
+                new object[] {
+                    10, 20, 30
+                }
+                , returnValues
+                , ""
+            );
         }
         #endregion
     }

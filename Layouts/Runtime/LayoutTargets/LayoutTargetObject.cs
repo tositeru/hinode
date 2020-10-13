@@ -36,6 +36,8 @@ namespace Hinode.Layouts
         [SerializeField] Vector3 _localSize;
         [SerializeField] Vector3 _anchorMin;
         [SerializeField] Vector3 _anchorMax;
+        [SerializeField] Vector3 _anchorOffsetMin;
+        [SerializeField] Vector3 _anchorOffsetMax;
         [SerializeField] Vector3 _offset;
         [SerializeField] Vector3 _pivot = Vector3.one * 0.5f;
 
@@ -216,14 +218,14 @@ namespace Hinode.Layouts
 
         public virtual void Dispose()
         {
-            while(0 < _children.Count)
+            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutTargetObject#Dispose", LayoutDefines.LOG_SELECTOR);
+
+            while (0 < _children.Count)
             {
                 _children.Items.First().SetParent(null);
             }
             //_children.Clear();
             SetParent(null);
-
-            _onDisposed.SafeDynamicInvoke(this, () => $"LayoutTargetObject#Dispose", LayoutDefines.LOG_SELECTOR);
 
             _onDisposed.Clear();
             _onChangedParent.Clear();
@@ -237,22 +239,31 @@ namespace Hinode.Layouts
 
         public void AddLayout(ILayout layout)
         {
-            if (!_layouts.Contains(layout))
+            //Callbackの設定はコンストラクタの_layoutsのコールバックの方で行っています。
+
+            bool doAdd = !_layouts.Contains(layout);
+
+            //同じ型のLayoutは一つしか登録できないようにしています。
+            doAdd &= layout.DoAllowDuplicate
+                || !_layouts.Any(_l => _l.GetType().Equals(layout.GetType()));
+
+            if (doAdd)
             {
                 var insertIndex = _layouts.FindIndex((_l) => layout.OperationPriority < _l.OperationPriority);
                 if(insertIndex != -1)
                     _layouts.InsertTo(insertIndex, layout);
                 else
                     _layouts.Add(layout);
-            }
-            if(layout.Target != this)
-            {
-                layout.Target = this;
+                if(layout.Target != this)
+                {
+                    layout.Target = this;
+                }
             }
         }
 
         public void RemoveLayout(ILayout layout)
         {
+            //Callbackの設定はコンストラクタの_layoutsのコールバックの方で行っています。
             if (_layouts.Contains(layout))
             {
                 _layouts.Remove(layout);
@@ -262,7 +273,6 @@ namespace Hinode.Layouts
                 layout.Target = null;
             }
         }
-
 
         public void UpdateAnchorParam(Vector3 anchorMin, Vector3 anchorMax, Vector3 offsetMin, Vector3 offsetMax)
         {
@@ -285,6 +295,9 @@ namespace Hinode.Layouts
 
             _offset = -offsetMin.Mul(Vector3.one - Pivot) + offsetMax.Mul(Pivot);
 
+            _anchorOffsetMin = offsetMin;
+            _anchorOffsetMax = offsetMax;
+
             _prevParentSize = parentLayoutSize;
 
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
@@ -305,22 +318,16 @@ namespace Hinode.Layouts
             _prevParentSize = Parent != null
                 ? Parent.LayoutSize()
                 : Vector3.zero;
+            var (offsetMin, offsetMax) = this.AnchorOffsetMinMax();
+            _anchorOffsetMin = offsetMin;
+            _anchorOffsetMax = offsetMax;
             OnUpdateLocalSizeWithExceptionCheck(prevLocalSize);
             OnUpdateOffsetWithExceptionCheck(prevOffset);
         }
 
         public void FollowParent()
         {
-            //以前のOffsetMin/Maxを計算しています。
-            var prevAnchorAreaSize = _prevParentSize.Mul(AnchorMax - AnchorMin);
-            var max = prevAnchorAreaSize * 0.5f;
-            var min = -max;
-
-            var halfSize = LocalSize * 0.5f;
-            var (localMin, localMax) = (-halfSize + Offset, halfSize + Offset);
-            var (offsetMin, offsetMax) = (-(localMin - min), localMax - max);
-
-            UpdateAnchorParam(AnchorMin, AnchorMax, offsetMin, offsetMax);
+            UpdateAnchorParam(AnchorMin, AnchorMax, _anchorOffsetMin, _anchorOffsetMax);
         }
 
         Vector3 LimitLocalSizeByLayoutInfo(Vector3 localSize)

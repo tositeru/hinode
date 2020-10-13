@@ -825,5 +825,33 @@ namespace Hinode.Layouts.Tests
             Assert.AreEqual(0, layoutTarget.Layouts.Count);
         }
         #endregion
+
+        #region GetParentEnumerable
+        /// <summary>
+        /// <seealso cref="ILayoutTargetExtensions.GetParentEnumerable(ILayoutTarget)"/>
+        /// </summary>
+        [Test]
+        public void GetParentEnumerablePasses()
+        {
+            var target = new LayoutTargetObject();
+            var parents = new LayoutTargetObject[]
+            {
+                new LayoutTargetObject(),
+                new LayoutTargetObject(),
+                new LayoutTargetObject(),
+            };
+            for (var i=0; i<parents.Length-1; ++i)
+            {
+                parents[i].SetParent(parents[i+1]);
+            }
+            target.SetParent(parents[0]);
+
+            AssertionUtils.AssertEnumerable(
+                parents,
+                target.GetParentEnumerable(),
+                ""
+            );
+        }
+        #endregion
     }
 }

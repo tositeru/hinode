@@ -32,10 +32,15 @@ namespace Hinode.Layouts
     [DisallowMultipleComponent()]
     public class LayoutTargetComponent : MonoBehaviour
     {
+        public delegate void OnDestroyedCallback(LayoutTargetComponent layoutTarget);
+
         public static LayoutTargetComponent GetOrAdd(GameObject gameObject)
         {
             return gameObject.GetOrAddComponent<LayoutTargetComponent>();
         }
+
+        SmartDelegate<OnDestroyedCallback> _onDestroyed = new SmartDelegate<OnDestroyedCallback>();
+        public NotInvokableDelegate<OnDestroyedCallback> OnDestroyed { get => _onDestroyed; }
 
         ILayoutTargetUpdater _updater;
         public ILayoutTargetUpdater Updater
@@ -318,6 +323,8 @@ namespace Hinode.Layouts
 
         void OnDestroy()
         {
+            _onDestroyed.SafeDynamicInvoke(this, () => "Fail in OnDestroy...", LayoutDefines.LOG_SELECTOR);
+
             _parentDummy = null;
             if(_target != null)
             {
