@@ -278,10 +278,28 @@ namespace Hinode
         /// <returns></returns>
         public static bool EqualGenericTypeDefinition(this System.Type t, System.Type other)
         {
-            var self = t.IsGenericType && !t.IsGenericTypeDefinition ? t.GetGenericTypeDefinition() : t;
-            other = other.IsGenericType && !other.IsGenericTypeDefinition ? other.GetGenericTypeDefinition() : other;
-            return self.Equals(other);
+            if (t == null || other == null) return t == other;
+
+            if (InnerEqualGenericTypeDefinition(t, other))
+                return true;
+            //型を入れ替えて判定する
+            return InnerEqualGenericTypeDefinition(other, t);
         }
+
+        static bool InnerEqualGenericTypeDefinition(System.Type t, System.Type other)
+        {
+            var self = t;
+            var o = other.IsGenericType && !other.IsGenericTypeDefinition ? other.GetGenericTypeDefinition() : other;
+            while (self != null)
+            {
+                self = self.IsGenericType && !self.IsGenericTypeDefinition ? self.GetGenericTypeDefinition() : self;
+                if (self.Equals(o)) return true;
+                self = self.BaseType;
+            }
+
+            return t.GetInterfaces().Any(_i => InnerEqualGenericTypeDefinition(_i, other));
+        }
+
 
         /// <summary>
         /// <seealso cref="Hinode.Tests.CSharp.Extensions.TestTypeExtensions.GetFieldInHierarchyPasses()"/>
