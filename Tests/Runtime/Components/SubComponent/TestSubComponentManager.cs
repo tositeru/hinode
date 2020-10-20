@@ -11,6 +11,8 @@ namespace Hinode.Tests.Components.SubComponent
     /// </summary>
     public class TestSubComponentManager : TestBase
     {
+        const int ORDER_CONSTRUCTOR = 0;
+
         [System.AttributeUsage(System.AttributeTargets.Field, Inherited=false, AllowMultiple = false)]
         public sealed class TestFieldAttribute : System.Attribute
             , ISubComponentAttribute
@@ -69,13 +71,37 @@ namespace Hinode.Tests.Components.SubComponent
             public Sub1 SerializedField { get => serializedField; }
         }
 
+        class TestComponent2 : MonoBehaviour
+            , ISubComponent<TestComponent2>
+        {
+            public class Sub1 : ISubComponent<TestComponent2>
+            {
+                public int CallCounter = 0;
+
+                public TestComponent2 RootComponent { get; set; }
+
+                public void Destroy() { CallCounter++; }
+                public void Init() { CallCounter++; }
+                public void UpdateUI() { CallCounter++; }
+            }
+
+            [TestField]
+            public Sub1 publicField = new Sub1();
+
+            public TestComponent2 RootComponent { get; set; }
+
+            public void Destroy() {}
+            public void Init() {}
+            public void UpdateUI() {}
+        }
+
         /// <summary>
         /// <seealso cref="SubComponentManager{T}.RootComponent"/>
         /// <seealso cref="SubComponentManager{T}.Init()"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
-        public IEnumerator ConstructorPasses()
+        [UnityTest, Order(ORDER_CONSTRUCTOR), Description("コンストラクタのテスト")]
+        public IEnumerator Constructor_Passes()
         {
             var rootComponent = new GameObject().AddComponent<TestComponent>();
 
@@ -83,17 +109,35 @@ namespace Hinode.Tests.Components.SubComponent
             Assert.AreSame(rootComponent, manager.RootComponent);
             Assert.AreSame(rootComponent, rootComponent.publicField.RootComponent);
             Assert.AreSame(rootComponent, rootComponent.SerializedField.RootComponent);
+            Assert.AreEqual(2, manager.SubComponentCount);
             yield break;
         }
-
 
         /// <summary>
         /// <seealso cref="SubComponentManager{T}.RootComponent"/>
         /// <seealso cref="SubComponentManager{T}.Init()"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
-        public IEnumerator ConstructorIgnoreNullSubComponentPasses()
+        [UnityTest, Order(ORDER_CONSTRUCTOR), Description("RootComponentがISubComponentを継承している時のテスト")]
+        public IEnumerator Constructor_Passes2()
+        {
+            var rootComponent = new GameObject().AddComponent<TestComponent2>();
+
+            var manager = new SubComponentManager<TestComponent2>(rootComponent); // test point
+            Assert.AreSame(rootComponent, manager.RootComponent);
+            Assert.IsNull(rootComponent.RootComponent);
+            Assert.AreSame(rootComponent, rootComponent.publicField.RootComponent);
+            Assert.AreEqual(2, manager.SubComponentCount);
+            yield break;
+        }
+
+        /// <summary>
+        /// <seealso cref="SubComponentManager{T}.RootComponent"/>
+        /// <seealso cref="SubComponentManager{T}.Init()"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest, Order(ORDER_CONSTRUCTOR + 1), Description("RootComponentにあるISubComponentがNullの時のテスト")]
+        public IEnumerator Constructor_IgnoreNullSubComponent_Passes()
         {
             var rootComponent = new GameObject().AddComponent<TestComponent>();
             rootComponent.publicField = null;

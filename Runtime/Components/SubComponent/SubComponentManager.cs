@@ -18,11 +18,19 @@ namespace Hinode
 
         HashSet<ISubComponent<T>> _subComponents = new HashSet<ISubComponent<T>>();
 
+        public IReadOnlyCollection<ISubComponent<T>> SubComponents { get => _subComponents; }
         public int SubComponentCount { get => _subComponents.Count; }
 
         public SubComponentManager(T rootComponent)
         {
             RootComponent = rootComponent;
+
+            if(RootComponent is ISubComponent<T>)
+            {
+                var rootCom = RootComponent as ISubComponent<T>;
+                rootCom.RootComponent = null;
+                _subComponents.Add(rootCom);
+            }
 
             var rootType = typeof(T);
             var fields = rootType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
@@ -62,6 +70,36 @@ namespace Hinode
             {
                 SubComponentAttributeManager.RunUpdateUIMethods(com);
                 com.UpdateUI();
+            }
+        }
+
+        /// <summary>
+        /// Hinode.MethodLabelAttributeが指定されたISubComponentのメソッドを呼び出す関数
+        ///
+        /// void XXX()なメソッドのみ対応しています。
+        ///
+        /// 任意の戻り値や引数を持つメソッドを呼び出したい時は以下の例を参考にしてください。
+        /// <code>
+        /// //call -> int XXX(int, int);
+        /// var manager = new SubComponentManager<T>();
+        /// var returnType = typeof(int);
+        /// var isStatic = false;
+        /// var label = "Label";
+        /// var methods = manager.SubComponents.Select(_com => MethodLabelAttribute.CallMethods(returnType, _com, label, isStatic, 100, 200));
+        /// foreach(var returnValue in methods)
+        /// {
+        ///     //recive returnValue from Methods
+        ///     Debug.Log($"returnValue => {returnValue}");
+        /// }
+        /// </code>
+        /// <seealso cref="Hinode.MethodLabelAttribute"/>
+        /// </summary>
+        /// <param name="methodLabel"></param>
+        public void CallSubComponentMethods(string methodLabel, bool isStatic = false)
+        {
+            foreach(var methods in _subComponents.Select(_com => MethodLabelAttribute.CallMethods(typeof(object), _com, methodLabel, isStatic)))
+            {
+                methods.CallAll();
             }
         }
     }
