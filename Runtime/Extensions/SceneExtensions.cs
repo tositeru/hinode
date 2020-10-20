@@ -48,5 +48,27 @@ namespace Hinode
                 return GetEnumerator();
             }
         }
+
+        public static IEnumerable<Scene> GetLoadedSceneEnumerable()
+        {
+            return new LoadedSceneEnumerable();
+        }
+
+        class LoadedSceneEnumerable : IEnumerable<Scene>, IEnumerable
+        {
+            public LoadedSceneEnumerable()
+            { }
+
+            public IEnumerator<Scene> GetEnumerator()
+            {
+                for(var i=0; i<SceneManager.sceneCount; ++i)
+                {
+                    yield return SceneManager.GetSceneAt(i);
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
     }
 }

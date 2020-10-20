@@ -13,6 +13,8 @@ namespace Hinode.Tests.CSharp.Extensions
     /// </summary>
     public class TestTypeExtensions
     {
+        const int ORDER_EQUAL_GENERIC_TYPE_DEFINITION = 0;
+
         interface IsSameOrInheritedTypePassesInterface { }
         class IsSameOrInheritedTypePassesBaseClass { }
         class IsSameOrInheritedTypePassesClass
@@ -130,22 +132,61 @@ namespace Hinode.Tests.CSharp.Extensions
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => typeof(Dictionary<string, int>).GetArrayElementType());
         }
 
+        class ListEx : List<int>
+        { }
         /// <summary>
         /// <seealso cref="TypeExtensions.EqualGenericTypeDefinition(System.Type, System.Type)"/>
         /// </summary>
-        [Test]
-        public void EqualGenericTypeDefinitionPasses()
+        [Test, Order(ORDER_EQUAL_GENERIC_TYPE_DEFINITION), Description("Genericを含む型の判定のテスト")]
+        public void EqualGenericTypeDefinition_Passes()
         {
-            var baseType = typeof(List<>);
-            var type = typeof(List<int>);
-            Assert.IsTrue(type.EqualGenericTypeDefinition(baseType));
-            Assert.IsTrue(baseType.EqualGenericTypeDefinition(type));
+            {
+                var baseType = typeof(List<>);
+                var type = typeof(List<int>);
+                Assert.IsTrue(type.EqualGenericTypeDefinition(baseType));
+                Assert.IsTrue(baseType.EqualGenericTypeDefinition(type));
 
-            Assert.IsTrue(typeof(List<string>).EqualGenericTypeDefinition(typeof(List<int>)));
-            Assert.IsTrue(typeof(int).EqualGenericTypeDefinition(typeof(int)));
+                Assert.IsTrue(typeof(List<string>).EqualGenericTypeDefinition(typeof(List<int>)));
+                Assert.IsTrue(typeof(int).EqualGenericTypeDefinition(typeof(int)));
 
-            Assert.IsFalse(typeof(int).EqualGenericTypeDefinition(typeof(double)));
-            Assert.IsFalse(typeof(List<int>).EqualGenericTypeDefinition(typeof(HashSet<int>)));
+                Assert.IsFalse(typeof(int).EqualGenericTypeDefinition(typeof(double)));
+                Assert.IsFalse(typeof(List<int>).EqualGenericTypeDefinition(typeof(HashSet<int>)));
+            }
+
+            {//Inherited Type
+                var baseType = typeof(List<>);
+                var type = typeof(ListEx);
+                Assert.IsTrue(type.EqualGenericTypeDefinition(baseType));
+                Assert.IsTrue(baseType.EqualGenericTypeDefinition(type));
+            }
+        }
+
+        interface Interface<T> { }
+        interface TestInterface : Interface<int> { }
+        interface OtherInterface<T> { }
+        /// <summary>
+        /// <seealso cref="TypeExtensions.EqualGenericTypeDefinition(System.Type, System.Type)"/>
+        /// </summary>
+        [Test, Order(ORDER_EQUAL_GENERIC_TYPE_DEFINITION), Description("Interfaceのチェック")]
+        public void EqualGenericTypeDefinition_Interface_Passes()
+        {
+            {
+                var baseType = typeof(Interface<>);
+                var type = typeof(Interface<int>);
+                Assert.IsTrue(type.EqualGenericTypeDefinition(baseType));
+                Assert.IsTrue(baseType.EqualGenericTypeDefinition(type));
+
+                Assert.IsTrue(typeof(Interface<string>).EqualGenericTypeDefinition(typeof(Interface<int>)));
+
+                Assert.IsFalse(typeof(Interface<int>).EqualGenericTypeDefinition(typeof(OtherInterface<int>)));
+            }
+
+            {//Inherited Type
+                var baseType = typeof(Interface<>);
+                var type = typeof(TestInterface);
+                Assert.IsTrue(type.EqualGenericTypeDefinition(baseType));
+                Assert.IsTrue(baseType.EqualGenericTypeDefinition(type));
+            }
         }
 
         /// <summary>

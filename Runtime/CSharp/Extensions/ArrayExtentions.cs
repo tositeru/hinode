@@ -62,6 +62,60 @@ namespace Hinode
                 public void Reset() => _enumerator = _target.GetEnumerator();
             }
         }
+    }
+
+    public static class Array2DExtensions
+    {
+        public static IEnumerable<T> AsEnumerable<T>(this T[,] _array)
+        {
+            return new Array2DEnumerable<T>(_array);
+        }
+
+        public static IEnumerable<(T, int x, int y)> AsEnumerableWithIndex<T>(this T[,] _array)
+        {
+            return new Array2DWithIndexEnumerable<T>(_array);
+        }
+
+        class Array2DEnumerable<T> : IEnumerable<T>, IEnumerable
+        {
+            T[,] _target;
+            public Array2DEnumerable(T[,] target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                foreach (var v in _target)
+                {
+                    yield return v;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
+
+        class Array2DWithIndexEnumerable<T> : IEnumerable<(T, int, int)>, IEnumerable
+        {
+            T[,] _target;
+            public Array2DWithIndexEnumerable(T[,] target)
+            {
+                _target = target;
+            }
+
+            public IEnumerator<(T, int, int)> GetEnumerator()
+            {
+                for (var x = 0; x < _target.GetLength(0); ++x)
+                {
+                    for (var y = 0; y < _target.GetLength(1); ++y)
+                    {
+                        yield return (_target[x, y], y, x);
+                    }
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+        }
 
     }
 }

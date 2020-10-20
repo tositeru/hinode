@@ -18,6 +18,7 @@ namespace Hinode
         }
 
         IInstanceCreater _creator;
+        public IInstanceCreater Creator { get => _creator; }
 
         public ObjectPool(IInstanceCreater creater)
         {
