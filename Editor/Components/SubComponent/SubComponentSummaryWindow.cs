@@ -22,11 +22,15 @@ namespace Hinode.Editors
         MethodLabelPopup _methodLabelPopup;
         MonoBehaviour _currentRoot;
 
+        bool FoldoutLabelFilters { get; set; } = true;
         bool FoldOutSubComponents { get; set; } = true;
         bool FoldOutSubComponentsHowTo { get; set; } = false;
+
         Vector2 ScrollPosSubComponents { get; set; }
         string FilterLabel { get => _methodLabelPopup.SelectedLabel; }
         bool EnableFilterLabel { get => !string.IsNullOrEmpty(FilterLabel); }
+
+        GameObject CheckPrefab { get; set; } = null;
 
 
         bool MatchLabelFilter(MethodLabelAttribute labels)
@@ -57,30 +61,82 @@ namespace Hinode.Editors
                 EditorGUILayout.TextArea(SUB_COMPONENTS_HOW_TO, GUILayout.MinHeight(150));
             }
 
-            if (_rootPopup.Draw(new GUIContent("Root MonoBehaviour")))
+            using (var _h1 = new EditorGUILayout.HorizontalScope())
             {
-                _currentRoot = _rootPopup.SelectedMonoBehaviour;
-                if (_currentRoot != null)
+                if (_rootPopup.Draw(new GUIContent("Root MonoBehaviour")))
                 {
-                    _methodLabelPopup = new MethodLabelPopup(_currentRoot);
+                    _currentRoot = _rootPopup.SelectedMonoBehaviour;
+                    if (_currentRoot != null)
+                    {
+                        _methodLabelPopup = new MethodLabelPopup(_currentRoot);
+                    }
                 }
+                EditorGUILayout.ObjectField(_currentRoot, typeof(MonoBehaviour), true, GUILayout.MaxWidth(150));
             }
 
             if (_currentRoot == null) return;
 
-            if (_methodLabelPopup.Draw(new GUIContent("Method Label Filter")))
+            using (var scroll = new EditorGUILayout.ScrollViewScope(ScrollPosSubComponents))
             {
-            }
+                ScrollPosSubComponents = scroll.scrollPosition;
 
-            FoldOutSubComponents = EditorGUILayout.Foldout(FoldOutSubComponents, "SubComponents");
-            if (FoldOutSubComponents)
-            {
-                using (var scroll = new EditorGUILayout.ScrollViewScope(ScrollPosSubComponents))
+                var labelFilterInfo = _currentRoot.GetType().GetProperty("ControllerLabelFilters");
+                var labelFilters = labelFilterInfo.GetValue(_currentRoot) as ControllerLabelFilter[];
+
+                FoldoutLabelFilters = EditorGUILayout.Foldout(FoldoutLabelFilters, $"LabelObjects in {(CheckPrefab != null ? "Prefab" : "Scene")}");
+                if(FoldoutLabelFilters)
                 {
-                    ScrollPosSubComponents = scroll.scrollPosition;
-
                     using (var indent = new EditorGUI.IndentLevelScope())
                     {
+                        CheckPrefab = EditorGUILayout.ObjectField(new GUIContent("Check Prefab Root"), CheckPrefab, typeof(GameObject), false)
+                            as GameObject;
+
+                        IEnumerable<LabelObject> labelObjs;
+                        if(CheckPrefab == null)
+                        {
+                            var selfScene = SceneExtensions.GetLoadedSceneEnumerable()
+                                .First(_s => _s.GetRootGameObjects().Any(_o => _o == _currentRoot.gameObject));
+                            labelObjs = selfScene.GetGameObjectEnumerable()
+                                .Select(_o => _o.GetComponent<LabelObject>())
+                                .Where(_l => _l != null);
+                        }
+                        else
+                        {
+                            labelObjs = CheckPrefab.GetComponentsInChildren<LabelObject>();
+                        }
+
+                        foreach (var label in labelObjs)
+                        {
+                            using (var h = new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
+                            {
+                                EditorGUILayout.ObjectField(label, label.GetType(), true);
+
+                                var txt = label.Labels.Concat(label.InitialLabels).Aggregate("", (_s, _c) => _s + _c + " ");
+                                EditorGUILayout.LabelField($"{txt}");
+
+                                var matchFilter = labelFilters.FirstOrDefault(_f => _f.DoMatch(label, out var _));
+                                //EditorGUILayout.Toggle("DoMatchFilter?", matchFilter != null);
+
+                                var controllerMethods = _currentRoot.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                    .Select(_m => (method: _m, label: _m.GetCustomAttribute<MethodLabelAttribute>()))
+                                    .Where(_t => _t.label != null)
+                                    .Where(_t => matchFilter.MethodLabels.Count == _t.label.Labels.Count
+                                        && matchFilter.MethodLabels.All(_l => _t.label.Contains(_l)));
+
+                                EditorGUILayout.Popup(new GUIContent("Bind Methods"), 0, controllerMethods.Select(_t => _currentRoot.GetType().Name + "#" +  _t.method.Name).ToArray());
+                            }
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space();
+
+                FoldOutSubComponents = EditorGUILayout.Foldout(FoldOutSubComponents, "SubComponents");
+                if (FoldOutSubComponents)
+                {
+                    using (var indent = new EditorGUI.IndentLevelScope())
+                    {
+                        _methodLabelPopup.Draw(new GUIContent("Method Label Filter"));
                         foreach (var subCom in GetSubComponentsInRoot(_currentRoot.GetType()))
                         {
                             DrawSubComponent(subCom.type, subCom.fieldName);
@@ -222,8 +278,19 @@ namespace Hinode.Editors
 
         const string SUB_COMPONENTS_HOW_TO =
 @"How to
-ここでは選択したMonoBehaviourが持つSubComponentを確認することができます。
+ここでは選択したMonoBehaviourWithSubComponent<T>が持つSubComponentを確認することができます。
 確認できる項目は以下のものになります。
+- 関連するLabelObjects:
+    選択中のMonoBehaviourWithSubComponent<T>が所属するSceneにあるLabelObject Componentを確認できます。
+    or Check Prefab Root　を指定した時はそのPrefabにあるLabelObject Componentが確認できます。
+
+    確認できる項目は以下のものです。
+    - Initial Labels
+    - バインドされる可能性がある選択中のMonoBehaviourWithSubComponent<T>のメソッド
+
+    メソッドのバインドの自動化は実装されていないため、Script上から設定してください。
+    その際は、MonoBehaviourWithSubComponent<T>#CreateControllerLabelFilters()とControllerLabelFilter classを利用してください。
+
 - MethodLabel: SubComponentのメンバ関数に指定されているMethodLabelAttributeの一覧を確認できます。
 
 ## Reflesh Windowボタン

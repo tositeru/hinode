@@ -17,13 +17,17 @@ namespace Hinode
 		public static bool IsValidLabel(string label)
 			=> _validRegex.IsMatch(label);
 
+		[SerializeField] string[] _initialLabels;
 		HashSet<string> _labels = new HashSet<string>();
+
+		public IReadOnlyCollection<string> InitialLabels { get => _initialLabels; }
+		public IReadOnlyCollection<string> Labels { get => _labels; }
 
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
 		/// </summary>
-		public int Count { get => _labels.Count; }
+		public int Count { get => Labels.Count; }
 
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
@@ -39,7 +43,7 @@ namespace Hinode
 		/// </summary>
 		/// <param name="labels"></param>
 		/// <returns></returns>
-		public bool Contains(IEnumerable<string> labels) => labels.All(_l => _labels.Contains(_l));
+		public bool Contains(IEnumerable<string> labels) => labels.All(_l => Labels.Contains(_l) || InitialLabels.Contains(_l));
 
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
@@ -112,11 +116,89 @@ namespace Hinode
 			return this;
 		}
 
+		public bool DoMatch<T>(out T getComponent, params string[] labels)
+			where T : Component
+        {
+			var isOK = DoMatch(out var com, typeof(T), labels);
+			getComponent = com as T;
+			return isOK;
+		}
+
+		public bool DoMatch(out Component getComponent, System.Type useComponentType, params string[] labels)
+		{
+			getComponent = null;
+			if (useComponentType.IsSubclassOf(typeof(Component)))
+            {
+				var doContainsCom = gameObject.TryGetComponent(useComponentType, out getComponent);
+				if (labels.Length == 0)
+					return doContainsCom;
+				else
+					return Contains(labels) && doContainsCom;
+			}
+			else
+            {
+				return Contains(labels);
+			}
+		}
+
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerator<string> GetEnumerator() => _labels.GetEnumerator();
+		public IEnumerator<string> GetEnumerator() => Labels.Concat(InitialLabels).GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
+
+		public static LabelObject GetLabelObject(object obj)
+        {
+			LabelObject label = null;
+			if (obj is Component)
+				label = (obj as Component).GetComponent<LabelObject>();
+			else if (obj is GameObject)
+				label = (obj as GameObject).GetComponent<LabelObject>();
+			else if (obj is Transform)
+				label = (obj as Transform).GetComponent<LabelObject>();
+			return label;
+		}
+
+		//public static void MatchAndAction(object obj, IEnumerable<LabelFilter> filters)
+  //      {
+		//	var label = GetLabelObject(obj);
+		//	if (label != null)
+		//	{
+		//		label.MatchAndAction(filters);
+		//	}
+		//}
+		public class LabelFilter
+		{
+			public System.Type ComponentType { get; }
+			public string[] Labels { get; }
+
+			public LabelFilter(System.Type componentType, params string[] labels)
+			{
+				ComponentType = componentType;
+				Labels = labels;
+			}
+
+			public static LabelFilter Create(System.Type comType, params string[] labels)
+			{
+				return new LabelFilter(comType, labels);
+			}
+
+			public static LabelFilter Create<T>(params string[] labels)
+				where T : Component
+            {
+				return new LabelFilter(typeof(T), labels);
+            }
+
+			public bool DoMatch<T>(LabelObject label, out T component)
+				where T : Component
+			{
+				return label.DoMatch(out component, Labels);
+			}
+			public bool DoMatch(LabelObject label, out Component component)
+			{
+				return label.DoMatch(out component, ComponentType, Labels);
+			}
+		}
+	}
 }
