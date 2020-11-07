@@ -12,22 +12,18 @@ namespace Hinode
 	/// </summary>
 	public class LabelObject : MonoBehaviour, IEnumerable<string>, IEnumerable
     {
-		static Regex _validRegex = new Regex(@"^[\w_]+$");
+		[SerializeField] string[] _constLabels = new string[] { };
+		//HashSet<string> _labels = new HashSet<string>();
 
-		public static bool IsValidLabel(string label)
-			=> _validRegex.IsMatch(label);
-
-		[SerializeField] string[] _initialLabels;
-		HashSet<string> _labels = new HashSet<string>();
-
-		public IReadOnlyCollection<string> InitialLabels { get => _initialLabels; }
-		public IReadOnlyCollection<string> Labels { get => _labels; }
+		public IReadOnlyCollection<string> ConstLabels { get => _constLabels; }
+		public Labels Labels { get; } = new Labels();
+		public IEnumerable<string> AllLabels { get => Labels.Concat(ConstLabels); }
 
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
 		/// </summary>
-		public int Count { get => Labels.Count; }
+		public int Count { get => Labels.Count + _constLabels.Length; }
 
 		/// <summary>
 		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
@@ -43,79 +39,16 @@ namespace Hinode
 		/// </summary>
 		/// <param name="labels"></param>
 		/// <returns></returns>
-		public bool Contains(IEnumerable<string> labels) => labels.All(_l => Labels.Contains(_l) || InitialLabels.Contains(_l));
+		public bool Contains(IEnumerable<string> labels)
+			=> labels.All(_l => Labels.Contains(_l) || ConstLabels.Contains(_l));
 
 		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.ValidLabelPasses()"/>
-		/// </summary>
-		/// <param name="label"></param>
-		/// <returns></returns>
-		public LabelObject Add(string label)
-		{
-			Assert.IsTrue(IsValidLabel(label), $"'{label}' is not valid... use only numeric, alphabet and _.");
-			_labels.Add(label);
-			return this;
-		}
-
-		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
-		/// </summary>
-		/// <param name="labels"></param>
-		/// <returns></returns>
-		public LabelObject AddRange(params string[] labels) => AddRange(labels.AsEnumerable());
-
-		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
-		/// </summary>
-		/// <param name="labels"></param>
-		/// <returns></returns>
-		public LabelObject AddRange(IEnumerable<string> labels)
-		{
-			foreach(var l in labels)
-            {
-				Add(l);
-            }
-			return this;
-		}
-
-		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.BasicUsagePasses()"/>
-		/// </summary>
-		/// <param name="label"></param>
-		/// <returns></returns>
-		public LabelObject Remove(string label)
-		{
-			_labels.Remove(label);
-			return this;
-		}
-
-		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
-		/// </summary>
-		/// <param name="labels"></param>
-		/// <returns></returns>
-		public LabelObject RemoveRange(params string[] labels)
-			=> RemoveRange(labels.AsEnumerable());
-		public LabelObject RemoveRange(IEnumerable<string> labels)
-        {
-			foreach(var l in labels)
-            {
-				Remove(l);
-            }
-			return this;
-        }
-
-		/// <summary>
-		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
-		/// </summary>
-		/// <returns></returns>
-		public LabelObject Clear()
-		{
-			_labels.Clear();
-			return this;
-		}
-
+        /// 指定したラベルとComponentを持っているか確認します
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="getComponent"></param>
+        /// <param name="labels"></param>
+        /// <returns></returns>
 		public bool DoMatch<T>(out T getComponent, params string[] labels)
 			where T : Component
         {
@@ -124,10 +57,17 @@ namespace Hinode
 			return isOK;
 		}
 
+		/// <summary>
+		/// 指定したラベルとComponentを持っているか確認します
+		/// </summary>
+		/// <param name="getComponent"></param>
+		/// <param name="useComponentType"></param>
+		/// <param name="labels"></param>
+		/// <returns></returns>
 		public bool DoMatch(out Component getComponent, System.Type useComponentType, params string[] labels)
 		{
 			getComponent = null;
-			if (useComponentType.IsSubclassOf(typeof(Component)))
+			if (useComponentType?.IsSubclassOf(typeof(Component)) ?? false)
             {
 				var doContainsCom = gameObject.TryGetComponent(useComponentType, out getComponent);
 				if (labels.Length == 0)
@@ -145,7 +85,7 @@ namespace Hinode
 		/// <seealso cref="Hinode.Tests.TestLabelObject.AddAndRemoveRangePasses()"/>
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerator<string> GetEnumerator() => Labels.Concat(InitialLabels).GetEnumerator();
+		public IEnumerator<string> GetEnumerator() => AllLabels.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 		public static LabelObject GetLabelObject(object obj)
@@ -160,14 +100,9 @@ namespace Hinode
 			return label;
 		}
 
-		//public static void MatchAndAction(object obj, IEnumerable<LabelFilter> filters)
-  //      {
-		//	var label = GetLabelObject(obj);
-		//	if (label != null)
-		//	{
-		//		label.MatchAndAction(filters);
-		//	}
-		//}
+		/// <summary>
+        /// 
+        /// </summary>
 		public class LabelFilter
 		{
 			public System.Type ComponentType { get; }
@@ -200,5 +135,15 @@ namespace Hinode
 				return label.DoMatch(out component, ComponentType, Labels);
 			}
 		}
+
+		/// <summary>
+        /// 
+        /// </summary>
+        [System.AttributeUsage(System.AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+        public sealed class LabelListClassAttribute : System.Attribute
+        {
+            public LabelListClassAttribute()
+            { }
+        }
 	}
 }

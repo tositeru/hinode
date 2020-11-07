@@ -23,6 +23,8 @@ namespace Hinode.Editors
         MonoBehaviour _currentRoot;
 
         bool FoldoutLabelFilters { get; set; } = true;
+        bool FoldoutControllerLabelFilters { get; set; } = true;
+        bool FoldoutBindCallbacks { get; set; } = true;
         bool FoldOutSubComponents { get; set; } = true;
         bool FoldOutSubComponentsHowTo { get; set; } = false;
 
@@ -32,8 +34,28 @@ namespace Hinode.Editors
 
         GameObject CheckPrefab { get; set; } = null;
 
+        IEnumerable<LabelObject> LabelObjects
+        {
+            get
+            {
+                IEnumerable<LabelObject> labelObjs;
+                if (CheckPrefab == null)
+                {
+                    var selfScene = SceneExtensions.GetSceneEnumerable()
+                        .First(_s => _s.GetRootGameObjects().Any(_o => _o == _currentRoot.gameObject));
+                    labelObjs = selfScene.GetGameObjectEnumerable()
+                        .Select(_o => _o.GetComponent<LabelObject>())
+                        .Where(_l => _l != null);
+                }
+                else
+                {
+                    labelObjs = CheckPrefab.GetComponentsInChildren<LabelObject>();
+                }
+                return labelObjs;
+            }
+        }
 
-        bool MatchLabelFilter(MethodLabelAttribute labels)
+        bool MatchLabelFilter(LabelsAttribute labels)
         {
             if (!EnableFilterLabel) return true;
 
@@ -43,18 +65,21 @@ namespace Hinode.Editors
         void OnEnable()
         {
             titleContent = new GUIContent("SubComponent Summary");
-            _rootPopup = new RootPopup();
+            _rootPopup = new RootPopup(_rootPopup);
+            _currentRoot = _rootPopup.SelectedMonoBehaviour;
+            _methodLabelPopup = new MethodLabelPopup(_currentRoot);
+        }
+
+        private void OnFocus()
+        {
+            titleContent = new GUIContent("SubComponent Summary");
+            _rootPopup = new RootPopup(_rootPopup);
             _currentRoot = _rootPopup.SelectedMonoBehaviour;
             _methodLabelPopup = new MethodLabelPopup(_currentRoot);
         }
 
         public void OnGUI()
         {
-            if (GUILayout.Button("Reflesh Window"))
-            {
-                OnEnable();
-            }
-
             FoldOutSubComponentsHowTo = EditorGUILayout.Foldout(FoldOutSubComponentsHowTo, "How To");
             if (FoldOutSubComponentsHowTo)
             {
@@ -76,12 +101,15 @@ namespace Hinode.Editors
 
             if (_currentRoot == null) return;
 
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
             using (var scroll = new EditorGUILayout.ScrollViewScope(ScrollPosSubComponents))
             {
                 ScrollPosSubComponents = scroll.scrollPosition;
 
-                var labelFilterInfo = _currentRoot.GetType().GetProperty("ControllerLabelFilters");
-                var labelFilters = labelFilterInfo.GetValue(_currentRoot) as ControllerLabelFilter[];
+                //var labelFilterInfo = _currentRoot.GetType().GetProperty("ControllerLabelFilters");
+                //var labelFilters = labelFilterInfo.GetValue(_currentRoot) as ControllerLabelFilter[];
 
                 FoldoutLabelFilters = EditorGUILayout.Foldout(FoldoutLabelFilters, $"LabelObjects in {(CheckPrefab != null ? "Prefab" : "Scene")}");
                 if(FoldoutLabelFilters)
@@ -91,39 +119,44 @@ namespace Hinode.Editors
                         CheckPrefab = EditorGUILayout.ObjectField(new GUIContent("Check Prefab Root"), CheckPrefab, typeof(GameObject), false)
                             as GameObject;
 
-                        IEnumerable<LabelObject> labelObjs;
-                        if(CheckPrefab == null)
-                        {
-                            var selfScene = SceneExtensions.GetLoadedSceneEnumerable()
-                                .First(_s => _s.GetRootGameObjects().Any(_o => _o == _currentRoot.gameObject));
-                            labelObjs = selfScene.GetGameObjectEnumerable()
-                                .Select(_o => _o.GetComponent<LabelObject>())
-                                .Where(_l => _l != null);
-                        }
-                        else
-                        {
-                            labelObjs = CheckPrefab.GetComponentsInChildren<LabelObject>();
-                        }
-
-                        foreach (var label in labelObjs)
+                        foreach (var label in LabelObjects)
                         {
                             using (var h = new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
                             {
-                                EditorGUILayout.ObjectField(label, label.GetType(), true);
+                                EditorGUILayout.ObjectField(label, label.GetType(), true, GUILayout.MaxWidth(150));
 
-                                var txt = label.Labels.Concat(label.InitialLabels).Aggregate("", (_s, _c) => _s + _c + " ");
+                                var txt = label.Labels.Concat(label.ConstLabels).Aggregate("", (_s, _c) => _s + _c + " ");
                                 EditorGUILayout.LabelField($"{txt}");
 
-                                var matchFilter = labelFilters.FirstOrDefault(_f => _f.DoMatch(label, out var _));
-                                //EditorGUILayout.Toggle("DoMatchFilter?", matchFilter != null);
+                                var matchingMethods = _currentRoot.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                                    .Select(_m => (methodInfo: _m, labels: _m.GetCustomAttributes<BindCallbackAttribute>()))
+                                    .Where(_t => _t.labels.Any())
+                                    .Where(_t => _t.labels.Any(_l =>
+                                        _l.DoMatch(Labels.MatchOp.Included, label.AllLabels)
+                                        && _l.EnableBind(_t.methodInfo, label.gameObject)
+                                    ));
 
-                                var controllerMethods = _currentRoot.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                    .Select(_m => (method: _m, label: _m.GetCustomAttribute<MethodLabelAttribute>()))
-                                    .Where(_t => _t.label != null)
-                                    .Where(_t => matchFilter.MethodLabels.Count == _t.label.Labels.Count
-                                        && matchFilter.MethodLabels.All(_l => _t.label.Contains(_l)));
+                                //EditorGUILayout.LabelField($"Bind Methods({matchFilter.ComponentType?.Name ?? "<none>"})");
+                                EditorGUILayout.Popup(new GUIContent("Bind Methods")
+                                    , 0
+                                    , matchingMethods
+                                        .Select(_t => _currentRoot.GetType().Name + "#" + _t.methodInfo.ToString())
+                                        .ToArray());
 
-                                EditorGUILayout.Popup(new GUIContent("Bind Methods"), 0, controllerMethods.Select(_t => _currentRoot.GetType().Name + "#" +  _t.method.Name).ToArray());
+                                //var matchFilter = labelFilters.FirstOrDefault(_f => _f.DoMatch(label, out var _));
+                                ////EditorGUILayout.Toggle("DoMatchFilter?", matchFilter != null);
+
+                                //if(matchFilter != null)
+                                //{
+                                //    var controllerMethods = _currentRoot.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                //        .Select(_m => (method: _m, label: _m.GetCustomAttribute<MethodLabelAttribute>()))
+                                //        .Where(_t => _t.label != null)
+                                //        .Where(_t => matchFilter.MethodLabels.Count == _t.label.Labels.Count
+                                //            && matchFilter.MethodLabels.All(_l => _t.label.Contains(_l)));
+
+                                //    EditorGUILayout.LabelField($"Bind Methods({matchFilter.ComponentType?.Name ?? "<none>"})");
+                                //    EditorGUILayout.Popup(0, controllerMethods.Select(_t => _currentRoot.GetType().Name + "#" +  _t.method.Name).ToArray());
+                                //}
                             }
                         }
                     }
@@ -131,6 +164,80 @@ namespace Hinode.Editors
 
                 EditorGUILayout.Space();
 
+                DrawBindCallbacks();
+
+                //FoldoutControllerLabelFilters = EditorGUILayout.Foldout(FoldoutControllerLabelFilters, "Controller Label Filters");
+                //if (FoldoutControllerLabelFilters)
+                //{
+                //    using (var indent = new EditorGUI.IndentLevelScope())
+                //    {
+                //        foreach(var filter in labelFilters)
+                //        {
+                //            EditorGUILayout.LabelField($"'{filter.Description}'");
+                //            using (var indent2 = new EditorGUI.IndentLevelScope())
+                //            {
+                //                using (var h = new EditorGUILayout.HorizontalScope())
+                //                {
+                //                    using (var v = new EditorGUILayout.VerticalScope())
+                //                    {
+                //                        var txt = filter.ComponentType?.Name ?? "<empty type>";
+                //                        EditorGUILayout.LabelField("Component=>" + txt, GUILayout.MaxWidth(150), GUILayout.ExpandWidth(false));
+                //                        using (var i = new EditorGUI.IndentLevelScope())
+                //                        {
+                //                            foreach (var l in GetLabelObjectsEnumerable(CheckPrefab)
+                //                                .Where(_l => filter.DoMatch(_l, out var _)))
+                //                            {
+                //                                EditorGUILayout.ObjectField(l, typeof(LabelObject), true, GUILayout.MaxWidth(125));
+                //                            }
+                //                        }
+                //                    }
+
+                //                    float itemHeight = 15;
+                //                    using (var v = new EditorGUILayout.VerticalScope())
+                //                    {
+                //                        EditorGUILayout.LabelField("Labels");
+                //                        using (var i = new EditorGUI.IndentLevelScope())
+                //                        {
+                //                            foreach (var l in filter.Labels)
+                //                            {
+                //                                EditorGUILayout.LabelField("+ " + l, GUILayout.Height(itemHeight));
+                //                            }
+                //                        }
+                //                    }
+                //                    using (var v = new EditorGUILayout.VerticalScope())
+                //                    {
+                //                        EditorGUILayout.LabelField("MethodLabels");
+                //                        using (var i = new EditorGUI.IndentLevelScope())
+                //                        {
+                //                            foreach (var l in filter.MethodLabels)
+                //                            {
+                //                                EditorGUILayout.LabelField("+ " + l, GUILayout.Height(itemHeight));
+                //                            }
+                //                        }
+                //                    }
+
+                //                    using (var v = new EditorGUILayout.VerticalScope())
+                //                    {
+                //                        EditorGUILayout.LabelField("May Bind Methods");
+                //                        using (var i = new EditorGUI.IndentLevelScope())
+                //                        {
+                //                            var controllerMethods = _currentRoot.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                //                                .Select(_m => (method: _m, label: _m.GetCustomAttribute<MethodLabelAttribute>()))
+                //                                .Where(_t => _t.label != null)
+                //                                .Where(_t => filter.MethodLabels.Count == _t.label.Labels.Count
+                //                                    && filter.MethodLabels.All(_l => _t.label.Contains(_l)));
+
+                //                            EditorGUILayout.Popup(0, controllerMethods
+                //                                .Select(_t => _currentRoot.GetType().Name + "#" + _t.method.Name).ToArray());
+                //                        }
+                //                    }
+                //                }
+                //            }
+                //        }
+                //    }
+                //}
+
+                EditorGUILayout.Space();
                 FoldOutSubComponents = EditorGUILayout.Foldout(FoldOutSubComponents, "SubComponents");
                 if (FoldOutSubComponents)
                 {
@@ -146,6 +253,97 @@ namespace Hinode.Editors
             }
         }
 
+        static readonly GUIContent LABEL_BIND_CALLBACKS = new GUIContent("BindCallbacks");
+        void DrawBindCallbacks()
+        {
+            FoldoutBindCallbacks = EditorGUILayout.Foldout(FoldoutBindCallbacks, LABEL_BIND_CALLBACKS);
+            if (!FoldoutBindCallbacks) return;
+
+            var rootType = _currentRoot.GetType();
+            using (var rootIndent = new EditorGUI.IndentLevelScope())
+            {
+                foreach(var (methodInfo, attrs) in BindCallbackAttribute.GetMethodInfoAndAttrEnumerable(rootType))
+                {
+                    EditorGUILayout.LabelField(methodInfo.ToString());
+                    //Show BindCallbacksAttr
+                    using (var indent = new EditorGUI.IndentLevelScope())
+                    {
+                        //Draw Memo
+                        foreach (var memo in methodInfo.GetCustomAttributes<MemoAttribute>()
+                            .Where(_a => _a.GetType().Equals(typeof(MemoAttribute)))
+                            )
+                        {
+                            EditorGUILayout.TextField("memo", memo.Memo);
+                        }
+
+                        foreach (var attr in attrs)
+                        {
+                            using (var H = new EditorGUILayout.HorizontalScope())
+                            {
+                                //Draw May Bind Targets
+                                using (var V = new EditorGUILayout.VerticalScope())
+                                {
+                                    EditorGUILayout.LabelField("May Bind Targets");
+                                    using (var ___ = new EditorGUI.IndentLevelScope())
+                                    {
+                                        foreach (var obj in LabelObjects
+                                            .Where(_l => attr.LabelHashSet.DoMatch(Labels.MatchOp.Included, _l.AllLabels))
+                                            .Where(_o => attr.EnableBind(methodInfo, _o.gameObject))
+                                        )
+                                        {
+                                            EditorGUILayout.ObjectField(obj, attr.CallbackBaseType, true);
+                                        }
+                                    }
+                                }
+                                //Draw Labels
+                                using (var V = new EditorGUILayout.VerticalScope())
+                                {
+                                    EditorGUILayout.LabelField("Labels");
+                                    using (var ___ = new EditorGUI.IndentLevelScope())
+                                    {
+                                        foreach (var l in attr.LabelHashSet)
+                                        {
+                                            EditorGUILayout.LabelField("+" + l);
+                                        }
+                                    }
+                                }
+                                //Draw Kind
+                                using (var V = new EditorGUILayout.VerticalScope())
+                                {
+                                    EditorGUILayout.EnumPopup("Kind", attr.CurrentKind);
+
+                                    using (var ___ = new EditorGUI.IndentLevelScope())
+                                    {
+                                        using (var ____ = new EditorGUILayout.HorizontalScope())
+                                        {
+                                            EditorGUILayout.Toggle(attr.IsValid, GUILayout.MaxWidth(50));
+                                            switch (attr.CurrentKind)
+                                            {
+                                                case BindCallbackAttribute.Kind.TypeAndCallback:
+                                                    EditorGUILayout.LabelField(attr.CallbackBaseType.ToString());
+                                                    EditorGUILayout.LabelField(attr.CallbackName);
+                                                    break;
+                                                case BindCallbackAttribute.Kind.Binder:
+                                                    EditorGUILayout.LabelField(attr.Binder.GetType().ToString());
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            //Draw Memo
+                            using (var ____ = new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.TextField("memo", attr.Memo);
+                            }
+
+                        }// foreach(attr)
+                    }
+                }
+            }
+        }
+
         void DrawSubComponent(System.Type subComType, string fieldName)
         {
             EditorGUILayout.LabelField($"{subComType.Name} : {fieldName}");
@@ -154,7 +352,8 @@ namespace Hinode.Editors
                 EditorGUILayout.LabelField("MethodLabels");
                 using (var methodLabelIndent = new EditorGUI.IndentLevelScope())
                 {
-                    var methodsWithLabel = GetMethodLabelEnumerable(subComType)
+                    var methodsWithLabel = GetMethodLabelsEnumerable(subComType)
+                        .SelectMany(_t => _t.labels.Select(_l => (methodInfo: _t.methodInfo, label: _l)))
                         .Where(_t => MatchLabelFilter(_t.label));
                     foreach (var (method, label) in methodsWithLabel)
                     {
@@ -166,11 +365,31 @@ namespace Hinode.Editors
             }
         }
 
-        static IEnumerable<(MethodInfo methodInfo, MethodLabelAttribute label)> GetMethodLabelEnumerable(System.Type type)
+        IEnumerable<LabelObject> GetLabelObjectsEnumerable(GameObject CheckPrefab)
+        {
+            if (CheckPrefab == null)
+            {
+                var selfScene = SceneExtensions.GetSceneEnumerable()
+                    .First(_s => _s.GetRootGameObjects().Any(_o => _o == _currentRoot.gameObject));
+                return selfScene.GetGameObjectEnumerable()
+                    .Select(_o => _o.GetComponent<LabelObject>())
+                    .Where(_l => _l != null);
+            }
+            else
+            {
+                return CheckPrefab.GetComponentsInChildren<LabelObject>();
+            }
+        }
+
+        static IEnumerable<(MethodInfo methodInfo, IEnumerable<LabelsAttribute> labels)> GetMethodLabelsEnumerable(System.Type type)
         {
             return type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Select(_m => (method: _m, label: _m.GetCustomAttribute<MethodLabelAttribute>()))
-                .Where(_t => _t.label != null);
+                .Select(_m => (
+                    method: _m,
+                    labels: _m.GetCustomAttributes<LabelsAttribute>()
+                        .Where(_a => _a.GetType().Equals(typeof(LabelsAttribute)))
+                    )
+                );
         }
 
         static IEnumerable<(System.Type type, string fieldName)> GetSubComponentsInRoot(System.Type rootType)
@@ -212,6 +431,15 @@ namespace Hinode.Editors
         {
             (Scene scene, MonoBehaviour com)[] _optionList;
 
+            public RootPopup()
+            {}
+
+            public RootPopup(RootPopup other)
+            {
+                SelectedIndex = other?.SelectedIndex ?? 0;
+                SelectedIndex = Mathf.Clamp(SelectedIndex, 0, OptionList.Length-1);
+            }
+
             public MonoBehaviour SelectedMonoBehaviour
             {
                 get => SelectedIndex == 0
@@ -227,7 +455,7 @@ namespace Hinode.Editors
                     {
                         _optionList = new (Scene, MonoBehaviour)[] { (default, null) }
                             .Concat(
-                                SceneExtensions.GetLoadedSceneEnumerable()
+                                SceneExtensions.GetSceneEnumerable()
                                 .SelectMany(_s => _s.GetGameObjectEnumerable()
                                     .SelectMany(_g => _g.GetComponents<MonoBehaviour>())
                                     .Where(_c => _c.GetType().EqualGenericTypeDefinition(typeof(MonoBehaviourWithSubComponents<>)))
@@ -268,8 +496,8 @@ namespace Hinode.Editors
                 return new string[] { "(none)" }
                     .Concat(
                         GetSubComponentsInRoot(RootType)
-                        .SelectMany(_t => GetMethodLabelEnumerable(_t.type)
-                            .SelectMany(_tt => _tt.label.Labels)
+                        .SelectMany(_t => GetMethodLabelsEnumerable(_t.type)
+                            .SelectMany(_tt => _tt.labels.SelectMany(_l => _l.Labels))
                         )
                     )
                     .ToArray();
@@ -281,20 +509,34 @@ namespace Hinode.Editors
 ここでは選択したMonoBehaviourWithSubComponent<T>が持つSubComponentを確認することができます。
 確認できる項目は以下のものになります。
 - 関連するLabelObjects:
-    選択中のMonoBehaviourWithSubComponent<T>が所属するSceneにあるLabelObject Componentを確認できます。
-    or Check Prefab Root　を指定した時はそのPrefabにあるLabelObject Componentが確認できます。
+- Controller Label Filters
+- SubComponents
 
-    確認できる項目は以下のものです。
-    - Initial Labels
-    - バインドされる可能性がある選択中のMonoBehaviourWithSubComponent<T>のメソッド
+## 関連するLabelObjects:
+  選択中のMonoBehaviourWithSubComponent<T>が所属するSceneにあるLabelObject Componentを確認できます。
+  or Check Prefab Root　を指定した時はそのPrefabにあるLabelObject Componentが確認できます。
 
-    メソッドのバインドの自動化は実装されていないため、Script上から設定してください。
-    その際は、MonoBehaviourWithSubComponent<T>#CreateControllerLabelFilters()とControllerLabelFilter classを利用してください。
+  確認できる項目は以下のものです。
+  - Initial Labels
+  - バインドされる可能性がある選択中のMonoBehaviourWithSubComponent<T>のメソッド
 
-- MethodLabel: SubComponentのメンバ関数に指定されているMethodLabelAttributeの一覧を確認できます。
+  メソッドのバインドの自動化は実装されていないため、Script上から設定してください。
+  その際は、MonoBehaviourWithSubComponent<T>#CreateControllerLabelFilters()とControllerLabelFilter classを利用してください。
 
-## Reflesh Windowボタン
-このWindowはScene上のObjectが変更された際に自動的に更新されませんので、その際はReflesh Windowボタンを押してください。
+## Controller Label Filters
+  選択中のMonoBehaviourWithSubComponent<T>に設定されているControllerLabelFilterを確認できます。
+  
+  以下の情報を確認できます。
+  - LabelObjectを持つGameObject中で使用するComponent + このフィルターと一致するシーン/Prefabの中に存在するLabelObject
+  - Label
+  - MethodLabel
+  - 選択中のMonoBehaviourWithSubComponent<T>のメンバ関数の内、このフィルターと一致する関数の一覧
+
+## SubComponents
+  選択中のMonoBehaviourWithSubComponent<T>にあるSubComponentの情報を表示します。
+  以下情報を確認できます。
+  - メンバ関数に指定されているMethodLabelAttributeの一覧。
+
 ";
     }
 }

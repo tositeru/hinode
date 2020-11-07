@@ -34,7 +34,18 @@ namespace Hinode
 
             public IEnumerator<GameObject> GetEnumerator()
             {
-                foreach(var root in _target.GetRootGameObjects())
+                GameObject[] roots;
+                try
+                {
+                    roots = _target.GetRootGameObjects();
+                }
+                catch(System.Exception e)
+                {
+                    Logger.LogWarning(Logger.Priority.High, () => $"Fail to GetRootGameObjects()... {_target.name} {System.Environment.NewLine}{System.Environment.NewLine}{e}");
+                    yield break;
+                }
+
+                foreach(var root in roots)
                 {
                     foreach(var obj in root.transform.GetHierarchyEnumerable())
                     {
@@ -49,21 +60,22 @@ namespace Hinode
             }
         }
 
-        public static IEnumerable<Scene> GetLoadedSceneEnumerable()
+        public static IEnumerable<Scene> GetSceneEnumerable()
         {
-            return new LoadedSceneEnumerable();
+            return new SceneEnumerable();
         }
 
-        class LoadedSceneEnumerable : IEnumerable<Scene>, IEnumerable
+        class SceneEnumerable : IEnumerable<Scene>, IEnumerable
         {
-            public LoadedSceneEnumerable()
+            public SceneEnumerable()
             { }
 
             public IEnumerator<Scene> GetEnumerator()
             {
                 for(var i=0; i<SceneManager.sceneCount; ++i)
                 {
-                    yield return SceneManager.GetSceneAt(i);
+                    var scene = SceneManager.GetSceneAt(i);
+                    yield return scene;
                 }
             }
 

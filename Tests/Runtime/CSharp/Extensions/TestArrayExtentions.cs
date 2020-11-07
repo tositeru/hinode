@@ -37,10 +37,13 @@ namespace Hinode.Tests.CSharp.Extensions
 
     public class TestArray2DExtensions
     {
+        const int ORDER_AS_ENUMERABLE = 0;
+        const int ORDER_COPY = ORDER_AS_ENUMERABLE + 100;
+
         /// <summary>
         /// <seealso cref="Array2DExtensions.AsEnumerable{T}(T[,])"/>
         /// </summary>
-        [Test]
+        [Test, Order(ORDER_AS_ENUMERABLE)]
         public void AsEnumerable_Pass()
         {
             int[,] list = new int[,] {
@@ -58,7 +61,7 @@ namespace Hinode.Tests.CSharp.Extensions
         /// <summary>
         /// <seealso cref="Array2DExtensions.AsEnumerableWithIndex{T}(T[,]){T}(T[,])"/>
         /// </summary>
-        [Test]
+        [Test, Order(ORDER_AS_ENUMERABLE)]
         public void AsEnumerableWithIndex_Pass()
         {
             int[,] list = new int[,] {
@@ -75,7 +78,26 @@ namespace Hinode.Tests.CSharp.Extensions
                 , list.AsEnumerableWithIndex()
                 , ""
             );
+        }
 
+        /// <summary>
+        /// <seealso cref="Array2DExtensions.Copy{T}(T[,])"/>
+        /// </summary>
+        [Test, Order(ORDER_COPY)]
+        public void Copy_Passes()
+        {
+            int[,] list = new int[,] {
+                { 0, 1, 2, },
+                { 3, 4, 5, },
+            };
+
+            var copy = list.Copy();
+
+            AssertionUtils.AssertEnumerable(
+                list.AsEnumerableWithIndex()
+                , copy.AsEnumerableWithIndex()
+                , ""
+            );
         }
     }
 }

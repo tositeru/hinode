@@ -106,7 +106,7 @@ namespace Hinode.Tests
                 .Where(_c => _c.renderMode == RenderMode.ScreenSpaceOverlay))
             {
                 var label = canvas.gameObject.AddComponent<LabelObject>();
-                label.Add(FOR_SCREENSHOT_LABEL);
+                label.Labels.Add(FOR_SCREENSHOT_LABEL);
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
                 canvas.worldCamera = camera;
             }

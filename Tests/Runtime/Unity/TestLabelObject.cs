@@ -11,6 +11,10 @@ namespace Hinode.Tests.Unity
 	/// </summary>
     public class TestLabelObject : TestBase
     {
+        const int ORDER_BASIC_USAGE = 0;
+        const int ORDER_DO_MATCH = ORDER_BASIC_USAGE + 100;
+        const int ORDER_GET_LABEL_OBJECT = 0;
+
         /// <summary>
 		/// <seealso cref="LabelObject.Add(string)"/>
 		/// <seealso cref="LabelObject.Contains(string[])"/>
@@ -18,99 +22,101 @@ namespace Hinode.Tests.Unity
 		/// <seealso cref="LabelObject.Count"/>
 		/// </summary>
 		/// <returns></returns>
-        [UnityTest]
-        public IEnumerator BasicUsagePasses()
+        [UnityTest, Order(ORDER_BASIC_USAGE), Description("")]
+        public IEnumerator BasicUsage_Passes()
         {
             var gameObject = new GameObject("obj");
             var label = gameObject.AddComponent<LabelObject>();
 
             var word = "word";
-            label.Add(word);
+            label.Labels.Add(word);
             Assert.IsTrue(label.Contains(word));
             Assert.AreEqual(1, label.Count);
 
-            label.Remove(word);
+            label.Labels.Remove(word);
             Assert.IsFalse(label.Contains(word));
             Assert.AreEqual(0, label.Count);
             yield return null;
         }
 
+        #region DoMatch
         /// <summary>
-        /// <seealso cref="LabelObject.AddRange(string)"/>
-        /// <seealso cref="LabelObject.Contains(string[])"/>
-        /// <seealso cref="LabelObject.RemoveRange(string)"/>
-		/// <seealso cref="LabelObject.Count"/>
-		/// <seealso cref="LabelObject.Clear()"/>
+        /// <seealso cref="LabelObject.DoMatch{T}(out T, string[])"/>
+        /// <seealso cref="LabelObject.DoMatch(out Component, System.Type, string[])"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
-        public IEnumerator AddAndRemoveRangePasses()
+        [UnityTest(), Order(ORDER_DO_MATCH), Description("")]
+        public IEnumerator DoMatch_Passes()
         {
             var gameObject = new GameObject("obj");
             var label = gameObject.AddComponent<LabelObject>();
+            label.Labels.AddRange("Apple", "Orange");
+            var com = label.gameObject.AddComponent<BoxCollider>();
 
-            var words = new string[] { "Apple", "Orange", "Grape" };
-            label.AddRange(words);
-            Assert.IsTrue(label.Contains(words));
-            Assert.AreEqual(words.Length, label.Count);
-
-            label.Remove("Apple");
-            Assert.IsFalse(label.Contains(words));
-            Assert.IsTrue(label.Contains("Orange", "Grape"));
-            Assert.AreEqual(2, label.Count);
-
-            AssertionUtils.AssertEnumerableByUnordered(
-                new string[] { "Orange", "Grape" }
-                , label
-                , ""
-            );
-
-            label.Clear();
-            AssertionUtils.AssertEnumerableByUnordered(
-                new string[] { }
-                , label
-                , ""
-            );
-            yield return null;
-        }
-
-        /// <summary>
-		/// <seealso cref="LabelObject.Add"/>
-		/// </summary>
-		/// <returns></returns>
-        [UnityTest]
-        public IEnumerator ValidLabelPasses()
-        {
-            var gameObject = new GameObject("obj");
-            var label = gameObject.AddComponent<LabelObject>();
-
-            Assert.DoesNotThrow(() => {
-                label.Add("apple");
-                label.Add("1234");
-                label.Add("APPLE");
-                label.Add("____");
-                label.Add("_Ap1");
-                label.Add("1a_E3");
-            });
-            Debug.Log($"Success to Valid Label!");
-
-            foreach (var l in new string[] {
-                "!",
-                "?",
-                ".",
-                "@a0kf",
-                "|",
-                "(",
-                ")",
-                "$",
-            })
             {
-                Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
-                    label.Add(l);
-                });
+                Assert.IsTrue(label.DoMatch(out var getCom, typeof(BoxCollider), "Apple", "Orange"));
+                Assert.AreSame(com, getCom);
             }
-            Debug.Log($"Success to Invalid Label!");
-            yield return null;
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(Match ComponentType and Labels)!");
+
+            {
+                Assert.IsTrue(label.DoMatch(out var getCom, typeof(BoxCollider), "Apple"));
+                Assert.AreSame(com, getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(Match ComponentType and Labels 2)!");
+
+            {
+                Assert.IsFalse(label.DoMatch(out var getCom, typeof(BoxCollider), "Hoge"));
+                Assert.AreSame(com, getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(Match ComponentType and not Match Labels)!");
+
+            {
+                Assert.IsFalse(label.DoMatch(out var getCom, typeof(MeshFilter), "Apple"));
+                Assert.IsNull(getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(not Match ComponentType and Match Labels)!");
+
+            {
+                Assert.IsFalse(label.DoMatch(out var getCom, typeof(MeshFilter), "Hoge"));
+                Assert.IsNull(getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(not Match ComponentType and Labels)!");
+
+            {
+                var labels = new string[] { "Apple", "Orange" };
+                Assert.AreEqual(label.Contains(labels), label.DoMatch(out var getCom, null, labels));
+                Assert.IsNull(getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(Not ComponentType and Match Labels)!");
+
+            {
+                var labels = new string[] { "Apple", "hoge" };
+                Assert.AreEqual(label.Contains(labels), label.DoMatch(out var getCom, null, labels));
+                Assert.IsNull(getCom);
+            }
+            Logger.Log(Logger.Priority.High, () => "Success to DoMatch(Not ComponentType and not Match Labels)!");
+
+            yield break;
         }
+        #endregion
+
+        #region GetLabelObject
+        [UnityTest, Order(ORDER_GET_LABEL_OBJECT), Description("")]
+        public IEnumerator GetLabelObject_Passes()
+        {
+            var gameObject = new GameObject("obj");
+            var label = gameObject.AddComponent<LabelObject>();
+
+            Assert.AreSame(label, LabelObject.GetLabelObject(gameObject));
+            Assert.AreSame(label, LabelObject.GetLabelObject(gameObject.transform));
+            Assert.AreSame(label, LabelObject.GetLabelObject(label));
+
+
+            Assert.IsNull(LabelObject.GetLabelObject(100));
+            Assert.IsNull(LabelObject.GetLabelObject(""));
+            yield break;
+        }
+        #endregion
     }
 }

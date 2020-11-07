@@ -66,6 +66,16 @@ namespace Hinode
 
     public static class Array2DExtensions
     {
+        public static T[,] Copy<T>(this T[,] _array)
+        {
+            var copy = new T[_array.GetLength(0), _array.GetLength(1)];
+            foreach (var (v, x, y) in _array.AsEnumerableWithIndex())
+            {
+                copy[y, x] = v;
+            }
+            return copy;
+        }
+
         public static IEnumerable<T> AsEnumerable<T>(this T[,] _array)
         {
             return new Array2DEnumerable<T>(_array);

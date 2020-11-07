@@ -102,7 +102,7 @@ namespace Hinode.Tests.CSharp.Serialization
             });
         }
 
-        [ContainsSerializationKeyTypeGetter(typeof(TestClass))]
+        [ContainsSerializationKeyTypeGetter(typeof(ContainsMultipleSerializationKeyTypeTestClass))]
         class ContainsMultipleSerializationKeyTypeTestClass
         {
             [SerializationKeyTypeGetter]
@@ -117,8 +117,8 @@ namespace Hinode.Tests.CSharp.Serialization
         {
             Assert.Throws<UnityEngine.Assertions.AssertionException>(() => {
                 var attr = typeof(ContainsMultipleSerializationKeyTypeTestClass).GetCustomAttributes(true)
-                .OfType<ContainsSerializationKeyTypeGetterAttribute>()
-                .First();
+                    .OfType<ContainsSerializationKeyTypeGetterAttribute>()
+                    .First();
 
                 var keyTypeGetter = attr.CreateKeyTypeGetter(typeof(TestSubClass));
             });

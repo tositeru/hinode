@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -25,43 +26,28 @@ namespace Hinode
         protected SubComponentManager<T> SubComponents { get => _subComponents; }
         public T RootComponent { get; set; }
 
-        ControllerLabelFilter[] _controllerLabelFilters;
-
-        /// <summary>
-        /// インスタンスが所属しているSceneまたはPrefabに存在するGameObjectにアタッチされているLabelObjectに対してのフィルター
-        /// 
-        /// </summary>
-        public ControllerLabelFilter[] ControllerLabelFilters
-        {
-            get => (_controllerLabelFilters != null) ? _controllerLabelFilters : _controllerLabelFilters = CreateControllerLabelFilters();
-        }
-
-        protected virtual ControllerLabelFilter[] CreateControllerLabelFilters() { return new ControllerLabelFilter[] { }; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public bool CallControllerLabelFilterCallback(object obj)
+        public void BindCallbacks(object obj)
         {
             var labelObj = LabelObject.GetLabelObject(obj);
-            if (labelObj != null)
-            {
-                var (filter, com, doMatch) = ControllerLabelFilters.Select(_f => {
-                    var _doMatch = _f.DoMatch(labelObj, out var _com);
-                    return (filter: _f, com: _com, doMatch: _doMatch);
-                })
-                    .FirstOrDefault(_t => _t.doMatch);
-                if (doMatch)
-                {
-                    filter.Callback(labelObj, com);
-                    return true;
-                }
-            }
-            return false;
-        }
+            if (labelObj == null) return;
 
+            var matchingMethods = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Select(_m => {
+                    var attrs = _m.GetCustomAttributes<BindCallbackAttribute>();
+                    var useAttr = attrs?.FirstOrDefault(_a => _a.DoMatch(Labels.MatchOp.Included, labelObj.AllLabels))
+                        ?? null;
+                    return (methodInfo: _m, attr: useAttr);
+                })
+                .Where(_t => _t.attr != null);
+
+            foreach (var (info, attr) in matchingMethods)
+            {
+                var com = labelObj.gameObject.GetComponent(attr.CallbackBaseType);
+                if (com == null) continue;
+
+                attr.Bind(this, info, com);
+            }
+        }
 
         protected virtual void Awake()
         {
@@ -82,48 +68,17 @@ namespace Hinode
         }
 
         #region ISubComponent
-        public virtual void Init() {}
-        public virtual void Destroy() {}
-        public virtual void UpdateUI() {}
-        #endregion
-    }
-
-    /// <summary>
-    /// MVCのContrrolerに関係するメソッドとLabelObjectを関連づけるためのクラス
-    /// </summary>
-    public class ControllerLabelFilter : LabelObject.LabelFilter
-    {
-        public HashSet<string> MethodLabels { get; set; } = new HashSet<string>();
-        public System.Action<LabelObject, Component> Callback { get; set; }
-
-        public ControllerLabelFilter(System.Type componentType, params string[] labels)
-            : base(componentType, labels)
-        { }
-
-        public ControllerLabelFilter SetMethodLabels(params string[] methodLabels)
+        public virtual void Init()
         {
-            foreach (var l in methodLabels.Where(_l => !MethodLabels.Contains(_l)))
+            var selfScene = SceneExtensions.GetSceneEnumerable()
+                .First(_s => _s.GetRootGameObjects().Any(_o => _o == gameObject));
+            foreach (var obj in selfScene.GetGameObjectEnumerable())
             {
-                MethodLabels.Add(l);
+                BindCallbacks(obj);
             }
-            return this;
         }
-
-        public ControllerLabelFilter SetCallback(System.Action<LabelObject, Component> action)
-        {
-            Callback = action;
-            return this;
-        }
-
-        public static new ControllerLabelFilter Create(System.Type comType, params string[] labels)
-        {
-            return new ControllerLabelFilter(comType, labels);
-        }
-
-        public static new ControllerLabelFilter Create<TCom>(params string[] labels)
-            where TCom : Component
-        {
-            return new ControllerLabelFilter(typeof(TCom), labels);
-        }
+        public virtual void Destroy() { }
+        public virtual void UpdateUI() { }
+        #endregion
     }
 }

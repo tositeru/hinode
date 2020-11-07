@@ -85,7 +85,17 @@ namespace Hinode
         /// var returnType = typeof(int);
         /// var isStatic = false;
         /// var label = "Label";
-        /// var methods = manager.SubComponents.Select(_com => MethodLabelAttribute.CallMethods(returnType, _com, label, isStatic, 100, 200));
+        /// var methods = manager.SubComponents.SelectMany(_s =>
+        ///     _s.GetType().GetMethods(BindingFlags.Public | bindingFlags)
+        ///         .Where(_m => {
+        ///             var attr = _m.GetCustomAttributes<LabelsAttribute>()
+        ///                 .FirstOrDefault(_a => _a.GetType().Equals(typeof(LabelsAttribute)));
+        ///             if (attr == null) return false;
+        ///             // Filtering With 'label'
+        ///             return attr.DoMatch(Labels.MatchOp.Partial, label);
+        ///         })
+        ///         // below pass to Arguments And ReturnType!
+        ///         .CallMethods(isStatic? null : _s, typeof(void), 100, 200));
         /// foreach(var returnValue in methods)
         /// {
         ///     //recive returnValue from Methods
@@ -97,10 +107,17 @@ namespace Hinode
         /// <param name="methodLabel"></param>
         public void CallSubComponentMethods(string methodLabel, bool isStatic = false)
         {
-            foreach(var methods in _subComponents.Select(_com => MethodLabelAttribute.CallMethods(typeof(object), _com, methodLabel, isStatic)))
-            {
-                methods.CallAll();
-            }
+            var bindingFlags = isStatic ? BindingFlags.Static : BindingFlags.Instance;
+            var callMethods = _subComponents.SelectMany(_s =>
+                    _s.GetType().GetMethods(BindingFlags.Public | bindingFlags)
+                        .Where(_m => {
+                            var attr = _m.GetCustomAttributes<LabelsAttribute>().FirstOrDefault(_a => _a.GetType().Equals(typeof(LabelsAttribute)));
+                            if (attr == null) return false;
+                            return attr.DoMatch(Labels.MatchOp.Partial, methodLabel);
+                        })
+                        .CallMethods(isStatic ? null : _s, typeof(void))); 
+
+            foreach(var returnValue in callMethods) { }
         }
     }
 }
