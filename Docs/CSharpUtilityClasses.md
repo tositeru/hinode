@@ -338,3 +338,78 @@ Hinodeでは以下の数学ライブラリを用意しています。
 
 - フーリエ変換
 - IndexCombinationEnumerable: 指定した長さの配列に対する添字の全ての組み合わせを列挙するEnumerable
+
+### Array2D
+
+Hinodeでは多次元配列の便利クラスを提供しています。
+
+- Array2D<T>
+
+
+UnityのSerializeにはUnityの仕様上、Templateを含む型はシリアライズの対象にならないため対応していませんが、
+拡張Editorに対応した`Hinode.Editors.Array2DEditor`を提供おり、以下の機能を提供しています。
+
+こちらのクラスを使用することでInspector上などにArray2Dを表示することができますので利用してください。
+
+- 配列内の部分的な表示 (CountPerPage/PageOffset)
+    利便性または処理負荷などから画面に表示する際、表示対象のデータの範囲を指定することが可能です。
+- 2段回に分けたサイズ変更 (EditingSize)
+- 配列のサイズ変更時に元々あったデータをシフトさせる機能 (EditingShiftOffset/PrevShiftOffset)
+    配列サイズを変更する際は変更するサイズを指定したからボタンを押す必要があります。
+    その際に元のデータを指定したオフセット分ズラすことも可能です。
+
+```csharp
+using Hinode.Editors;
+using UnityEditor;
+
+class Hoge : Editor
+{
+    Array2D<int> _array2D = new Array2D<int>();
+    Array2DEditor<int> Array2DEditor;
+
+    void OnEnable()
+    {
+        Array2DEditor = new Array2DEditor<int>(new GUIContent("Title"));
+        Array2DEditor.OnChanged.Add(OnChangedArray2D);
+    }
+
+    void OnChangedArray2D(Array2D<int> inst, Array2DEditor<int>.ValueKind kinds)
+    {
+        //Resize Board and Update Data Page UI
+        if (0 != (kinds & Array2DEditor<int>.ValueKind.Size))
+        {
+            //Changed Array2D<int>#Size.
+        }
+
+        //Changed Draw Page(for GUI)
+        if (0 != (kinds & Array2DEditor<int>.ValueKind.PageParams))
+        {
+            //Changed Array2D<int> Data
+        }
+    }
+
+    void OnInspectorGUI()
+    {
+        Array2DEditor.Draw(_array2D);
+    }
+}
+```
+
+### Labels
+
+Hinodeではラベルを表すクラスを提供しています。
+
+このクラスと関連したクラス・AttributeをHinodeでは提供していますのでそちらと合わせて使用してください。
+
+- LabelsAttribute
+- BindCallbackAttribute
+- LabelsObject(Unity)
+
+#### Labels#DoMatch
+
+Labelsの一致判定用の関数として`Labels#DoMatch(MatchOp op, string[] labels)`を提供しています。
+
+一致判定の際は以下のOptionを指定してください。
+- MatchOp#Complete : Labelsが持つlabelと完全に一致しているかどうか?
+- MatchOp#Included : Labelsが持つlabelが全て含まれているかどうか?
+- MatchOp#Included : Labelsが持つlabelの内一つでも一致しているかどうか？

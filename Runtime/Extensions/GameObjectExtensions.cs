@@ -9,6 +9,18 @@ namespace Hinode
     /// </summary>
     public static class GameObjectExtensions
     {
+        public static T GetComponent<T>(object target)
+            where T : Component
+            => GetComponent(target, typeof(T)) as T;
+
+        public static Component GetComponent(object target, System.Type comType)
+        {
+            if (target is GameObject) return (target as GameObject).GetComponent(comType);
+            if (target is Transform) return (target as Transform).GetComponent(comType);
+            if (target is Component) return (target as Component).GetComponent(comType);
+            return null;
+        }
+
         /// <summary>
         /// <seealso cref="Hinode.Tests.Extensions.GetOrAddComponentPasses()"/>
         /// </summary>

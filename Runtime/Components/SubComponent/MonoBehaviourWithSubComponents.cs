@@ -23,7 +23,7 @@ namespace Hinode
     {
         SubComponentManager<T> _subComponents;
 
-        protected SubComponentManager<T> SubComponents { get => _subComponents; }
+        protected SubComponentManager<T> SubComponentManager { get => _subComponents; }
         public T RootComponent { get; set; }
 
         public void BindCallbacks(object obj)
@@ -31,22 +31,7 @@ namespace Hinode
             var labelObj = LabelObject.GetLabelObject(obj);
             if (labelObj == null) return;
 
-            var matchingMethods = GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Select(_m => {
-                    var attrs = _m.GetCustomAttributes<BindCallbackAttribute>();
-                    var useAttr = attrs?.FirstOrDefault(_a => _a.DoMatch(Labels.MatchOp.Included, labelObj.AllLabels))
-                        ?? null;
-                    return (methodInfo: _m, attr: useAttr);
-                })
-                .Where(_t => _t.attr != null);
-
-            foreach (var (info, attr) in matchingMethods)
-            {
-                var com = labelObj.gameObject.GetComponent(attr.CallbackBaseType);
-                if (com == null) continue;
-
-                attr.Bind(this, info, com);
-            }
+            BindCallbackAttribute.BindToGameObject(this, labelObj.gameObject, Labels.MatchOp.Included, labelObj.AllLabels);
         }
 
         protected virtual void Awake()

@@ -7,14 +7,31 @@
 - System.Array
     - GetEnumerable()
     - GetEnumerable<T>()
+- T[,]
+    - GetEnumerable()
+    - GetEnumerable<T>()
 - System.Delegate
-    - ClearInvocations()
-    - ClearInvocations<T>() where T : System.Delegate
+    - Copy()
+    - AsEnumerable<T>()
+    - AsEnumerableWithIndex()
+    - GetFieldValue(string fieldName, out object value)
+    - DoMatchFieldValues(params (string fieldName, object value)[] checkValues)
 - System.Collections.Generic.Dictionary
     - Merge<TKey, TValue>(bool isOverwrite, params IEnumerable<KeyValuePair<TKey, TValue>>[] srcDicts)
     - Merge<TKey, TValue>(bool isOverwrite, IEnumerable<IEnumerable<KeyValuePair<TKey, TValue>>> srcDicts)
+-System.Reflection.MethodInfo
+    - DoMatchReturnTypeAndArguments(System.Type returnType, params System.Type[] argTypes)
+    - DoMatchReturnTypeAndArguments(System.Type returnType, IEnumerable<System.Type> argTypes)
+    - GetMatchArgsAndReturnType(this IEnumerable<MethodInfo> methodInfos, System.Type returnType, IEnumerable<System.Type> argTypes)
+    - GetMatchArgsAndReturnType(this IEnumerable<MethodInfo> methodInfos, System.Type returnType, params System.Type[] argTypes)
+    - CallMethods(this IEnumerable<MethodInfo> methodInfos, object inst, System.Type returnType, params object[] args)
+    - CallMethods(this IEnumerable<MethodInfo> methodInfos, object inst, System.Type returnType, IEnumerable<object> args)
 - System.Runtime.Serialization.SerializationInfo
     - GetEnumerable()
+- System.Random
+    - Range(this System.Random rnd, double min, double max)
+    - Range(this System.Random rnd, int min, int max)
+    - Range(this System.Random rnd, float min, float max)
 - System.IO.TextReader
     - MoveTo(char)
     - MoveTo(char[])
@@ -50,6 +67,8 @@
 - Color
     - HSVToRGBA(float H, float S, float V, float a, bool hdr=false) <= not Extension Methods
 - GameObject
+    - GetComponent<T>(object target) where T : Component (not extension method)
+    - GetComponent(object target, System.Type comType) (not extension method)
     - GetOrAddComponent<T>() where T : Component
     - GetOrAddComponent(System.Type componentType)
     - Create(string name, Transform parent) <= not Extension Methods
@@ -66,9 +85,12 @@
     - Overlaps(Rect other)
 - Scene
     - GetGameObjectEnumerable()
+    - GetSceneEnumerable() (not extension method)
 - Transform
     - GetChildEnumerable()
     - GetHierarchyEnumerable()
     - GetParentEnumerable()
+- UnityEvent
+    - GetInvocationList()
 - Vector2
     - TryParse(string text, out Vector2 result) <= not Extension Methods

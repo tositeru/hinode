@@ -67,6 +67,15 @@ namespace Hinode.Editors
             RootLabel = label;
         }
 
+        public bool Draw(IReadOnlyArray2D<T> target, FieldInfo fieldInfo = null, GUIStyle style = null, params GUILayoutOption[] options)
+        {
+            var cache = IsReadOnly;
+            IsReadOnly = true;
+            var doChanged = Draw(target as Array2D<T>, fieldInfo, style, options);
+            IsReadOnly = cache;
+            return doChanged;
+        }
+
         public bool Draw(Array2D<T> target, FieldInfo fieldInfo = null, GUIStyle style = null, params GUILayoutOption[] options)
         {
             if(Target != target)

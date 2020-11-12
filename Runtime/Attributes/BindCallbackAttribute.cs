@@ -45,8 +45,8 @@ namespace Hinode
         public interface IBinderPredicate
         {
             bool EnableBind(MethodInfo methodInfo, object obj);
-            void AddCallbacks(object target, MethodInfo methodInfo, object obj);
-            void RemoveCallbacks(object target, MethodInfo methodInfo, object obj);
+            bool AddCallbacks(object target, MethodInfo methodInfo, object obj);
+            bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj);
         }
 
         public Kind CurrentKind { get => Binder != null ? Kind.Binder : Kind.TypeAndCallback; }
@@ -75,6 +75,8 @@ namespace Hinode
 
         public BindCallbackAttribute(System.Type type, string callbackName)
         {
+            Assert.IsNotNull(type, $"Type is not null...");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(callbackName), $"CallbackName is not null, empty or whitespace...");
             CallbackBaseType = type;
             CallbackName = callbackName;
         }
@@ -136,29 +138,29 @@ namespace Hinode
             }
         }
 
-        public void Bind(object target, MethodInfo targetMethodInfo, object obj)
+        public bool Bind(object target, MethodInfo targetMethodInfo, object obj)
         {
             switch (CurrentKind)
             {
                 case Kind.TypeAndCallback:
-                    BindWithTypeAndCallbackName(target, targetMethodInfo, obj, CallbackBaseType, CallbackName);
-                    break;
+                    return BindWithTypeAndCallbackName(target, targetMethodInfo, obj, CallbackBaseType, CallbackName);
                 case Kind.Binder:
-                    Binder.AddCallbacks(target, targetMethodInfo, obj);
-                    break;
+                    return Binder.AddCallbacks(target, targetMethodInfo, obj);
+                default:
+                    throw new System.NotImplementedException();
             }
         }
 
-        public void Unbind(object target, MethodInfo targetMethodInfo, object obj)
+        public bool Unbind(object target, MethodInfo targetMethodInfo, object obj)
         {
             switch (CurrentKind)
             {
                 case Kind.TypeAndCallback:
-                    UnbindWithTypeAndCallbackName(target, targetMethodInfo, obj, CallbackBaseType, CallbackName);
-                    break;
+                    return UnbindWithTypeAndCallbackName(target, targetMethodInfo, obj, CallbackBaseType, CallbackName);
                 case Kind.Binder:
-                    Binder.RemoveCallbacks(target, targetMethodInfo, obj);
-                    break;
+                    return Binder.RemoveCallbacks(target, targetMethodInfo, obj);
+                default:
+                    throw new System.NotImplementedException();
             }
         }
 
@@ -213,7 +215,7 @@ namespace Hinode
         /// <param name="targetMethodInfo"></param>
         /// <param name="obj"></param>
         /// <param name="callbackName"></param>
-        public static void BindWithTypeAndCallbackName<T>(object target, MethodInfo targetMethodInfo, object obj, string callbackName)
+        public static bool BindWithTypeAndCallbackName<T>(object target, MethodInfo targetMethodInfo, object obj, string callbackName)
             => BindWithTypeAndCallbackName(target, targetMethodInfo, obj, typeof(T), callbackName);
 
         /// <summary>
@@ -224,26 +226,25 @@ namespace Hinode
         /// <param name="obj"></param>
         /// <param name="type"></param>
         /// <param name="callbackName"></param>
-        public static void BindWithTypeAndCallbackName(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
+        public static bool BindWithTypeAndCallbackName(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
         {
             if (target == null || targetMethodInfo == null || obj == null || type == null || string.IsNullOrEmpty(callbackName))
             {
                 Logger.LogWarning(Logger.Priority.High, () => "Invalid Arguments...");
-                return;
+                return false;
             }
 
             var info = type.GetProperty(callbackName);
             if (info == null)
             {
-                BindToEvent(target, targetMethodInfo, obj, type, callbackName);
-                return;
+                return BindToEvent(target, targetMethodInfo, obj, type, callbackName);
             }
 
             var callback = info.GetValue(obj);
             if (callback == null)
             {
                 Logger.LogWarning(Logger.Priority.High, () => $"Fail to Get Callback Instance... type={type}, callbackName={callbackName}");
-                return;
+                return false;
             }
 
             try
@@ -281,11 +282,13 @@ namespace Hinode
                     else
                     {
                         Logger.LogWarning(Logger.Priority.High, () => $"Don't set {type.Name}{info.Name} prop...");
+                        return false;
                     }
                 }
                 else
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Don't Support CallbackType... {callbackName}:{callbackType}");
+                    return false;
                 }
             }
             catch(System.Exception e)
@@ -299,16 +302,18 @@ namespace Hinode
                     + $"-- CallbackType={type}{br}"
                     + $"-- callbackName={callbackName.GetType()}{br}"
                     + $"{br}-- {e}");
+                return false;
             }
+            return true;
         }
 
-        static void BindToEvent(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
+        static bool BindToEvent(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
         {
             var eventInfo = type.GetEvent(callbackName);
             if (eventInfo == null)
             {
                 Logger.LogWarning(Logger.Priority.High, () => $"Fail to Get Callback Instance... type={type}, callbackName={callbackName}");
-                return;
+                return false;
             }
 
             try
@@ -327,34 +332,35 @@ namespace Hinode
                     + $"-- CallbackType={type}{br}"
                     + $"-- callbackName={callbackName.GetType()}{br}"
                     + $"{br}-- {e}");
+                return false;
             }
+            return true;
         }
         #endregion
 
         #region Unbind
-        public static void UnbindWithTypeAndCallbackName<T>(object target, MethodInfo targetMethodInfo, object obj, string callbackName)
+        public static bool UnbindWithTypeAndCallbackName<T>(object target, MethodInfo targetMethodInfo, object obj, string callbackName)
             => UnbindWithTypeAndCallbackName(target, targetMethodInfo, obj, typeof(T), callbackName);
 
-        public static void UnbindWithTypeAndCallbackName(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
+        public static bool UnbindWithTypeAndCallbackName(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
         {
             if (target == null || targetMethodInfo == null || obj == null || type == null || string.IsNullOrEmpty(callbackName))
             {
                 Logger.LogWarning(Logger.Priority.High, () => "Invalid Arguments...");
-                return;
+                return false;
             }
 
             var info = type.GetProperty(callbackName);
             if (info == null)
             {
-                UnbindToEvent(target, targetMethodInfo, obj, type, callbackName);
-                return;
+                return UnbindToEvent(target, targetMethodInfo, obj, type, callbackName);
             }
 
             var callback = info.GetValue(obj);
             if (callback == null)
             {
                 Logger.LogWarning(Logger.Priority.High, () => $"Fail to Get Callback Instance... type={type}, callbackName={callbackName}");
-                return;
+                return false;
             }
 
             try
@@ -392,11 +398,13 @@ namespace Hinode
                     else
                     {
                         Logger.LogWarning(Logger.Priority.High, () => $"Don't set {type.Name}{info.Name} prop...");
+                        return false;
                     }
                 }
                 else
                 {
                     Logger.LogWarning(Logger.Priority.High, () => $"Don't Support CallbackType... {callbackName}:{callbackType}");
+                    return false;
                 }
             }
             catch (System.Exception e)
@@ -410,16 +418,18 @@ namespace Hinode
                     + $"-- CallbackType={type}{br}"
                     + $"-- callbackName={callbackName.GetType()}{br}"
                     + $"{br}-- {e}");
+                return false;
             }
+            return true;
         }
 
-        static void UnbindToEvent(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
+        static bool UnbindToEvent(object target, MethodInfo targetMethodInfo, object obj, System.Type type, string callbackName)
         {
             var eventInfo = type.GetEvent(callbackName);
             if (eventInfo == null)
             {
                 Logger.LogWarning(Logger.Priority.High, () => $"Fail to Get Callback Instance... type={type}, callbackName={callbackName}");
-                return;
+                return false;
             }
 
             try
@@ -438,7 +448,9 @@ namespace Hinode
                     + $"-- CallbackType={type}{br}"
                     + $"-- callbackName={callbackName.GetType()}{br}"
                     + $"{br}-- {e}");
+                return false;
             }
+            return true;
         }
         #endregion
 
@@ -486,11 +498,41 @@ namespace Hinode
             switch (CurrentKind)
             {
                 case Kind.Binder:
-                    return Binder.EnableBind(methodInfo, gameObject.gameObject);
+                    return Binder.EnableBind(methodInfo, gameObject);
                 case Kind.TypeAndCallback:
                     var com = gameObject.GetComponent(CallbackBaseType);
                     if (com == null) return false;
                     return EnableBind(methodInfo, com);
+                default:
+                    throw new System.NotImplementedException();
+            }
+        }
+
+        public bool Bind(object target, MethodInfo methodInfo, GameObject gameObject)
+        {
+            switch (CurrentKind)
+            {
+                case Kind.Binder:
+                    return Bind(target, methodInfo, (object)gameObject);
+                case Kind.TypeAndCallback:
+                    var com = gameObject.GetComponent(CallbackBaseType);
+                    if (com == null) return false;
+                    return Bind(target, methodInfo, com);
+                default:
+                    throw new System.NotImplementedException();
+            }
+        }
+
+        public bool Unbind(object target, MethodInfo methodInfo, GameObject gameObject)
+        {
+            switch (CurrentKind)
+            {
+                case Kind.Binder:
+                    return Unbind(target, methodInfo, (object)gameObject);
+                case Kind.TypeAndCallback:
+                    var com = gameObject.GetComponent(CallbackBaseType);
+                    if (com == null) return false;
+                    return Unbind(target, methodInfo, com);
                 default:
                     throw new System.NotImplementedException();
             }
@@ -507,9 +549,7 @@ namespace Hinode
             {
                 foreach(var attr in attrs)
                 {
-                    var com = obj.GetComponent(attr.CallbackBaseType);
-                    if (com == null) continue;
-                    attr.Bind(target, methodInfo, com);
+                    attr.Bind(target, methodInfo, obj);
                 }
             }
         }

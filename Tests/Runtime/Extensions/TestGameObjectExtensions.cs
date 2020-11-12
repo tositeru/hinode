@@ -8,16 +8,55 @@ using UnityEngine.TestTools;
 namespace Hinode.Tests.Extensions
 {
     /// <summary>
+    /// test case
+    /// ## GetComponent(object target)
+    /// ## GetOrAddComponent
+    /// ## Create
     /// <seealso cref="GameObjectExtensions"/>
     /// </summary>
     public class TestGameObjectExtensions : TestBase
     {
+        const int Order_GetComponent = 0;
+        const int Order_GetOrAddComponent = 0;
+        const int Order_Create = 0;
+
+        #region GetComponent(object target)
+        [UnityTest, Order(Order_GetComponent), Description("")]
+        public IEnumerator GetComponent_Passes()
+        {
+            var obj = new GameObject("test"
+                , typeof(BoxCollider)
+                , typeof(MeshFilter));
+
+            var boxCollider = obj.GetComponent<BoxCollider>();
+            var meshFilter = obj.GetComponent<MeshFilter>();
+
+            Assert.AreSame(boxCollider, GameObjectExtensions.GetComponent<BoxCollider>(obj));
+            Assert.AreSame(boxCollider, GameObjectExtensions.GetComponent<BoxCollider>(obj.transform));
+            Assert.AreSame(boxCollider, GameObjectExtensions.GetComponent<BoxCollider>(meshFilter));
+
+            // Not Attach Component
+            Assert.IsNull(GameObjectExtensions.GetComponent<AudioListener>(obj));
+
+            // pass invalid target
+            int n = 0;
+            string s = "";
+            Assert.IsNull(GameObjectExtensions.GetComponent<BoxCollider>(null));
+            Assert.IsNull(GameObjectExtensions.GetComponent<BoxCollider>(n));
+            Assert.IsNull(GameObjectExtensions.GetComponent<BoxCollider>(s));
+
+
+            yield break;
+        }
+        #endregion
+
+        #region GetOrAddComponent
         /// <summary>
         /// <seealso cref="GameObjectExtensions.GetOrAddComponent{T}(GameObject)"/>
         /// <seealso cref="GameObjectExtensions.GetOrAddComponent(GameObject, System.Type)"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
+        [UnityTest, Order(Order_GetOrAddComponent), Description("")]
         public IEnumerator GetOrAddComponentPasses()
         {
             yield return null;
@@ -33,12 +72,15 @@ namespace Hinode.Tests.Extensions
             Assert.AreSame(box2, box);
         }
 
+        #endregion
+
+        #region Create
         /// <summary>
         /// <seealso cref="GameObjectExtensions.Create(string, Transform)"/>
         /// <seealso cref="GameObjectExtensions.Create(CreateGameObjectParam, List{GameObject})"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
+        [UnityTest, Order(Order_Create), Description("")]
         public IEnumerator CreateGameObjectPasses()
         {
             yield return null;
@@ -100,7 +142,7 @@ namespace Hinode.Tests.Extensions
         /// <seealso cref="GameObjectExtensions.Create(CreateGameObjectParam, List{GameObject})"/>
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
+        [UnityTest, Order(Order_Create), Description("")]
         public IEnumerator CreateGameObjectCallbackPasses()
         {
             yield return null;
@@ -128,5 +170,6 @@ namespace Hinode.Tests.Extensions
 
             Assert.AreEqual(4, counter, "onCreatedが想定した回数呼び出されていません。");
         }
+        #endregion
     }
 }

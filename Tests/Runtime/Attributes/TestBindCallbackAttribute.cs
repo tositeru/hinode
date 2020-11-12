@@ -66,22 +66,24 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     if (obj is GameObject)
                     {
                         var btn = (obj as GameObject).GetComponent<Button>();
                         BindCallbackAttribute.BindWithTypeAndCallbackName<Button>(target, methodInfo, btn, "onClick");
                     }
+                    return true;
                 }
 
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     if (obj is GameObject)
                     {
                         var btn = (obj as GameObject).GetComponent<Button>();
                         BindCallbackAttribute.UnbindWithTypeAndCallbackName<Button>(target, methodInfo, btn, "onClick");
                     }
+                    return true;
                 }
             }
             [BindCallback(typeof(BinderPredicate), Labels = new string[] { LABEL2 })]
@@ -155,8 +157,8 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj){}
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj){}
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj) => true;
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj) => true;
             }
             [BindCallback(typeof(BinderPredicate))]
             public void Predicate()
@@ -244,8 +246,8 @@ namespace Hinode.Tests.Attributes
                     return methodInfo.DoMatchReturnTypeAndArguments(typeof(void));
                 }
 
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj) {}
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj) { }
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj) => true;
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj) => true;
             }
             [BindCallback(typeof(BinderPredicate))]
             public void BinderFunc() { }
@@ -406,13 +408,15 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, "UnityEvent");
+                    return true;
                 }
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, "UnityEvent");
+                    return true;
                 }
             }
             [BindCallback(typeof(BinderPredicate), Labels = new string[] { LABEL2 })]
@@ -437,7 +441,7 @@ namespace Hinode.Tests.Attributes
 
                 var funcInfo = inst.GetType().GetMethod("Func");
                 var attr = funcInfo.GetCustomAttribute<BindCallbackAttribute>();
-                attr.Bind(inst, funcInfo, callback);
+                Assert.IsTrue(attr.Bind(inst, funcInfo, callback));
 
                 callback.UnityEvent.Invoke();
 
@@ -451,7 +455,7 @@ namespace Hinode.Tests.Attributes
 
                 var funcInfo = inst.GetType().GetMethod("Func2");
                 var attr = funcInfo.GetCustomAttribute<BindCallbackAttribute>();
-                attr.Bind(inst, funcInfo, callback);
+                Assert.IsTrue(attr.Bind(inst, funcInfo, callback));
 
                 callback.UnityEvent.Invoke();
 
@@ -477,13 +481,15 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, "UnityEvent");
+                    return true;
                 }
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
                     BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, "UnityEvent");
+                    return true;
                 }
             }
             [BindCallback(typeof(BinderPredicate), Labels = new string[] { LABEL2 })]
@@ -507,7 +513,7 @@ namespace Hinode.Tests.Attributes
                 var attr = funcInfo.GetCustomAttribute<BindCallbackAttribute>();
 
                 attr.Bind(inst, funcInfo, callback);
-                attr.Unbind(inst, funcInfo, callback);
+                Assert.IsTrue(attr.Unbind(inst, funcInfo, callback));
 
                 callback.UnityEvent.Invoke();
 
@@ -523,7 +529,7 @@ namespace Hinode.Tests.Attributes
                 var attr = funcInfo.GetCustomAttribute<BindCallbackAttribute>();
 
                 attr.Bind(inst, funcInfo, callback);
-                attr.Unbind(inst, funcInfo, callback);
+                Assert.IsTrue(attr.Unbind(inst, funcInfo, callback));
 
                 callback.UnityEvent.Invoke();
                 Assert.AreEqual(0, inst.Func2Counter);
@@ -556,13 +562,13 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
             }
 
@@ -640,13 +646,13 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
             }
             [BindCallback(typeof(BinderPredicate), Labels = new string[] { LABEL2 })]
@@ -689,9 +695,10 @@ namespace Hinode.Tests.Attributes
             var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
             var instMethodName = "Func";
-            BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "UnityEvent"
             );
+            Assert.IsTrue(isOK);
 
             callbackInst.UnityEvent.Invoke();
             Assert.AreEqual(1, inst.FuncCounter);
@@ -709,9 +716,10 @@ namespace Hinode.Tests.Attributes
             var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
             var instMethodName = "Func";
-            BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "Delegate"
             );
+            Assert.IsTrue(isOK);
 
             var list = callbackInst.Delegate.GetInvocationList();
             var pred = type.GetMethod(instMethodName)
@@ -734,9 +742,10 @@ namespace Hinode.Tests.Attributes
             var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
             var instMethodName = "Func";
-            BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "TestEvent"
             );
+            Assert.IsTrue(isOK);
 
             callbackInst.CallTestEvent();
             Assert.AreEqual(1, inst.FuncCounter);
@@ -754,9 +763,10 @@ namespace Hinode.Tests.Attributes
             var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
             var instMethodName = "Func";
-            BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
             );
+            Assert.IsTrue(isOK);
 
             Assert.IsTrue(callbackInst.SmartDelegate.Contains(inst.Func));
             Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
@@ -778,9 +788,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
                 var instMethodName = "1XXX1";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
 
                 Assert.AreEqual(0, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "Invalid Instance MethodName...");
@@ -792,9 +803,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
                 var instMethodName = "1XXX1";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                     null, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
 
                 Assert.AreEqual(0, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "target is null...");
@@ -806,9 +818,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
                 var instMethodName = "1XXX1";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod(instMethodName), null, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
 
                 Assert.AreEqual(0, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "callbackInstance is null...");
@@ -820,9 +833,11 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest.CallbackClass();
 
                 var instMethodName = "1XXX1";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "1XXX1"
                 );
+                Assert.IsFalse(isOK);
+
             }, "Invalid callbackName...");
             Logger.Log(Logger.Priority.High, () => "Success to Invalid callbackName!");
         }
@@ -890,9 +905,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest2.CallbackClass();
 
                 var instMethodName = "UnityEventFunc";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "UnityEvent"
                 );
+                Assert.IsTrue(isOK);
 
                 // note: UnityEvent don't have ReturnValue
                 var a = 1;
@@ -908,9 +924,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest2.CallbackClass();
 
                 var instMethodName = "Func";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "Delegate"
                 );
+                Assert.IsTrue(isOK);
 
                 Assert.AreEqual(2, callbackInst.Delegate.GetInvocationList().Length);//include default callback
 
@@ -928,9 +945,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest2.CallbackClass();
 
                 var instMethodName = "Func";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "TestEvent"
                 );
+                Assert.IsTrue(isOK);
 
                 var a = 1;
                 var b = "abc";
@@ -946,9 +964,10 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTest2.CallbackClass();
 
                 var instMethodName = "Func";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTest2.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
                 );
+                Assert.IsTrue(isOK);
 
                 Assert.IsTrue(callbackInst.SmartDelegate.Contains(inst.Func));
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
@@ -1036,12 +1055,13 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTestNotBind.CallbackClass();
 
                 var invalidMethodName = "InvalidFunc";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
                     inst
                     , type.GetMethod(invalidMethodName)
                     , callbackInst
                     , BindWithTypeAndCallbackNameTestNotBind.UNITY_EVENT_CALLBACK_NAME
                 );
+                Assert.IsFalse(isOK);
 
                 callbackInst.UnityEvent.Invoke(0, "");
                 Assert.AreEqual(0, inst.InvalidFuncCounter);
@@ -1054,12 +1074,13 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTestNotBind.CallbackClass();
 
                 var invalidMethodName = "InvalidFunc";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
                     inst
                     , type.GetMethod(invalidMethodName)
                     , callbackInst
                     , BindWithTypeAndCallbackNameTestNotBind.DELEGATE_CALLBACK_NAME
                 );
+                Assert.IsFalse(isOK);
 
                 //include default callback
                 Assert.AreEqual(1, callbackInst.Delegate.GetInvocationList().Length);
@@ -1072,12 +1093,13 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTestNotBind.CallbackClass();
 
                 var invalidMethodName = "InvalidFunc";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
                     inst
                     , type.GetMethod(invalidMethodName)
                     , callbackInst
                     , BindWithTypeAndCallbackNameTestNotBind.EVENT_NAME
                 );
+                Assert.IsFalse(isOK);
 
                 var a = 1;
                 var b = "abc";
@@ -1093,12 +1115,13 @@ namespace Hinode.Tests.Attributes
                 var callbackInst = new BindWithTypeAndCallbackNameTestNotBind.CallbackClass();
 
                 var invalidMethodName = "InvalidFunc";
-                BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
+                var isOK = BindCallbackAttribute.BindWithTypeAndCallbackName<BindWithTypeAndCallbackNameTestNotBind.CallbackClass>(
                     inst
                     , type.GetMethod(invalidMethodName)
                     , callbackInst
                     , BindWithTypeAndCallbackNameTestNotBind.SMART_DELEGATE_CALLBACK_NAME
                 );
+                Assert.IsFalse(isOK);
 
                 Assert.IsFalse(callbackInst.SmartDelegate.Contains(inst.Func));
                 Assert.AreEqual(0, callbackInst.SmartDelegate.RegistedDelegateCount);
@@ -1145,13 +1168,13 @@ namespace Hinode.Tests.Attributes
             public class BinderPredicate : BindCallbackAttribute.IBinderPredicate
             {
                 public bool EnableBind(MethodInfo methodInfo, object obj) => true;
-                public void AddCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool AddCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.BindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
-                public void RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
+                public bool RemoveCallbacks(object target, MethodInfo methodInfo, object obj)
                 {
-                    BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
+                    return BindCallbackAttribute.UnbindWithTypeAndCallbackName<CallbackClass>(target, methodInfo, obj, UNITY_EVENT_CALLBACK_NAME);
                 }
             }
             [BindCallback(typeof(BinderPredicate), Labels = new string[] { LABEL2 })]
@@ -1198,9 +1221,10 @@ namespace Hinode.Tests.Attributes
             BindCallbackAttribute.BindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "UnityEvent"
             );
-            BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "UnityEvent"
             );
+            Assert.IsTrue(isOK);
 
             callbackInst.UnityEvent.Invoke();
             Assert.AreEqual(0, inst.FuncCounter);
@@ -1221,9 +1245,10 @@ namespace Hinode.Tests.Attributes
             BindCallbackAttribute.BindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "Delegate"
             );
-            BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "Delegate"
             );
+            Assert.IsTrue(isOK);
 
             var list = callbackInst.Delegate.GetInvocationList();
             var pred = type.GetMethod(instMethodName)
@@ -1249,9 +1274,10 @@ namespace Hinode.Tests.Attributes
             BindCallbackAttribute.BindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "TestEvent"
             );
-            BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "TestEvent"
             );
+            Assert.IsTrue(isOK);
 
             callbackInst.CallTestEvent();
             Assert.AreEqual(0, inst.FuncCounter);
@@ -1272,9 +1298,10 @@ namespace Hinode.Tests.Attributes
             BindCallbackAttribute.BindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
             );
-            BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+            var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                 inst, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
             );
+            Assert.IsTrue(isOK);
 
             Assert.IsFalse(callbackInst.SmartDelegate.Contains(inst.Func));
             Assert.AreEqual(0, callbackInst.SmartDelegate.RegistedDelegateCount);
@@ -1301,9 +1328,10 @@ namespace Hinode.Tests.Attributes
                 );
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
 
-                BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod("1XXX1"), callbackInst, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "Invalid Instance MethodName...");
             Logger.Log(Logger.Priority.High, () => "Success to Invali Instance MethodName!");
@@ -1319,9 +1347,10 @@ namespace Hinode.Tests.Attributes
                 );
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
 
-                BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                     null, type.GetMethod(instMethodName), callbackInst, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
 
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "target is null...");
@@ -1338,9 +1367,11 @@ namespace Hinode.Tests.Attributes
                 );
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
 
-                BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod(instMethodName), null, "SmartDelegate"
                 );
+                Assert.IsFalse(isOK);
+
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "callbackInstance is null...");
             Logger.Log(Logger.Priority.High, () => "Success callbackInstance is null!");
@@ -1356,9 +1387,11 @@ namespace Hinode.Tests.Attributes
                 );
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
 
-                BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
+                var isOK = BindCallbackAttribute.UnbindWithTypeAndCallbackName<UnbindWithTypeAndCallbackNameTest.CallbackClass>(
                     inst, type.GetMethod(instMethodName), callbackInst, "1XXX1"
                 );
+                Assert.IsFalse(isOK);
+
                 Assert.AreEqual(1, callbackInst.SmartDelegate.RegistedDelegateCount);
             }, "Invalid callbackName...");
             Logger.Log(Logger.Priority.High, () => "Success to Invalid callbackName!");

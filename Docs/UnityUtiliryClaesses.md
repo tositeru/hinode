@@ -152,7 +152,16 @@ Modelの値が変更された時に合わせてSubComponentの値も合わせて
 
 #### 合わせて利用すると便利なクラス
 
+- MonoBehaviourWithSubComponents<T>
+- ModelBase<T, TValueKind>
+- LabelsAttribute
+- BindCallbackAttribute
+
+Editor拡張
+- SubComponent Summary
+
 ##### MonoBehaviourWithSubComponents<T>
+
 SubComponentを使用する際に必要なものを持つComponentになります。
 ルートとなるMonoBehaviourは基本的にこのクラスから派生することを推奨します。
 
@@ -208,11 +217,11 @@ public class Model : ModelBase<Model, Model.ValueKind>
 }
 ```
 
-##### MethodLabelAttribute
+##### LabelsAttribute
 
-`SubComponentManager`には管理するSubComponentが持つ`MethodLabelAttribute`が指定したメソッドを一括に呼び出すことができる関数(CallSubComponentMethods(label))を持ちます。
+`SubComponentManager`には管理するSubComponentが持つ`LabelsAttribute`が指定したメソッドを一括に呼び出すことができる関数(CallSubComponentMethods(label))を持ちます。
 
-また、MethodLabelAttribute#CallMethods()を直接呼び出すこともできますので用途に合わせて使い分けてください。
+また、LabelsAttribute#CallMethods()を直接呼び出すこともできますので用途に合わせて使い分けてください。
 
 以下の用途に使用すると便利です。
 - Modelが変更された時にViewへその変更を知らせる(Model -> View)
@@ -229,38 +238,46 @@ public class Scene : MonoBehaviourWithSubComponents<Scene>
 
     public void OnXXX()
     {
-        //Call void XXX() Method in SubComponent -> _sub.Method(), _sub2.Method()
-        SubComponents.CallSubComponentMethods(LABEL_METHOD);
+        //Call void XXX() Method in SubComponents -> _sub.Method(), _sub2.Method()
+        SubComponentManager.CallSubComponentMethods(LABEL_METHOD);
 
-        //Call int XXX(int) Method in SubComponent -> only _sub.MethodWithArgs(int)
+        //Call int XXX(int) Method in SubComponents -> only call _sub#MethodWithArgs(int)
         var returnType = typeof(int);
         var isStatic = false;
         var label = LABEL_METHOD;
-        var methods = SubComponents.Select(_com => MethodLabelAttribute.CallMethods(returnType, _com, label, isStatic, 100));
+        var methods = SubComponentManager.SubComponents.SelectMany(_s =>
+            _s.GetType().GetMethods(BindingFlags.Public | bindingFlags)
+                .Where(_m => {
+                    var attr = _m.GetCustomAttributes<LabelsAttribute>()
+                        .FirstOrDefault(_a => _a.GetType().Equals(typeof(LabelsAttribute)));
+                    if (attr == null) return false;
+                    // Filtering With 'label'
+                    return attr.DoMatch(Labels.MatchOp.Partial, label);
+                })
+                // below pass to Arguments And ReturnType!
+                .CallMethods(isStatic? null : _s, typeof(void), 100, 200));
         foreach(var returnValue in methods)
         {
             //recive returnValue from Methods
-            //log)
-            //returnValue => 200
             Debug.Log($"returnValue => {returnValue}");
         }
     }
 
     class SubComponent : ISubComponent<Scene>
     {
-        [MethodLabel(LABEL_METHOD)]
+        [Labels(LABEL_METHOD)]
         public void Method()
         {
             //...
         }
 
-        [MethodLabel(LABEL_METHOD2)]
+        [Labels(LABEL_METHOD2)]
         public void Method2()
         {
             //...
         }
 
-        [MethodLabel(LABEL_METHOD)]
+        [Labels(LABEL_METHOD)]
         public int MethodWithArgs(int n)
         {
             //...
@@ -270,13 +287,13 @@ public class Scene : MonoBehaviourWithSubComponents<Scene>
 
     class SubComponent2 : ISubComponent<Scene>
     {
-        [MethodLabel(LABEL_METHOD)]
+        [Labels(LABEL_METHOD)]
         public void Method()
         {
             //...
         }
 
-        [MethodLabel(LABEL_METHOD2)]
+        [Labels(LABEL_METHOD2)]
         public void Method2()
         {
             //...
@@ -285,9 +302,10 @@ public class Scene : MonoBehaviourWithSubComponents<Scene>
 }
 ```
 
-##### 専用のAttribute
+##### 専用/関連するAttribute
 
 - NotNullAttribute: 指定したFieldがNullの時に警告ログを出力するAttribute。SerializeされるFieldに指定してください。
+- BindCallbackAttribute: ControllerのコールバックとModelのメソッドを関連付けたり、Viewの関数を一括に呼び出す時に利用しています。
 
 #### SubComponent Summary
 
@@ -298,4 +316,4 @@ Hinodeではシーン上にあるMonoBehaviourWithSubComponents<>を継承する
 
 このEditorWindowでは以下の機能を持ちます。
 - 選択したMonoBehaviourWithSubComponents<>が持つSubComponentの一覧
-- SubComponentのメンバメソッドに指定されているMethodLabelAttributeの表示
+- SubComponentのメンバメソッドに指定されているLabelsAttributeの表示

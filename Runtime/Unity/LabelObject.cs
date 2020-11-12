@@ -90,14 +90,7 @@ namespace Hinode
 
 		public static LabelObject GetLabelObject(object obj)
         {
-			LabelObject label = null;
-			if (obj is Component)
-				label = (obj as Component).GetComponent<LabelObject>();
-			else if (obj is GameObject)
-				label = (obj as GameObject).GetComponent<LabelObject>();
-			else if (obj is Transform)
-				label = (obj as Transform).GetComponent<LabelObject>();
-			return label;
+			return GameObjectExtensions.GetComponent<LabelObject>(obj);
 		}
 
 		/// <summary>
