@@ -1,0 +1,5 @@
+﻿using System.IO;
+public class Apple
+{
+    ////@@ traits ./TestTraitsSupporter.cs $ExpandInFileTest
+}

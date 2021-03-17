@@ -105,6 +105,7 @@ namespace Hinode
                 _height = height;
                 _data = new T[Count];
             }
+            if (Count <= 0) return;
 
             int index = 0;
             foreach(var v in values)

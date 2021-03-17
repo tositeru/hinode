@@ -32,7 +32,10 @@ namespace Hinode.Tests.Input.InputViewers
             var (inputViewer, touch) = CreateTouchItem();
 
             inputViewer.UseInput.RecordedTouchSupported = true;
-            inputViewer.UseInput.RecordedTouchCount = 2;
+            for(int i=0; i<2; ++i)
+            {
+                inputViewer.UseInput.SetRecordedTouch(i, new Touch() { fingerId = i });
+            }
             yield return null;
             Assert.IsTrue(touch.DoEnabled);
             Assert.IsTrue(touch.Pointers.All(_p => _p.gameObject.activeInHierarchy));
@@ -62,7 +65,12 @@ namespace Hinode.Tests.Input.InputViewers
 
             foreach(var d in testData)
             {
-                inputViewer.UseInput.RecordedTouchCount = d;
+                inputViewer.UseInput.ClearRecordedTouch();
+                for (int i = 0; i < 2; ++i)
+                {
+                    inputViewer.UseInput.SetRecordedTouch(i, new Touch() { fingerId = i });
+                }
+
                 yield return null;
                 Assert.AreEqual(inputViewer.UseInput.TouchCount, touch.PointerCount);
                 Assert.AreEqual(inputViewer.UseInput.TouchCount, touch.Pointers.Count());
@@ -78,7 +86,11 @@ namespace Hinode.Tests.Input.InputViewers
         {
             var (inputViewer, touch) = CreateTouchItem();
             inputViewer.UseInput.RecordedTouchSupported = true;
-            inputViewer.UseInput.RecordedTouchCount = 3;
+            inputViewer.UseInput.ClearRecordedTouch();
+            for (int i = 0; i < 3; ++i)
+            {
+                inputViewer.UseInput.SetRecordedTouch(i, new Touch() { fingerId = i });
+            }
             yield return null;
 
             inputViewer.StyleInfo.Font = new Font();
@@ -99,7 +111,11 @@ namespace Hinode.Tests.Input.InputViewers
         {
             var (inputViewer, touch) = CreateTouchItem();
             inputViewer.UseInput.RecordedTouchSupported = true;
-            inputViewer.UseInput.RecordedTouchCount = 2;
+            inputViewer.UseInput.ClearRecordedTouch();
+            for (int i = 0; i < 2; ++i)
+            {
+                inputViewer.UseInput.SetRecordedTouch(i, new Touch() { fingerId = i });
+            }
             touch.PointerRadius = 20;
             yield return null;
 
@@ -120,7 +136,11 @@ namespace Hinode.Tests.Input.InputViewers
         {
             var (inputViewer, touch) = CreateTouchItem();
             inputViewer.UseInput.RecordedTouchSupported = true;
-            inputViewer.UseInput.RecordedTouchCount = 2;
+            inputViewer.UseInput.ClearRecordedTouch();
+            for (int i = 0; i < 2; ++i)
+            {
+                inputViewer.UseInput.SetRecordedTouch(i, new Touch() { fingerId = i });
+            }
 
             inputViewer.StyleInfo.ButtonColorAtFree = Color.red;
             inputViewer.StyleInfo.ButtonColorAtDown = Color.blue;

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c4a6c09edcc541a887e86dce9c80413, type: 3}
+  m_Name: SubComponentTemplate
+  m_EditorClassIdentifier: 
+  _replacementKeywords: {fileID: 0}
+  _isOnlyEmbbed: 0
+  _doShareKaywords: 0
+  _isSingleKeywordPairMode: 1
+  _templateText: "using System.Collections;\nusing System.Collections.Generic;\nusing
+    UnityEngine;\nusing Hinode;\n\n/// <summary>\r\n/// MonoBehaviourWithSubComponents
+    Template\r\n/// </summary>\npublic class $ClassName$ : MonoBehaviourWithSubComponents<$ClassName$>\n{\r\n   
+    #region Define Labels\r\n    // for LabelObject in Scene Labels \r\n    [LabelObject.LabelListClass]\r\n   
+    static class Labels\r\n    {\r\n        //public const string LABEL = \"L\";\r\n   
+    }\r\n\r\n    // for SubComponent Labels\r\n    static class ViewLabels\r\n   
+    {\r\n        //public const string LABEL = \"L\";\r\n    }\r\n    #endregion\r\n\r\n   
+    $ModelClassName$ Model { get; } = new $ModelClassName$();\r\n\r\n#pragma warning
+    disable CS0649\r\n    //[SerializeField, ScenePath] string _otherScenePath;\r\n#pragma
+    warning restore CS0649\r\n\n    //SubComponent1 _subComponent1;\n\n    override
+    protected void Awake()\r\n    {\r\n        Model.OnChangedValue.Add(ModelOnChangedValue);\r\n       
+    base.Awake();\r\n    }\r\n\r\n\r\n    #region ISubComponent interface\r\n   
+    public override void Init()\r\n    {\r\n        base.Init();\r\n    }\r\n   
+    #endregion\r\n\r\n    #region Model -> View\r\n    void ModelOnChangedValue($ModelClassName$
+    self, $ModelClassName$.ValueKind valueKind, object value, object prevValue)\r\n   
+    {\r\n        switch (valueKind)\r\n        {\r\n            //case $ModelClassName$.ValueKind.XXX:\r\n           
+    //    SubComponentManager.CallSubComponentMethods(ViewLabels.LABEL);\r\n           
+    //    break;\r\n        }\r\n    }\r\n    #endregion\r\n\r\n    #region Controller
+    in MVC\r\n//    [BindCallback(typeof(UnityEngine.UI.Button), \"onClick\", Labels
+    = new string[] { Labels.LABEL })]\r\n//    public void OnClick() {}\r\n    #endregion\r\n\r\n   
+    #region SubComponents\r\n/*\r\n    [System.Serializable]\r\n    class SubComponent1
+    : ISubComponent<$ClassName$>\r\n    {\r\n#pragma warning disable CS0649\r\n       
+    //[SerializeField, NotNull(\"Not Attach ...\")] GameObject _gameObject;\r\n#pragma
+    warning restore CS0649\r\n\r\n        public $ClassName$ RootComponent { get;
+    set; }\r\n\r\n        public void Destroy() {}\r\n        public void Init()
+    {}\r\n\r\n        public void UpdateUI() {}\r\n\r\n        [Labels(Labels = new
+    string[] { ViewLabels.LABEL })]\r\n        public void UpdateItem() {}\r\n   
+    }\r\n*/\r\n    #endregion\r\n}\n"
+  _keywords:
+  - key: ClassName
+    values: []
+  - key: ModelClassName
+    values: []
+  _ignorePairs: []
+  _embbedTemplates: []
+  _singleKeywordPairList:
+  - _pairKeywords:
+    - Apple
+    - AppleModel
+  _newline: 0

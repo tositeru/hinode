@@ -8,7 +8,8 @@
     "name": "tositeru"
   },
   "dependencies": {
-    "com.unity.ugui": "1.0.0"
+    "com.unity.ugui": "1.0.0",
+    "com.unity.editorcoroutines": "1.0.0"
   },
   "type": "library"
 }

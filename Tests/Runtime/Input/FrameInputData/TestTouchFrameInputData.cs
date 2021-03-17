@@ -166,7 +166,6 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             replayInput.RecordedMultiTouchEnabled = true;
             replayInput.RecordedStylusTouchSupported = true;
             replayInput.RecordedSimulateMouseWithTouches = true;
-            replayInput.RecordedTouchCount = 2;
             replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
             replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
 
@@ -248,15 +247,14 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             var data = new TouchFrameInputData();
             //Touch
-            replayInput.RecordedTouchSupported = true;
-            replayInput.RecordedTouchPressureSupported = true;
-            replayInput.RecordedMultiTouchEnabled = true;
-            replayInput.RecordedStylusTouchSupported = true;
-            replayInput.RecordedSimulateMouseWithTouches = true;
-            replayInput.RecordedTouchCount = 2;
-            replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
-            replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
-
+            data.TouchPressureSupported = true;
+            data.TouchPressureSupported = true;
+            data.MultiTouchEnabled = true;
+            data.StylusTouchSupported = true;
+            data.SimulateMouseWithTouches = true;
+            data.TouchCount = 2;
+            data.SetTouch(0, new Touch { fingerId = 11 });
+            data.SetTouch(1, new Touch { fingerId = 22 });
             //データが正しく設定されるか確認
             data.RecoverTo(replayInput);
 
@@ -292,7 +290,6 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             replayInput.RecordedMultiTouchEnabled = true;
             replayInput.RecordedStylusTouchSupported = true;
             replayInput.RecordedSimulateMouseWithTouches = true;
-            replayInput.RecordedTouchCount = 2;
             replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
             replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
 
@@ -336,7 +333,6 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             replayInput.RecordedMultiTouchEnabled = true;
             replayInput.RecordedStylusTouchSupported = true;
             replayInput.RecordedSimulateMouseWithTouches = true;
-            replayInput.RecordedTouchCount = 2;
             replayInput.SetRecordedTouch(0, new Touch { fingerId = 11 });
             replayInput.SetRecordedTouch(1, new Touch { fingerId = 22 });
 

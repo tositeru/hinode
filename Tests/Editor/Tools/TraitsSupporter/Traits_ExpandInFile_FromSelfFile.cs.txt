@@ -1,0 +1,9 @@
+﻿//// $SearchFromSelfFile
+public int ExpandInFileValue { get; set; }
+//// End $SearchFromSelfFile
+
+using System.IO;
+public class Apple
+{
+    ////@@ traits $SearchFromSelfFile
+}

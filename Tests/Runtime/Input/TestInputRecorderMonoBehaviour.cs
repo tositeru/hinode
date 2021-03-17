@@ -39,7 +39,8 @@ namespace Hinode.Tests.Input
 
             public void Record(ReplayableInput input)
             {
-                _dummyData.Value = input.TouchCount;
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                _dummyData.Value = input.TouchCount > 0 ? input.GetTouch(0).fingerId : -1;
             }
 
             /// <summary>
@@ -58,7 +59,9 @@ namespace Hinode.Tests.Input
             /// <param name="input"></param>
             public void RecoverTo(ReplayableInput input)
             {
-                input.RecordedTouchCount = DummyData; //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.ClearRecordedTouch();
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.SetRecordedTouch(0, new Touch() { fingerId = DummyData });
             }
 
             public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
@@ -149,7 +152,7 @@ namespace Hinode.Tests.Input
             var loopCount = 5;
             for(var i=0; i<loopCount; ++i)
             {
-                recoderObj.UseRecorder.UseInput.RecordedTouchCount = getFrameData(i);
+                recoderObj.UseRecorder.UseInput.SetRecordedTouch(0, new Touch() { fingerId = getFrameData(i) });
                 yield return null; // <- Call InputRecorder#StepFrame at WaitEndOfFrame()
             }
             recoderObj.StopRecord();
@@ -164,7 +167,7 @@ namespace Hinode.Tests.Input
                 {
                     recoderObj.UseRecorder.FrameDataRecorder.RecoverFromFrame(record[i], recoderObj.UseRecorder.UseSerializer);
                     recoderObj.UseRecorder.FrameDataRecorder.RecoverTo(recoderObj.UseRecorder.UseInput);
-                    Assert.AreEqual(getFrameData(i), recoderObj.UseRecorder.UseInput.TouchCount);
+                    Assert.AreEqual(getFrameData(i), recoderObj.UseRecorder.UseInput.GetTouch(0).fingerId);
                 }
             }
         }
@@ -189,7 +192,7 @@ namespace Hinode.Tests.Input
             var loopCount = 5;
             for (var i = 0; i < loopCount; ++i)
             {
-                recoderObj.UseRecorder.UseInput.RecordedTouchCount = getFrameData(i);
+                recoderObj.UseRecorder.UseInput.SetRecordedTouch(0, new Touch() { fingerId = getFrameData(i) });
                 recoderObj.UseRecorder.StepFrame();
             }
             recoderObj.UseRecorder.StopRecord();
@@ -203,7 +206,7 @@ namespace Hinode.Tests.Input
                     var validValue = (i < recoderObj.TargetRecord.FrameCount)
                         ? getFrameData(i)
                         : getFrameData(recoderObj.TargetRecord.FrameCount - 1);
-                    Assert.AreEqual(validValue, recoderObj.UseRecorder.UseInput.TouchCount);
+                    Assert.AreEqual(validValue, recoderObj.UseRecorder.UseInput.GetTouch(0).fingerId);
                 }
             }
             Debug.Log($"Success to Replay!");
@@ -223,7 +226,7 @@ namespace Hinode.Tests.Input
                     var validValue = (i < recoderObj.TargetRecord.FrameCount)
                         ? getFrameData(i)
                         : getFrameData(recoderObj.TargetRecord.FrameCount - 1);
-                    Assert.AreEqual(validValue, recoderObj.UseRecorder.UseInput.TouchCount);
+                    Assert.AreEqual(validValue, recoderObj.UseRecorder.UseInput.GetTouch(0).fingerId);
                 }
             }
             Debug.Log($"Success to Pause Replay!");

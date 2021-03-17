@@ -39,7 +39,8 @@ namespace Hinode.Tests.Input
 
             public void Record(ReplayableInput input)
             {
-                _dummyData.Value = input.TouchCount;
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                _dummyData.Value = input.TouchCount > 0 ? input.GetTouch(0).fingerId : -1;
             }
 
             /// <summary>
@@ -58,7 +59,9 @@ namespace Hinode.Tests.Input
             /// <param name="input"></param>
             public void RecoverTo(ReplayableInput input)
             {
-                input.RecordedTouchCount = DummyData; //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.ClearRecordedTouch();
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.SetRecordedTouch(0, new Touch() { fingerId = DummyData });
             }
 
             public IEnumerable<FrameInputDataKeyValue> GetValuesEnumerable()
@@ -214,10 +217,10 @@ namespace Hinode.Tests.Input
             System.Func<int, int> getInputData = (int i) => (i + 1) * 10;
             {
                 waitFrameCount = 5; //5フレーム待つ
-                recorder.UseInput.RecordedTouchCount = -10;
+                recorder.UseInput.ClearRecordedTouch();
                 for (var i = 0; i < waitFrameCount; ++i)
                 {
-                    recorder.UseInput.RecordedTouchCount = getInputData(i);
+                    recorder.UseInput.SetRecordedTouch(0, new Touch(){ fingerId = getInputData(i)});
                     recorder.StepFrame();
                 }
                 recorder.StopRecord();
@@ -249,7 +252,7 @@ namespace Hinode.Tests.Input
                 waitFrameCount = 3;
                 for (var i = 0; i < waitFrameCount; ++i)
                 {
-                    recorder.UseInput.RecordedTouchCount = getInputData(i);
+                    recorder.UseInput.SetRecordedTouch(0, new Touch() { fingerId = getInputData(i) });
                     recorder.StepFrame();
                 }
                 recorder.StopRecord();
@@ -291,7 +294,7 @@ namespace Hinode.Tests.Input
                 frameCount = 5; //5フレーム待つ
                 for (var i = 0; i < frameCount; ++i)
                 {
-                    recorder.UseInput.RecordedTouchCount = getInputData(i);
+                    recorder.UseInput.SetRecordedTouch(0, new Touch() { fingerId = getInputData(i) });
                     recorder.StepFrame();
 
                     recorder.StepFrame(); // <- not Add Frame!
@@ -337,7 +340,7 @@ namespace Hinode.Tests.Input
             for (var i = 0; i < 10; ++i)
             {
                 var frame = new InputRecord.Frame((uint)i, 0.016f);
-                recorder.UseInput.RecordedTouchCount = getFrameData(i);
+                recorder.UseInput.SetRecordedTouch(0, new Touch() { fingerId = getFrameData(i) });
                 recorder.FrameDataRecorder.Record(recorder.UseInput);
                 frame.InputText = recorder.UseSerializer.Serialize(recorder.FrameDataRecorder);
                 useRecord.Push(frame);

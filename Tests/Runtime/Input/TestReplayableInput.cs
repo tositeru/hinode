@@ -24,6 +24,8 @@ namespace Hinode.Tests.Input
         /// <seealso cref="ReplayableInput.RecordedMousePresent"/>
         /// <seealso cref="ReplayableInput.MouseScrollDelta"/>
         /// <seealso cref="ReplayableInput.RecordedMouseScrollDelta"/>
+		/// <seealso cref="ReplayableInput.GetPointerButton()"/>
+		/// <seealso cref="ReplayableInput.PointerPos"/>
         /// </summary>
         /// <returns></returns>
         [UnityTest]
@@ -132,14 +134,10 @@ namespace Hinode.Tests.Input
             {//TouchCount
                 input.IsReplaying = false;
                 Assert.AreEqual(UnityEngine.Input.touchCount, input.TouchCount);
-                input.IsReplaying = true;
-                input.RecordedTouchCount = 3;
-                Assert.AreEqual(input.RecordedTouchCount, input.TouchCount);
             }
 
             {//GetTouch
                 input.IsReplaying = true;
-                input.RecordedTouchCount = 3;
                 for(var i=0; i< input.TouchCount; ++i)
                 {
                     var t = new Touch()
@@ -148,9 +146,49 @@ namespace Hinode.Tests.Input
                     };
                     input.SetRecordedTouch(i, t);
                     Assert.AreEqual(input.GetRecordedTouch(i), input.GetTouch(i));
+                    Assert.AreEqual(i+1, input.TouchCount);
                 }
             }
+        }
 
+        /// <summary>
+        /// <seealso cref="ReplayableInput.IsReplaying"/>
+        /// <seealso cref="ReplayableInput.TouchSupported"/>
+        /// <seealso cref="ReplayableInput.RecordedTouchSupported"/>
+        /// <seealso cref="ReplayableInput.MultiTouchEnabled"/>
+        /// <seealso cref="ReplayableInput.RecordedMultiTouchEnabled"/>
+        /// <seealso cref="ReplayableInput.StylusTouchSupported"/>
+        /// <seealso cref="ReplayableInput.RecordedStylusTouchSupported"/>
+        /// <seealso cref="ReplayableInput.TouchPressureSupported"/>
+        /// <seealso cref="ReplayableInput.RecordedTouchPressureSupported"/>
+        /// <seealso cref="ReplayableInput.TouchCount"/>
+        /// <seealso cref="ReplayableInput.RecordedTouchCount"/>
+        /// <seealso cref="ReplayableInput.GetTouch(int)"/>
+        /// <seealso cref="ReplayableInput.SetRecordedTouch(int, Touch)"/>
+        /// <seealso cref="ReplayableInput.RemoveRecordedTouch(int)"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator RemoveRecordedTouch_Passes()
+        {
+            yield return null;
+            var input = new ReplayableInput();
+            input.IsReplaying = true;
+            for(int i=0; i<3; ++i)
+            {
+                var t = new Touch()
+                {
+                    fingerId = i,
+                };
+                input.SetRecordedTouch(i, t);
+            }
+
+            input.RemoveRecordedTouch(1);
+
+            AssertionUtils.AssertEnumerable(
+                new int[] { 0, 2 }
+                , input.GetTouches().Select(_t => _t.fingerId)
+                , "");
         }
 
         /// <summary>
@@ -432,9 +470,11 @@ namespace Hinode.Tests.Input
         /// <seealso cref="ReplayableInput.SetRecordedButton(string, InputDefines.ButtonCondition)"/>
         /// <seealso cref="ReplayableInput.GetButtonCondition(string)"/>
         /// </summary>
-        [Test]
-        public void GetButtonConditionPasses()
+        [UnityTest]
+        public IEnumerator GetButtonConditionPasses()
         {
+            yield return null;
+
             var input = new ReplayableInput();
             input.IsReplaying = true;
             var buttonNames = new string[] {
@@ -505,6 +545,53 @@ namespace Hinode.Tests.Input
                 Assert.AreEqual(0f, input.GetAxis(axisName));
             }
             Debug.Log($"Success to ReplayableInput#GetAxis()");
+        }
+
+        /// <summary>
+		/// <seealso cref="ReplayableInput.GetPointerButton()"/>
+		/// </summary>
+		/// <returns></returns>
+        [UnityTest]
+        public IEnumerator GetPointerButton_Passes()
+        {
+            yield return null;
+            var input = new ReplayableInput();
+
+            input.IsReplaying = true;
+            input.RecordedTouchSupported = true;
+
+            //use Touch
+            input.SetRecordedMouseButton(InputDefines.MouseButton.Left, InputDefines.ButtonCondition.Down);
+            input.SetRecordedTouch(0, new Touch() { fingerId = 0, phase = TouchPhase.Stationary });
+
+            Assert.AreEqual(InputDefines.ButtonCondition.Push, input.GetPointerButton());
+
+            //use Mouse
+            input.RemoveRecordedTouch(0);
+            Assert.AreEqual(InputDefines.ButtonCondition.Down, input.GetPointerButton());
+        }
+
+        /// <summary>
+        /// <seealso cref="ReplayableInput.PointerPos"/>
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator PointerPos_Passes()
+        {
+            yield return null;
+            var input = new ReplayableInput();
+
+            input.IsReplaying = true;
+            input.RecordedTouchSupported = true;
+
+            //use Touch
+            input.RecordedMousePos = Vector3.one * 100f;
+            input.SetRecordedTouch(0, new Touch() { fingerId = 0, position = Vector3.one });
+            AssertionUtils.AreNearlyEqual((Vector3)Vector2.one, input.PointerPos, float.Epsilon, "");
+
+            //use Mouse
+            input.RemoveRecordedTouch(0);
+            AssertionUtils.AreNearlyEqual(Vector3.one * 100f, input.PointerPos, float.Epsilon, "");
         }
     }
 }

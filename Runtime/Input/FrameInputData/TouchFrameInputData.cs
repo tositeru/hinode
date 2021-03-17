@@ -163,7 +163,7 @@ namespace Hinode
             input.RecordedMultiTouchEnabled = MultiTouchEnabled;
             input.RecordedStylusTouchSupported = StylusTouchSupported;
             input.RecordedSimulateMouseWithTouches = SimulateMouseWithTouches;
-            input.RecordedTouchCount = TouchCount;
+            input.ClearRecordedTouch();
             for (var i = 0; i < TouchCount; ++i)
             {
                 input.SetRecordedTouch(i, (Touch)GetTouch(i));

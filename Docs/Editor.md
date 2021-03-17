@@ -3,12 +3,13 @@
 Hinodeには以下のEditor拡張を提供しています。
 
 - [テキストテンプレートエンジン](./Editor/TextTemplateEngine.md)
+- [Traitsサポーター](./Docs/Editor/TextTemplateEngine.md)
 - [Screen Shot](#ScreenShot)
 - [Test Class Linter](#TestClassLinter)
 
 ### Screen Shot
 
-Hinodeは現在のシーンにあるCameraを仕様してScreenShotを撮る機能を提供しています。
+Hinodeは現在のシーンにあるCameraを使用してScreenShotを撮る機能を提供しています。
 
 使用する際は以下の手順を行ってください。
 

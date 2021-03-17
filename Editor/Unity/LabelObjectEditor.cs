@@ -29,7 +29,15 @@ namespace Hinode.Editors
         private void OnEnable()
         {
             _labelListClassPopup = new LabelListClassPopup(_labelListClassies);
-            _labelListPopup = new LabelListPopup(_labelListClassies.First());
+
+            if(_labelListClassies.Any())
+            {
+                _labelListPopup = new LabelListPopup(_labelListClassies.First());
+            }
+            else
+            {
+                _labelListPopup = null;
+            }
         }
 
         public override void OnInspectorGUI()
@@ -43,22 +51,25 @@ namespace Hinode.Editors
                     _labelListPopup = new LabelListPopup(_labelListClassPopup.SelectedType);
                 }
 
-                using (var h = new EditorGUILayout.HorizontalScope())
+                if(_labelListPopup != null)
                 {
-                    _labelListPopup.Draw(new GUIContent("labels"));
-
-                    if(GUILayout.Button("Add"))
+                    using (var h = new EditorGUILayout.HorizontalScope())
                     {
-                        var label = _labelListPopup.SelectedLabelValue;
+                        _labelListPopup.Draw(new GUIContent("labels"));
 
-                        var initialLabelProp = serializedObject.FindProperty("_constLabels");
-                        if(!initialLabelProp.GetArrayElementEnumerable().Any(_p => _p.prop.stringValue == label))
+                        if(GUILayout.Button("Add"))
                         {
-                            var index = initialLabelProp.arraySize;
-                            initialLabelProp.InsertArrayElementAtIndex(index);
-                            initialLabelProp.GetArrayElementAtIndex(index).stringValue = label;
+                            var label = _labelListPopup.SelectedLabelValue;
 
-                            serializedObject.ApplyModifiedProperties();
+                            var initialLabelProp = serializedObject.FindProperty("_constLabels");
+                            if(!initialLabelProp.GetArrayElementEnumerable().Any(_p => _p.prop.stringValue == label))
+                            {
+                                var index = initialLabelProp.arraySize;
+                                initialLabelProp.InsertArrayElementAtIndex(index);
+                                initialLabelProp.GetArrayElementAtIndex(index).stringValue = label;
+
+                                serializedObject.ApplyModifiedProperties();
+                            }
                         }
                     }
                 }

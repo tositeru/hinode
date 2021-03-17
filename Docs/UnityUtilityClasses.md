@@ -156,6 +156,7 @@ Modelの値が変更された時に合わせてSubComponentの値も合わせて
 - ModelBase<T, TValueKind>
 - LabelsAttribute
 - BindCallbackAttribute
+- GameObjectPoolBase<TRootSubComponent, TOwner, TInstance>
 
 Editor拡張
 - SubComponent Summary
@@ -307,7 +308,24 @@ public class Scene : MonoBehaviourWithSubComponents<Scene>
 - NotNullAttribute: 指定したFieldがNullの時に警告ログを出力するAttribute。SerializeされるFieldに指定してください。
 - BindCallbackAttribute: ControllerのコールバックとModelのメソッドを関連付けたり、Viewの関数を一括に呼び出す時に利用しています。
 
+#### GameObjectPoolBase<TRootSubComponent, TOwner, TInstance>
+
+`MonoBehaviourWithSubComponents<TRootSubComponent>`に対応した`ObjectPool`実装の基底クラスになります。
+`UnityComponentPool<TInstance>`を継承しています。
+
+`ObjectPool`関連の実装が定義されているため、それらを使用したい場合はこちらのクラスを使用することで簡単に対応できます。
+
+
+UnityComponentPool<TInstance>から追加で以下の関数を追加で定義しております。
+
+- DestroyNotInstanceTypeInRoot() : Rootとなっている親GameObjectの子からTemplateとして指定されていないGameObjectを全て削除します。
+- PushAllIcon() : Rootとなっている親GameObjectにあるTInstance型がアタッチされているGameObject全てをPoolにプッシュします。
+- GetInstance() : TInstanceを生成またはPoolからPopし、GameObjectをActive、およびRootの子へ登録します。
+
+
 #### SubComponent Summary
+
+専用のEditor拡張(EditorWindow)になります。
 
 Hinodeではシーン上にあるMonoBehaviourWithSubComponents<>を継承するComponentを持つGameObjectの情報を閲覧することができるEditorWindowも合わせて提供します。
 
@@ -317,3 +335,51 @@ Hinodeではシーン上にあるMonoBehaviourWithSubComponents<>を継承する
 このEditorWindowでは以下の機能を持ちます。
 - 選択したMonoBehaviourWithSubComponents<>が持つSubComponentの一覧
 - SubComponentのメンバメソッドに指定されているLabelsAttributeの表示
+
+### AnimationHub
+
+Hinodeでは`UnityEngine.Animator`とその中のAnimationを管理するための`Hinode.AnimationHub`を提供しています。
+
+`Hinode.AnimationHub`を利用することで、キー名を指定することで複数の`UnityEngine.Animator`のアニメーションを再生したり、Triggerを引くことが可能になります。
+
+`Hinode.AnimationHub`にはキー名と以下の項目のリストを設定することができます。
+
+- 指定したAnimatorのパラメータ(Int, Float, Bool, Trigger)
+- 指定したAnimatorのGameObjectのActive
+- 任意のUnityEvent(Animatorは指定する必要はありません。)
+
+
+以下に、スクリプト上からの`AnimationHub`に設定したデータを実行する方法を示します。
+
+
+```csharp
+var hub = gameObject.GetComponent<AnimationHub>();
+
+var key = "<key name>";
+hub.FirePack(key); // <- fire animations
+```
+
+#### AnimationSequence
+
+`Hinode.AnimationSequence`は`Hinode.AnimationHub`と一緒に使用されることを想定されたComponentです。
+
+このComponentを利用することで`Hinode.AnimationHub`に設定されたAnimation情報を順番に実行することが可能です。
+
+```csharp
+var hub = gameObject.GetComponent<AnimationHub>();
+var animationSequence = hub.Sequence;
+
+animationSequence.NextStepAnimation(); // <- run next animations
+```
+
+また、`Hinode.AnimationSequence`は現在再生中のアニメーションの再生が終わるまで、次のアニメーションに移行させない機能(Lock機能)も提供しています。
+
+Lock機能を使用する際は、再生が完了するのを監視したい`UnityEngine.Animator`のStateに`Hinode.AnimationHubBehaviour`も必ずアタッチして下さい。
+
+### SceneManagerModel
+
+`Hinode.SceneUtils.SceneManagerModel`を利用することで`UnityEngine.Scene`の管理をすることができます。
+
+`Hinode.SceneUtils.SceneManagerModel`は、あるシーンをルートシーンとして配置して、`LoadSceneMode.Additive`としてシーンを追加する形を想定しています。
+ルートシーンとして配置したシーンは`Hinode.SceneUtils.SceneManagerModel`では管理しないようにして下さい。
+

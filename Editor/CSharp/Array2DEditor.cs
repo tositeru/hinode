@@ -9,7 +9,7 @@ namespace Hinode.Editors
     /// <summary>
 	/// <seealso cref="Array2D{T}"/>
 	/// </summary>
-    public class Array2DEditor<T>
+    public class Array2DEditor<T> : ManualEditorBase
     {
         static readonly GUIContent SIZE_LABEL = new GUIContent("Size");
         static readonly GUIContent SHIFT_OFFSET_LABEL = new GUIContent("ShiftOffset");
@@ -53,19 +53,15 @@ namespace Hinode.Editors
         public bool DoChangedSize { get => Target.Width != EditingSize.x || Target.Height != EditingSize.y; }
         public bool DoChangedShiftOffset { get => EditingShiftOffset.x != 0 || EditingShiftOffset.y != 0; }
 
-        public GUIContent RootLabel { get; set; }
-        public bool Foldout { get; set; } = true;
-
         public System.Func<T, (GUIStyle style, GUILayoutOption[] options)> DataLayoutGetter { get; set; } = (_) => (null, null);
 
-        public Array2DEditor()
-            : this(new GUIContent("Array2D"))
+        public Array2DEditor(OwnerEditor owner)
+            : this(owner, new GUIContent("Array2D"))
         { }
 
-        public Array2DEditor(GUIContent label)
-        {
-            RootLabel = label;
-        }
+        public Array2DEditor(OwnerEditor owner, GUIContent label)
+            : base(owner, label)
+        {}
 
         public bool Draw(IReadOnlyArray2D<T> target, FieldInfo fieldInfo = null, GUIStyle style = null, params GUILayoutOption[] options)
         {
@@ -90,8 +86,8 @@ namespace Hinode.Editors
             FieldInfo = fieldInfo;
             ChangedValueKinds = 0;
 
-            Foldout = EditorGUILayout.Foldout(Foldout, RootLabel);
-            if (!Foldout) return DoChanged;
+            RootFoldout = EditorGUILayout.Foldout(RootFoldout, RootLabel);
+            if (!RootFoldout) return DoChanged;
 
             using (var indent = new EditorGUI.IndentLevelScope())
             {

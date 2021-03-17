@@ -46,7 +46,10 @@ namespace Hinode.Tests.Input
 
             public void RecoverTo(ReplayableInput input)
             {
-                input.RecordedTouchCount = Value.Value;
+                for(var i=0; i<Value.Value; ++i)
+                {
+                    input.SetRecordedTouch(i, new Touch { fingerId = i });
+                }
             }
 
             public void RefleshUpdatedFlags()

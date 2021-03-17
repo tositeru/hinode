@@ -413,3 +413,9 @@ Labelsの一致判定用の関数として`Labels#DoMatch(MatchOp op, string[] l
 - MatchOp#Complete : Labelsが持つlabelと完全に一致しているかどうか?
 - MatchOp#Included : Labelsが持つlabelが全て含まれているかどうか?
 - MatchOp#Included : Labelsが持つlabelの内一つでも一致しているかどうか？
+
+### GameTheory
+
+HinodeではGame理論の実装をサポートする`GameTheory`クラスを提供しています。
+
+#### TODO 使い方

@@ -32,15 +32,20 @@ namespace Hinode.Tests
             Assert.IsTrue(gots != null && corrects != null, $"{message}: 片方がnullになっています... correct=>{corrects != null} gots=>{gots != null}");
 
             var correctList = corrects.ToList();
-            Assert.AreEqual(corrects.Count(), gots.Count(), $"{message}: Don't Equal count...");
-
             if (comparer == null) comparer = EqualityComparer<T>.Default.Equals;
             foreach (var g in gots)
             {
-                Assert.IsTrue(correctList.Any(_o => comparer(_o, g)), $"{message}: Don't exist {g}...");
-                correctList.Remove(correctList.First(_o => comparer(_o, g)));
+                var index = correctList.FindIndex(_o => comparer(_o, g));
+                Assert.IsTrue(index != -1, $"{message}: Don't exist {g}...");
+                correctList.RemoveAt(index);
             }
-            Assert.IsTrue(0 == correctList.Count(), $"{message}: Don't match elements...");
+            if (correctList.Any())
+            {
+                var remaings = correctList
+                    .Select(_t => _t.ToString())
+                    .Aggregate((_s, _c) => _s + $"{System.Environment.NewLine}-- " + _c);
+                Assert.IsTrue(false, $"{message}: Don't match elements... {System.Environment.NewLine}-- {remaings}");
+            }
         }
 
         public static void AreNearlyEqual(float correct, float got, float epsilon=float.Epsilon, string message="")

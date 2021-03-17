@@ -1,4 +1,18 @@
-﻿using System.Collections;
+﻿// Copyright 2019 ~ tositeru
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,17 +33,17 @@ namespace Hinode.Editors
         [MenuItem("Assets/Hinode/Expand TextTemplate in Selecting Script Files", true)]
         public static bool ValidateExpandTextTemplateInScripts()
         {
-            return GetSelectingScriptAssetPath().Any();
+            return SelectionExtensions.GetSelectingScriptAssetPath().Any();
         }
 
         [MenuItem("Assets/Hinode/Expand TextTemplate in Selecting Script Files")]
         public static void ExpandTextTemplateInScripts()
         {
-            var log = GetSelectingScriptAssetPath()
+            var log = SelectionExtensions.GetSelectingScriptAssetPath()
                 .Aggregate("", (_s, _c) => _s + _c + ";");
             Debug.Log($"selecting scripts: {log}");
 
-            foreach(var assetPath in GetSelectingScriptAssetPath())
+            foreach(var assetPath in SelectionExtensions.GetSelectingScriptAssetPath())
             {
                 try
                 {
@@ -105,13 +119,6 @@ namespace Hinode.Editors
                 pos = e;
             }
             return (text, isEdit);
-        }
-
-        static IEnumerable<string> GetSelectingScriptAssetPath()
-        {
-            return Selection.assetGUIDs
-                .Select(_guid => AssetDatabase.GUIDToAssetPath(_guid))
-                .Where(_path => Path.GetExtension(_path) == ".cs");
         }
     }
 }
