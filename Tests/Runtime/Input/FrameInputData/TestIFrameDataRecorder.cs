@@ -25,7 +25,9 @@ namespace Hinode.Tests.Input
 
             public void RecoverTo(ReplayableInput input)
             {
-                input.RecordedTouchCount = TouchCount;
+                input.ClearRecordedTouch();
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.SetRecordedTouch(0, new Touch() { fingerId = _touchCount.Value });
             }
 
             public void ResetDatas()
@@ -35,7 +37,8 @@ namespace Hinode.Tests.Input
 
             public void Record(ReplayableInput input)
             {
-                _touchCount.Value = input.TouchCount;
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                _touchCount.Value = input.TouchCount > 0 ? input.GetTouch(0).fingerId : -1;
             }
 
             public void RefleshUpdatedFlags()

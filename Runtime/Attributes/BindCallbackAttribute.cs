@@ -539,12 +539,15 @@ namespace Hinode
         }
 
         /// <summary>
+        /// 
         /// </summary>
         /// <param name="target"></param>
         /// <param name="obj"></param>
-        public static void BindToGameObject(object target, GameObject obj, Labels.MatchOp op, IEnumerable<string> labels)
+        /// <param name="op"></param>
+        /// <param name="objLabels"></param>
+        public static void BindToGameObject(object target, GameObject obj, Labels.MatchOp op, IEnumerable<string> objLabels)
         {
-            var bindInfos = GetMethodInfoAndAttrEnumerable(target.GetType(), op, labels);
+            var bindInfos = GetMethodInfoAndAttrEnumerable(target.GetType(), op, objLabels);
             foreach (var (methodInfo, attrs) in bindInfos)
             {
                 foreach(var attr in attrs)
@@ -553,8 +556,8 @@ namespace Hinode
                 }
             }
         }
-        public static void BindToGameObject(object target, GameObject obj, Labels.MatchOp op, params string[] labels)
-            => BindToGameObject(target, obj, op, labels.AsEnumerable());
+        public static void BindToGameObject(object target, GameObject obj, Labels.MatchOp op, params string[] objLabels)
+            => BindToGameObject(target, obj, op, objLabels.AsEnumerable());
 
         /// <summary>
         /// 
@@ -563,9 +566,9 @@ namespace Hinode
         /// <param name="obj"></param>
         /// <param name="op"></param>
         /// <param name="labels"></param>
-        public static void UnbindToGameObject(object target, GameObject obj, Labels.MatchOp op, IEnumerable<string> labels)
+        public static void UnbindToGameObject(object target, GameObject obj, Labels.MatchOp op, IEnumerable<string> objLabels)
         {
-            var bindInfos = GetMethodInfoAndAttrEnumerable(target.GetType(), op, labels);
+            var bindInfos = GetMethodInfoAndAttrEnumerable(target.GetType(), op, objLabels);
             foreach (var (methodInfo, attrs) in bindInfos)
             {
                 foreach (var attr in attrs)
@@ -576,8 +579,8 @@ namespace Hinode
                 }
             }
         }
-        public static void UnbindToGameObject(object target, GameObject obj, Labels.MatchOp op, params string[] labels)
-            => UnbindToGameObject(target, obj, op, labels.AsEnumerable());
+        public static void UnbindToGameObject(object target, GameObject obj, Labels.MatchOp op, params string[] objLabels)
+            => UnbindToGameObject(target, obj, op, objLabels.AsEnumerable());
         #endregion
     }
 }

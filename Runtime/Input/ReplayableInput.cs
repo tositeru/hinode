@@ -155,7 +155,7 @@ namespace Hinode
         #region Touch
         readonly List<Touch> _recordedTouches = new List<Touch>();
 
-        public int RecordedTouchCount { get; set; } = 0;
+        public int RecordedTouchCount { get => _recordedTouches.Count; }
         public bool RecordedTouchSupported { get; set; } = false;
         public bool RecordedTouchPressureSupported { get; set; } = false;
         public bool RecordedMultiTouchEnabled { get; set; } = false;
@@ -237,6 +237,25 @@ namespace Hinode
             return _recordedTouches[index];
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        public void RemoveRecordedTouch(int index)
+        {
+            if (RecordedTouchCount <= index) return;
+            _recordedTouches.RemoveAt(index);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        public void ClearRecordedTouch()
+        {
+            ResizeRecordedTouches(0);
+        }
+
         void ResizeRecordedTouches(int size)
         {
             if (_recordedTouches.Count < size)
@@ -247,6 +266,45 @@ namespace Hinode
             }
         }
         #endregion
+
+        #endregion
+
+        #region Pointer
+
+        /// <summary>
+        /// マウスの左クリックもしくは、GetTouch(0)で取得できるTouchからデータを取得します。
+        /// 両方とも有効になっている時はTouchの方を優先します
+        /// </summary>
+        /// <param name="btn"></param>
+        /// <returns></returns>
+        public InputDefines.ButtonCondition GetPointerButton()
+        {
+            var mouse = GetMouseButton(InputDefines.MouseButton.Left);
+            if(!TouchSupported || TouchCount <= 0)
+            {
+                return mouse;
+            }
+            var touch = InputDefines.ToButtonCondition(GetTouch(0));
+            return (touch != InputDefines.ButtonCondition.Free) ? touch : mouse;
+        }
+
+        /// <summary>
+        /// マウスの位置もしくは、GetTouch(0)で取得できるTouchからデータを取得します。
+        /// 両方とも有効になっている時はTouchの方を優先します
+        /// </summary>
+        public Vector3 PointerPos
+        {
+            get
+            {
+                var mouse = MousePos;
+                if (!TouchSupported || TouchCount <= 0)
+                {
+                    return mouse;
+                }
+                var touch = GetTouch(0);
+                return (Vector3)touch.position;
+            }
+        }
 
         #endregion
 

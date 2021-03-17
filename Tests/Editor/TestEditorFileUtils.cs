@@ -123,6 +123,9 @@ namespace Hinode.Tests.Editors
                 Path.GetFullPath($"{hinodePackageInfo.resolvedPath}/Test.txt"),
                 Hinode.Editors.EditorFileUtils.GetFullFilepath(PackageDefines.GetHinodeAssetPath("Test.txt")));
 
+            Assert.IsNull(Hinode.Editors.EditorFileUtils.GetFullFilepath(null));
+            Assert.IsNull(Hinode.Editors.EditorFileUtils.GetFullFilepath(""));
+            Assert.IsNull(Hinode.Editors.EditorFileUtils.GetFullFilepath("  "));
         }
     }
 }

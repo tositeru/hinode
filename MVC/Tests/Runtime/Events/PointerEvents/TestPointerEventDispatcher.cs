@@ -550,7 +550,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
 
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
@@ -562,7 +561,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
             Debug.Log("start Touch Test2");
@@ -576,7 +575,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -594,7 +592,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
             Debug.Log("start Multi Touch Test");
@@ -608,7 +606,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, new Touch()
                 {
@@ -626,7 +623,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
         }
@@ -704,7 +701,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Ended,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
 
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
@@ -715,7 +711,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
             Debug.Log("start Touch Test2");
@@ -729,7 +725,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Ended,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -746,7 +741,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
             Debug.Log("start Multi Touch Test");
@@ -760,7 +755,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Ended,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, new Touch()
                 {
@@ -777,7 +771,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 root.Reset();
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
             }
         }
@@ -859,7 +853,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
 
@@ -874,7 +867,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -889,7 +882,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -910,7 +902,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -925,7 +917,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, new Touch()
                 {
@@ -948,7 +939,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1029,7 +1020,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 binderInstanceMap.UseEventDispatcherMap.SendTo(binderInstanceMap);
@@ -1040,7 +1030,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1055,7 +1045,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -1072,7 +1061,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1087,7 +1076,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, new Touch()
                 {
@@ -1105,7 +1093,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
                 Assert.AreEqual(binderInstanceMap.BindInstances[root].ViewObjects.First(), root.EventData.PointerDownViewObject);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1188,7 +1176,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
 
@@ -1202,7 +1189,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1217,7 +1204,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -1237,7 +1223,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1258,7 +1244,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, t2);
 
@@ -1275,7 +1260,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1359,7 +1344,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 1;
                 input.SetRecordedTouch(0, t);
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
 
@@ -1373,7 +1357,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1388,7 +1372,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, new Touch()
                 {
                     fingerId = 0,
@@ -1408,7 +1391,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }
@@ -1429,7 +1412,6 @@ namespace Hinode.MVC.Tests.Events.Pointer
                     phase = TouchPhase.Began,
                 };
                 input.RecordedTouchSupported = true;
-                input.RecordedTouchCount = 2;
                 input.SetRecordedTouch(0, t);
                 input.SetRecordedTouch(1, t2);
 
@@ -1446,7 +1428,7 @@ namespace Hinode.MVC.Tests.Events.Pointer
                 Assert.AreEqual(t.fingerId, root.EventData.FingerID);
                 Assert.AreEqual((Vector3)t.position, root.EventData.PointerPos);
 
-                input.RecordedTouchCount = 0;
+                input.ClearRecordedTouch();
                 binderInstanceMap.UseEventDispatcherMap.Update(binderInstanceMap);
                 root.Reset();
             }

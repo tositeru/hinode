@@ -41,12 +41,15 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             public void Record(ReplayableInput input)
             {
-                _value.Value = input.TouchCount;
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                _value.Value = input.TouchCount > 0 ? input.GetTouch(0).fingerId : -1;
             }
 
             public void RecoverTo(ReplayableInput input)
             {
-                input.RecordedTouchCount = _value.Value;
+                input.ClearRecordedTouch();
+                //手ごろなプロパティに設定しているだけで、特に意味はない処理
+                input.SetRecordedTouch(0, new Touch() { fingerId = _value.Value });
             }
 
             public void RefleshUpdatedFlags()
@@ -496,6 +499,7 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             //好きなデータを指定できるためReplayableInputを使用している
             var replayInput = new ReplayableInput();
             replayInput.IsReplaying = true;
+            replayInput.SetRecordedTouch(0, new Touch() { fingerId = 22 });
 
             var key = "test";
             var key2 = "test2";
@@ -513,8 +517,8 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             AssertionUtils.AssertEnumerableByUnordered(
                 new (string, object)[] {
-                    ($"{key}.{TestRecorder.KeyValue}", replayInput.TouchCount),
-                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.TouchCount),
+                    ($"{key}.{TestRecorder.KeyValue}", replayInput.GetTouch(0).fingerId),
+                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.GetTouch(0).fingerId),
                 }
                 , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , ""
@@ -546,8 +550,7 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
                 .AddChildRecorder(childRecorder)
                 .AddChildRecorder(childRecorder2);
 
-            replayInput.RecordedTouchCount = 111;
-
+            replayInput.SetRecordedTouch(0, new Touch() { fingerId = 111 });
             recorder.Record(replayInput);
 
             var serializer = new JsonSerializer();
@@ -582,7 +585,7 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
             var replayInput = new ReplayableInput();
             replayInput.IsReplaying = true;
 
-            replayInput.RecordedTouchCount = 100;
+            replayInput.SetRecordedTouch(0, new Touch() { fingerId = 100 });
 
             var key = "test";
             var key2 = "test2";
@@ -600,8 +603,8 @@ namespace Hinode.Tests.Input.FrameInputDataRecorder
 
             AssertionUtils.AssertEnumerableByUnordered(
                 new (string key, object value)[] {
-                    ($"{key}.{TestRecorder.KeyValue}", replayInput.TouchCount),
-                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.TouchCount),
+                    ($"{key}.{TestRecorder.KeyValue}", replayInput.GetTouch(0).fingerId),
+                    ($"{key2}.{TestRecorder2.KeyValue}", replayInput.GetTouch(0).fingerId),
                 }
                 , recorder.GetValuesEnumerable().Select(_t => (_t.Key, _t.Value.RawValue))
                 , ""
